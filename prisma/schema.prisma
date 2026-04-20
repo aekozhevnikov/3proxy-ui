@@ -1,0 +1,65 @@
+// Prisma schema for 3proxy UI
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// generator seed {
+//   provider = "tsx"
+//   output   = "./dist/scripts/seed.js"
+// }
+
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  password  String
+  name      String?
+  isAdmin   Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+model Server {
+  id                       Int          @id @default(autoincrement())
+  name                     String
+  hostnameOrIp             String       // 3proxy server address
+  portForNewAccessKeys     Int          @default(3128) // Default 3proxy port
+  apiUrl                   String?      // If using management API
+  apiId                    String?
+  apiCertSha256            String?
+  apiCreatedAt             DateTime?
+  isAvailable              Boolean      @default(true)
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime?    @updatedAt
+}
+
+model ProxyUser {
+  id             Int      @id @default(autoincrement())
+  username       String   @unique
+  password       String   // Hashed password
+  isActive       Boolean  @default(true)
+  dataLimit      BigInt?  // Limit in MB (null = unlimited)
+  dataUsed       BigInt   @default(0)    @map("data_used") // Used in MB
+  ipLimit        Int?     @default(1)    // Max IP addresses per user (requires IPCOUNT)
+  telegramUserId String?  // Telegram user ID for notifications
+  deactivatedAt  DateTime? @map("deactivated_at") // When user was deactivated due to limit
+  expiresAt      DateTime? @map("expires_at")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([expiresAt])
+  @@index([deactivatedAt])
+}
+
+model ConfigVersion {
+  id        Int      @id @default(autoincrement())
+  version   Int      @default(1)
+  config    String?  // Full 3proxy config content
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,21 @@
+# Test outputs
+dist/
+
+# Test data
+data/
+logs/
+*.db
+
+# Docker volumes
+.docker/
+
+# Node
+node_modules/
+.DS_Store
+
+# Environment
+.env.local
+.env.*.local
+
+# Build artifacts
+.next/

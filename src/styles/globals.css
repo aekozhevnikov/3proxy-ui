@@ -1,0 +1,76 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@config "../../tailwind.config.js";
+
+
+/* Set default font */
+html {
+  font-family: var(--font-sans), serif;
+}
+
+/* Apply background and foreground colors */
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Dark mode support - these classes will be toggled by next-themes */
+.dark body {
+  background-color: var(--color-background-dark);
+  color: var(--color-foreground-dark);
+}
+
+/* HeroUI DatePicker custom styles */
+[data-slot="calendar"] [data-slot="cell"] {
+  border-radius: 9999px; /* rounded-full */
+  transition: background-color 0.2s, color 0.2s;
+}
+
+[data-slot="calendar"] [data-slot="cell"]:hover {
+  background-color: rgb(59 130 246 / 0.1); /* blue-500/10 */
+  color: inherit;
+}
+
+.dark [data-slot="calendar"] [data-slot="cell"]:hover {
+  background-color: rgb(59 130 246 / 0.2); /* blue-500/20 */
+}
+
+[data-slot="calendar"] [data-slot="cell"][data-selected="true"] {
+  background-color: rgb(59 130 246); /* blue-500 */
+  color: white;
+}
+
+[data-slot="calendar"] [data-slot="cell"][data-disabled="true"] {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+[data-slot="calendar"] [data-slot="cell"][data-disabled="true"]:hover {
+  background-color: transparent;
+}
+
+/* Unavailable/past dates - force styling with high specificity */
+html body [data-slot="calendar"] [data-slot="cell"][data-unavailable="true"] > span,
+html body [data-slot="calendar"] [data-slot="cell"][data-unavailable="true"] > div > span {
+  color: #9ca3af !important; /* gray-400 */
+  opacity: 0.4 !important;
+  text-decoration: none !important;
+  background-color: transparent !important;
+}
+
+html body .dark [data-slot="calendar"] [data-slot="cell"][data-unavailable="true"] > span,
+html body .dark [data-slot="calendar"] [data-slot="cell"][data-unavailable="true"] > div > span {
+  color: #6b7280 !important; /* gray-500 */
+}
+
+html body [data-slot="calendar"] [data-slot="cell"][data-unavailable="true"]:hover > span,
+html body [data-slot="calendar"] [data-slot="cell"][data-unavailable="true"]:hover > div > span {
+  background-color: transparent !important;
+  color: #9ca3af !important;
+}
+
+html body .dark [data-slot="calendar"] [data-slot="cell"][data-unavailable="true"]:hover > span,
+html body .dark [data-slot="calendar"] [data-slot="cell"][data-unavailable="true"]:hover > div > span {
+  color: #6b7280 !important;
+}

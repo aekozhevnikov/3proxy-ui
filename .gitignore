@@ -1,0 +1,14 @@
+## IDEs
+.vscode/
+.idea/
+.env
+3proxy
+dist
+node_modules
+.next
+tsconfig.tsbuildinfo
+dev
+
+*storybook.log
+storybook-static
+data/

@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  3proxy-ui-e2e:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        PROXY_DOMAIN: test.local
+        HTTP_PORT: 3128
+        SOCKS_PORT: 1080
+        JWT_SECRET: test-secret-key-minimum-32-characters-long
+    environment:
+      - DATABASE_URL=file:/app/data/test.db
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - API_URL=http://localhost:3000
+      - JWT_SECRET=test-secret-key-minimum-32-characters-long
+      - ENABLE_FAIL2BAN=true
+      - FAIL2BAN_BANTIME=60
+      - FAIL2BAN_FINDTIME=10
+      - FAIL2BAN_MAXRETRY=2
+      - TRAFFIC_SYNC_INTERVAL=*/1 * * * *
+    ports:
+      - "3000:3000"
+      - "3128:3128"
+      - "1080:1080"
+    volumes:
+      - e2e_data:/app/data
+      - e2e_logs:/etc/3proxy/logs
+      - e2e_fail2ban:/var/lib/fail2ban
+    depends_on:
+      - postgres
+    command: >
+      sh -c "
+        echo 'Waiting for services...' &&
+        sleep 5 &&
+        echo 'Starting E2E test instance...' &&
+        /entrypoint.sh
+      "
+
+volumes:
+  postgres_data:
+  e2e_data:
+  e2e_logs:
+  e2e_fail2ban:

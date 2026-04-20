@@ -1,0 +1,49 @@
+# Dependencies (will be installed in Docker)
+# node_modules is excluded, but we'll copy it from deps stage
+
+# Build outputs (we generate them in Docker)
+.next
+out
+dist
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.github
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database dev files
+prisma/*.db
+
+# Exclude all 3proxy files EXCEPT the needed configs
+# We'll explicitly include the ones we need in the Dockerfile COPY commands
+3proxy/*
+!3proxy/3proxy.cfg
+!3proxy/docker/
+!3proxy/docker/fail2ban-filter-docker.conf
+!3proxy/docker/fail2ban-jail-docker.conf
+!3proxy/fail2ban-filter.conf
+!3proxy/fail2ban-filter-ip-limit.conf
+!3proxy/fail2ban-jail-ip-limit.conf
+
+node_modules
+tsconfig.tsbuildinfo
+*.md
