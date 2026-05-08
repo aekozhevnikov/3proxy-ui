@@ -151,6 +151,7 @@ export async function POST(request: Request): Promise<Response> {
         const now = new Date();
         let updatedCount = 0;
         let totalTraffic = 0;
+        let deactivatedCount = 0;
 
         // Reset cached logs dir to allow re-discovery (important for tests)
         cachedLogsDir = null;
@@ -356,7 +357,7 @@ export async function POST(request: Request): Promise<Response> {
             success: true,
             message: `Maintenance completed`,
             updatedCount,
-            deactivatedCount: proxyStats.deactivatedCount,
+            deactivatedCount: proxyStats.deactivatedCount + deactivatedCount,
             totalTraffic,
             sourceFile: logsDir ? (await fs.readdir(logsDir)).find((f) => f.startsWith("3proxy.log")) : "none"
         });

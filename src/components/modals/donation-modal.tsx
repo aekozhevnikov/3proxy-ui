@@ -63,7 +63,7 @@ export default function DonationModal({ disclosure }: Props) {
                                                 </Accordion.Heading>
                                                 <Accordion.Panel>
                                                     <Accordion.Body>
-                                                        <CryptoItem address={address!} name={name} />
+                                                        <CryptoItem _name={name} address={address!} />
                                                     </Accordion.Body>
                                                 </Accordion.Panel>
                                             </AccordionItem>
