@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            users: users.map((user: ProxyUser) => ({
+            users: users.map((user) => ({
                 ...user,
                 dataLimit: user.dataLimit ? Number(user.dataLimit) : null,
                 dataUsed: Number(user.dataUsed)
