@@ -60,7 +60,11 @@ jobs:
           npx prisma migrate deploy
           npx prisma generate
 
+      - name: Compile scripts
+        run: npm run compile
+
+      - name: Setup admin user
+        run: node ./dist/scripts/setup.js
+
       - name: Build the project
-        run: |
-          npm run setup
-          npm run build
+        run: npm run build
