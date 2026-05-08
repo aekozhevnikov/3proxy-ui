@@ -63,8 +63,11 @@ jobs:
       - name: Compile scripts
         run: npm run compile
 
+      - name: Verify compiled output
+        run: ls -la dist/scripts/
+
       - name: Setup admin user
-        run: node ./dist/scripts/setup.js
+        run: npm run setup
 
       - name: Build the project
         run: npm run build
