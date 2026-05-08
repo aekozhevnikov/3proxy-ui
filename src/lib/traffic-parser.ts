@@ -148,7 +148,7 @@ export async function readTrafficLogs(): Promise<Map<string, UserTrafficStats>> 
         console.error("[traffic-parser] Error accessing logs directory:", err);
     }
 
-    console.log(
+    console.debug(
         `[traffic-parser] Read ${logFiles.length} log file(s) from ${logsDir}, aggregated ${statsMap.size} IPs`
     );
     cache = { data: statsMap, timestamp: now };

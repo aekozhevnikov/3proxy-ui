@@ -120,10 +120,8 @@ function log(message: string, type: "info" | "error" | "success" = "info") {
             console.error(`${prefix} ${message}`);
             break;
         case "success":
-            console.log(`${prefix} ✓ ${message}`);
             break;
         default:
-            console.log(`${prefix} ${message}`);
     }
 }
 

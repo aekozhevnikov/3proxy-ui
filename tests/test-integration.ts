@@ -7,7 +7,6 @@ const prisma = new PrismaClient();
 
 async function testIntegration() {
     try {
-        console.log('=== Integration Test: User Deactivation Flow ===\n');
 
         // 1. Create test ProxyUser with data limit
         const testUsername = 'integration_test_' + Date.now();
@@ -26,9 +25,6 @@ async function testIntegration() {
             }
         });
 
-        console.log(`✅ Created ProxyUser: ${testUsername}`);
-        console.log(`   ID: ${proxyUser.id}`);
-        console.log(`   Data limit: ${dataLimitMB} MB (${dataLimitBytes} bytes)\n`);
 
         // 2. Simulate traffic logs
         const logsDir = path.join(process.cwd(), 'test-logs');
@@ -47,12 +43,8 @@ async function testIntegration() {
         const logFile = path.join(logsDir, '3proxy.log');
         await fs.writeFile(logFile, logContent);
 
-        console.log('✅ Created test log file with simulated traffic');
-        console.log(`   Log file: ${logFile}`);
-        console.log(`   Content: ${logContent.trim()}\n`);
 
         // 3. Call maintenance API to trigger full flow, passing logsDir
-        console.log('Calling maintenance API...');
         const maintenanceResponse = await fetch('http://localhost:3000/api/users/maintenance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -60,13 +52,11 @@ async function testIntegration() {
         });
         const maintenanceData = await maintenanceResponse.json();
 
-        console.log('Maintenance response:', maintenanceData);
 
         if (!maintenanceResponse.ok || !maintenanceData.success) {
             throw new Error('Maintenance API failed: ' + (maintenanceData.error || 'Unknown error'));
         }
 
-        console.log(`✅ Maintenance: ${maintenanceData.updatedCount} users updated, ${maintenanceData.deactivatedCount} deactivated\n`);
 
         // 5. Verify final state
         const finalUser = await prisma.proxyUser.findUnique({
@@ -86,12 +76,6 @@ async function testIntegration() {
             throw new Error(`User line should be commented as DEACTIVATED: ${userLines[0]}`);
         }
 
-        console.log('\n=== Final User State ===');
-        console.log(`Username: ${finalUser?.username}`);
-        console.log(`isActive: ${finalUser?.isActive}`);
-        console.log(`dataUsed: ${Number(finalUser?.dataUsed) / 1024 / 1024} MB`);
-        console.log(`dataLimit: ${Number(finalUser?.dataLimit) / 1024 / 1024} MB`);
-        console.log(`deactivatedAt: ${finalUser?.deactivatedAt?.toISOString() || 'null'}`);
 
         // 6. Assertions
         if (finalUser?.isActive !== false) {
@@ -106,7 +90,6 @@ async function testIntegration() {
             throw new Error(`dataUsed should be at least ${expectedDataUsed} MB, got ${Number(finalUser?.dataUsed) / 1024 / 1024} MB`);
         }
 
-        console.log('\n✅ All assertions PASSED');
 
         // 9. Cleanup
         await prisma.proxyUser.delete({
@@ -115,8 +98,6 @@ async function testIntegration() {
         await fs.unlink(logFile);
         await fs.rm(logsDir, { recursive: true, force: true });
 
-        console.log('✅ Cleanup completed');
-        console.log('\n🎉 Integration test PASSED!');
 
     } catch (error) {
         console.error('\n❌ Integration test FAILED:', error);

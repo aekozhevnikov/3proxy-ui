@@ -9,14 +9,14 @@ function shouldLog(level: LogLevel): boolean {
 }
 
 export const logger = {
-    debug: (...args: unknown[]) => {
+    debug: (..._args: unknown[]) => {
         if (shouldLog("debug")) {
-            console.log(...args);
+            console.debug(..._args);
         }
     },
-    info: (...args: unknown[]) => {
+    info: (..._args: unknown[]) => {
         if (shouldLog("info")) {
-            console.log(...args);
+            console.info(..._args);
         }
     },
     warn: (...args: unknown[]) => {

@@ -17,7 +17,6 @@ export async function generateHttpTraffic(
   requestCount: number = 10,
   requestSize: number = 1024 * 1024 // 1MB
 ): Promise<ProxyTrafficStats> {
-  console.log(`Generating ${requestCount} HTTP requests through ${proxyUrl}...`);
 
   const startTime = Date.now();
   let totalSent = 0;
@@ -54,7 +53,6 @@ export async function generateHttpTraffic(
         : 0;
       successfulRequests++;
 
-      console.log(`  Request ${i + 1}/${requestCount}: ${response.status}`);
 
       // Small delay between requests
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -120,7 +118,6 @@ export async function generateExceedTraffic(
   const chunkSize = 1024 * 1024; // 1MB chunks
   const chunks = Math.ceil(toGenerate / chunkSize);
 
-  console.log(`Generating ${toGenerate / 1024 / 1024} MB traffic for ${username} (limit: ${dataLimit / 1024 / 1024} MB)...`);
 
   for (let i = 0; i < chunks; i++) {
     const sent = Math.min(chunkSize, toGenerate - (i * chunkSize));

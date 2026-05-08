@@ -20,11 +20,6 @@ async function main() {
                 isAdmin: true
             }
         });
-        console.log("✅ Admin user created");
-        console.log("   Username: admin");
-        console.log("   Password: admin");
-    } else {
-        console.log("ℹ️ Admin user already exists");
     }
 }
 

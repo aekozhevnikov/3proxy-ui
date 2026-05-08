@@ -37,7 +37,7 @@ export async function ensureAdminUser(
 
         if (!existing) {
             // Create admin user in User table
-            const admin = await prisma.user.create({
+            await prisma.user.create({
                 data: {
                     username: adminConfig.username,
                     password: hashedPassword,
@@ -45,13 +45,6 @@ export async function ensureAdminUser(
                     isAdmin: true
                 }
             });
-
-            console.log("✅ Admin user created:");
-            console.log(`   Username: ${admin.username}`);
-            console.log(`   Name: ${admin.name}`);
-            console.log("\n⚠️  Please change the default password after first login!");
-        } else {
-            console.log("[ensureAdmin] Admin user already exists:", existing.username);
         }
 
         // Ensure proxy user exists for admin in ProxyUser table (Option 1: all proxy users in DB)
@@ -73,10 +66,6 @@ export async function ensureAdminUser(
                     deactivatedAt: null
                 }
             });
-            console.log("✅ Proxy user created for admin:");
-            console.log(`   Username: ${adminConfig.username}`);
-        } else {
-            console.log(`[ensureAdmin] Proxy user already exists: ${adminConfig.username}`);
         }
 
         return existing ? null : { username: adminConfig.username, password: adminConfig.password };

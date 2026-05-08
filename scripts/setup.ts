@@ -12,7 +12,6 @@ async function createAdmin() {
     });
 
     if (existing) {
-        console.log("Admin user already exists");
         process.exit(0);
     }
 
@@ -27,10 +26,6 @@ async function createAdmin() {
         }
     });
 
-    console.log("✅ Admin user created:");
-    console.log(`   Username: ${username}`);
-    console.log(`   Password: ${password}`);
-    console.log("\n⚠️  Please change the password after first login!");
     process.exit(0);
 }
 

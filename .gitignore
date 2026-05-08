@@ -12,3 +12,6 @@ dev
 *storybook.log
 storybook-static
 data/
+*.bak
+.DS_Store
+prisma/sqlite/app.db

@@ -51,8 +51,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        console.log(`[test-proxy] Testing active user: ${username}`);
-
         // Check if 3proxy is running (via Docker or directly)
         let isRunning = false;
 
@@ -99,7 +97,7 @@ export async function POST(request: NextRequest) {
                 proxyHost = statusData.bindAddress || "127.0.0.1";
             }
         } catch (error) {
-            console.log(`Could not get system status, using defaults, error: ${error}`);
+            console.error(error);
         }
 
         // If couldn't get from API, try default ports

@@ -13,8 +13,6 @@ export async function fetchProxyConfig(): Promise<{ domain: string; httpPort: st
 
     // During image build, don't attempt to fetch - just return fallback
     if (typeof window === "undefined" && process.env.NEXT_BUILD === "true") {
-        console.log("[Build] Skipping API fetch, using fallback env vars");
-
         return {
             domain: process.env.NEXT_PUBLIC_PROXY_DOMAIN || "localhost",
             httpPort: process.env.NEXT_PUBLIC_HTTP_PORT || "3128",

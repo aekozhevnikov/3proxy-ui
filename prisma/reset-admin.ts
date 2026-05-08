@@ -10,7 +10,6 @@ async function resetAdminPassword() {
     });
 
     if (!admin) {
-        console.log("❌ Admin user not found");
         process.exit(1);
     }
 
@@ -22,10 +21,6 @@ async function resetAdminPassword() {
         where: { id: admin.id },
         data: { password: hashedPassword }
     });
-
-    console.log("✅ Admin password reset");
-    console.log("   Username: admin");
-    console.log("   Password: admin");
 }
 
 resetAdminPassword()
