@@ -45,8 +45,8 @@ jobs:
 
           docker buildx build \
             --platform linux/amd64 \
-            --tag hungryking/3proxy-admin:$VERSION \
-            --tag hungryking/3proxy-admin:latest \
+            --tag ${{ secrets.DOCKER_USERNAME }}/3proxy-admin:$VERSION \
+            --tag ${{ secrets.DOCKER_USERNAME }}/3proxy-admin:latest \
             --push .
 
       - name: Sync README to Docker Hub
@@ -60,7 +60,7 @@ jobs:
           # Update repository description with DOCKER.md content
           DESCRIPTION=$(cat DOCKER.md | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
 
-          curl -s -X PATCH "https://hub.docker.com/v2/repositories/hungryking/3proxy-admin/" \
+          curl -s -X PATCH "https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/3proxy-admin/" \
             -H "Authorization: JWT $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"full_description":'"$DESCRIPTION"'}'
