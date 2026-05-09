@@ -1,6 +1,6 @@
 # 3proxy Admin UI — Docker Deployment
 
-Docker Hub: [hungryking/3proxy-admin](https://hub.docker.com/r/hungryking/3proxy-admin)
+Docker Hub: [hungryking/3proxy-ui](https://hub.docker.com/r/hungryking/3proxy-ui)
 
 A web-based administration interface for managing [3proxy](https://github.com/3proxy/3proxy) proxy servers. This Docker image bundles the Next.js application, fail2ban, and all dependencies into a single container.
 
@@ -8,7 +8,7 @@ A web-based administration interface for managing [3proxy](https://github.com/3p
 
 ```bash
 docker run -d \
-  --name 3proxy-admin \
+  --name 3proxy-ui \
   -p 3000:3000 \
   -p 3128:3128 \
   -p 1080:1080 \
@@ -17,7 +17,7 @@ docker run -d \
   -v 3proxy-data:/app/data \
   -v 3proxy-logs:/etc/3proxy/logs \
   --restart unless-stopped \
-  hungryking/3proxy-admin:latest
+  hungryking/3proxy-ui:latest
 ```
 
 Then open http://localhost:3000 in your browser.
@@ -32,9 +32,9 @@ Then open http://localhost:3000 in your browser.
 version: "3.8"
 
 services:
-  3proxy-admin:
-    image: hungryking/3proxy-admin:latest
-    container_name: 3proxy-admin
+  3proxy-ui:
+    image: hungryking/3proxy-ui:latest
+    container_name: 3proxy-ui
     ports:
       - "3000:3000"   # Web UI
       - "3128:3128"   # HTTP proxy
@@ -127,7 +127,7 @@ volumes:
 ## Health Check
 
 ```bash
-docker exec 3proxy-admin curl -f http://localhost:3000/api/health
+docker exec 3proxy-ui curl -f http://localhost:3000/api/health
 ```
 
 ## Building Locally
@@ -135,7 +135,7 @@ docker exec 3proxy-admin curl -f http://localhost:3000/api/health
 ```bash
 git clone https://github.com/aekozhevnikov/3proxy-ui.git
 cd 3proxy-ui
-docker build -t 3proxy-admin .
+docker build -t 3proxy-ui .
 ```
 
 ## License

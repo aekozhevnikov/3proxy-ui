@@ -49,7 +49,7 @@ A comprehensive web-based administration interface for managing [3proxy](https:/
 ## Architecture
 
 ```
-3proxy-admin/
+3proxy-ui/
 ├── src/
 │   ├── app/              # Next.js 13+ app router
 │   │   ├── api/          # API routes (auth, users, config, logs, etc.)
@@ -80,8 +80,8 @@ A comprehensive web-based administration interface for managing [3proxy](https:/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/3proxy-admin.git
-   cd 3proxy-admin
+   git clone https://github.com/your-username/3proxy-ui.git
+   cd 3proxy-ui
    ```
 
 2. **Install dependencies**
@@ -118,13 +118,13 @@ For detailed Docker deployment instructions, environment variables reference, an
 Quick start:
 ```bash
 docker run -d \
-  --name 3proxy-admin \
+  --name 3proxy-ui \
   -p 3000:3000 \
   -p 3128:3128 \
   -p 1080:1080 \
   -e JWT_SECRET="your-secret-at-least-32-characters-long" \
   -e PROXY_DOMAIN="proxy.example.com" \
-  hungryking/3proxy-admin:latest
+  hungryking/3proxy-ui:latest
 ```
 
 **Default credentials** (change immediately after first login):
@@ -220,7 +220,7 @@ The project includes:
 ### Docker
 ```bash
 # Build the image
-docker build -t 3proxy-admin .
+docker build -t 3proxy-ui .
 
 # Run the container
 docker run -d -p 3000:3000 \
@@ -228,7 +228,7 @@ docker run -d -p 3000:3000 \
   -e NEXTAUTH_SECRET="your-secret-here" \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/3proxy:/app/3proxy \
-  3proxy-admin
+  3proxy-ui
 ```
 
 ### Docker Compose (Recommended)
@@ -313,7 +313,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For issues, questions, or feature requests:
-1. Check the [existing issues](https://github.com/your-username/3proxy-admin/issues)
+1. Check the [existing issues](https://github.com/your-username/3proxy-ui/issues)
 2. Open a new issue with detailed information
 3. Join our community discussions
 
