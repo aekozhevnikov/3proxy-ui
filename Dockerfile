@@ -21,16 +21,10 @@ WORKDIR /app
 
 ENV NEXT_BUILD=true
 
-# Accept build arguments for configuration (can be overridden with docker build --build-arg)
-ARG PROXY_DOMAIN=localhost
-ARG HTTP_PORT=3128
-ARG SOCKS_PORT=1080
-ARG JWT_SECRET
-
-ENV PROXY_DOMAIN=${PROXY_DOMAIN} \
-    HTTP_PORT=${HTTP_PORT} \
-    SOCKS_PORT=${SOCKS_PORT} \
-    JWT_SECRET=${JWT_SECRET:-please-change-this-secret-in-production-at-least-32-chars}
+ENV PROXY_DOMAIN=localhost \
+    HTTP_PORT=3128 \
+    SOCKS_PORT=1080 \
+    JWT_SECRET=please-change-this-secret-in-production-at-least-32-chars
 
 COPY package-lock.json package.json ./
 RUN npm install
