@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Build and Push Multi-Platform Docker Image
+      - name: Build and Push Docker Image
         run: |
           VERSION=${{ github.ref_name }}
           VERSION=${VERSION#v} # Remove leading 'v' if it exists
@@ -48,3 +48,19 @@ jobs:
             --tag hungryking/3proxy-admin:$VERSION \
             --tag hungryking/3proxy-admin:latest \
             --push .
+
+      - name: Sync README to Docker Hub
+        run: |
+          # Get Docker Hub token
+          TOKEN=$(curl -s -X POST https://hub.docker.com/v2/users/login \
+            -H "Content-Type: application/json" \
+            -d '{"username":"'"${{ secrets.DOCKER_USERNAME }}"'","password":"'"${{ secrets.DOCKER_TOKEN }}"'"}' \
+            | jq -r '.token')
+
+          # Update repository description with DOCKER.md content
+          DESCRIPTION=$(cat DOCKER.md | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
+
+          curl -s -X PATCH "https://hub.docker.com/v2/repositories/hungryking/3proxy-admin/" \
+            -H "Authorization: JWT $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"full_description":'"$DESCRIPTION"'}'

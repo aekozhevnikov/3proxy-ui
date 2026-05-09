@@ -113,17 +113,23 @@ A comprehensive web-based administration interface for managing [3proxy](https:/
 
 ### Docker Deployment
 
-1. **Build and run with Docker Compose**
-   ```bash
-   docker compose up -d --build
-   ```
+For detailed Docker deployment instructions, environment variables reference, and Docker Compose configuration, see **[DOCKER.md](DOCKER.md)**.
 
-2. **Access the application**
-   Open http://localhost:3000 in your browser
+Quick start:
+```bash
+docker run -d \
+  --name 3proxy-admin \
+  -p 3000:3000 \
+  -p 3128:3128 \
+  -p 1080:1080 \
+  -e JWT_SECRET="your-secret-at-least-32-characters-long" \
+  -e PROXY_DOMAIN="proxy.example.com" \
+  hungryking/3proxy-admin:latest
+```
 
-3. **Default credentials** (change immediately after first login)
-   - Username: `admin`
-   - Password: `admin`
+**Default credentials** (change immediately after first login):
+- Username: `admin`
+- Password: `admin`
 
 ## Configuration
 
