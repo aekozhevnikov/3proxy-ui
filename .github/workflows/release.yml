@@ -50,17 +50,32 @@ jobs:
             --push .
 
       - name: Sync README to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
-          # Get Docker Hub token
-          TOKEN=$(curl -s -X POST https://hub.docker.com/v2/users/login \
+          # Get Docker Hub JWT token
+          LOGIN_RESP=$(curl -s -X POST https://hub.docker.com/v2/users/login \
             -H "Content-Type: application/json" \
-            -d '{"username":"'"${{ secrets.DOCKER_USERNAME }}"'","password":"'"${{ secrets.DOCKER_TOKEN }}"'"}' \
-            | jq -r '.token')
+            -d "{\"username\":\"$DOCKER_USERNAME\",\"password\":\"$DOCKER_TOKEN\"}")
+
+          echo "Login response: $LOGIN_RESP"
+
+          TOKEN=$(echo "$LOGIN_RESP" | jq -r '.token')
+
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "ERROR: Failed to get Docker Hub token"
+            exit 1
+          fi
+
+          echo "Token obtained successfully"
 
           # Update repository description with DOCKER.md content
           DESCRIPTION=$(cat DOCKER.md | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
 
-          curl -s -X PATCH "https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_USERNAME }}/3proxy-admin/" \
+          PATCH_RESP=$(curl -s -X PATCH "https://hub.docker.com/v2/repositories/$DOCKER_USERNAME/3proxy-admin/" \
             -H "Authorization: JWT $TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"full_description":'"$DESCRIPTION"'}'
+            -d '{"full_description":'"$DESCRIPTION"'}')
+
+          echo "Patch response: $PATCH_RESP"
