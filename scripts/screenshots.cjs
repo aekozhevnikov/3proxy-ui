@@ -17,7 +17,7 @@ const pages = [
 const viewports = [
   { name: "desktop", width: 1440, height: 900 },
   { name: "tablet", width: 768, height: 1024 },
-  { name: "mobile", width: 375, height: 812 },
+  { name: "mobile", width: 300, height: 812 },
 ];
 
 function httpPost(url, data) {

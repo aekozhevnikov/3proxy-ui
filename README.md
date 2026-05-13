@@ -24,7 +24,7 @@ A comprehensive web-based administration interface for managing [3proxy](https:/
 |:---:|:---:|:---:|
 | ![Users](screenshots/admin-users-tablet.png) | ![Create](screenshots/admin-users-create-tablet.png) | ![Profile](screenshots/admin-profile-tablet.png) |
 
-### Mobile (375×812)
+### Mobile (300×812)
 
 | Home | Login | Dashboard |
 |:---:|:---:|:---:|
