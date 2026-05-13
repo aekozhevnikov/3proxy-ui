@@ -2,7 +2,37 @@
 
 A comprehensive web-based administration interface for managing [3proxy](https://github.com/3proxy/3proxy) proxy servers. Built with Next.js, React, and TypeScript, this UI provides intuitive controls for user management, traffic monitoring, configuration, and system observability.
 
-![3proxy Admin UI Dashboard](https://via.placeholder.com/800x400/0d6efd/ffffff?text=3proxy+Admin+UI+Dashboard)
+## Screenshots
+
+### Desktop (1440×900)
+
+| Home | Login | Dashboard |
+|:---:|:---:|:---:|
+| ![Home](screenshots/home-desktop.png) | ![Login](screenshots/login-desktop.png) | ![Dashboard](screenshots/admin-dashboard-desktop.png) |
+
+| Users List | Create User | Profile |
+|:---:|:---:|:---:|
+| ![Users](screenshots/admin-users-desktop.png) | ![Create](screenshots/admin-users-create-desktop.png) | ![Profile](screenshots/admin-profile-desktop.png) |
+
+### Tablet (768×1024)
+
+| Home | Login | Dashboard |
+|:---:|:---:|:---:|
+| ![Home](screenshots/home-tablet.png) | ![Login](screenshots/login-tablet.png) | ![Dashboard](screenshots/admin-dashboard-tablet.png) |
+
+| Users List | Create User | Profile |
+|:---:|:---:|:---:|
+| ![Users](screenshots/admin-users-tablet.png) | ![Create](screenshots/admin-users-create-tablet.png) | ![Profile](screenshots/admin-profile-tablet.png) |
+
+### Mobile (375×812)
+
+| Home | Login | Dashboard |
+|:---:|:---:|:---:|
+| ![Home](screenshots/home-mobile.png) | ![Login](screenshots/login-mobile.png) | ![Dashboard](screenshots/admin-dashboard-mobile.png) |
+
+| Users List | Create User | Profile |
+|:---:|:---:|:---:|
+| ![Users](screenshots/admin-users-mobile.png) | ![Create](screenshots/admin-users-create-mobile.png) | ![Profile](screenshots/admin-profile-mobile.png) |
 
 ## Features
 
