@@ -113,9 +113,12 @@ function CryptoItem({ _name, address }: { _name: string; address: string }) {
     };
 
     return (
-        <div className="flex flex-col items-center overflow-hidden">
+        <div className="flex flex-col items-center overflow-hidden w-full">
             <div className="flex justify-center mb-6 rounded-xl">
-                <div ref={qrCodeContainerRef} className="rounded-xl overflow-hidden bg-white dark:bg-gray-700" />
+                <div
+                    ref={qrCodeContainerRef}
+                    className="rounded-xl overflow-hidden bg-white dark:bg-gray-700 max-w-full [&>canvas]:max-w-full [&>canvas]:h-auto [&>img]:max-w-full [&>img]:h-auto"
+                />
             </div>
             <div className="flex items-center gap-2 w-full max-w-lg">
                 <div className="flex-1 min-w-0 px-3 py-3 bg-gray-200 dark:bg-gray-700 rounded-full text-sm">

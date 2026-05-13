@@ -67,7 +67,7 @@ export default async function RootLayout({ children }: Props) {
                             <div className="relative flex flex-col flex-1 min-h-screen">
                                 <SideMenuDrawer />
 
-                                <main className="flex-1 mt-8 lg:mt-0 pt-8 px-2 overflow-auto">{children}</main>
+                                <main className="flex-1 mt-8 lg:mt-0 pt-8 px-2 overflow-x-hidden">{children}</main>
 
                                 <Footer />
                             </div>

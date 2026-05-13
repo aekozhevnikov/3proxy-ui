@@ -113,7 +113,7 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
                         {qrCodeUrl ? (
                             <Image
                                 alt="Telegram QR Code"
-                                className="border border-gray-200 dark:border-gray-700 rounded-xl"
+                                className="border border-gray-200 dark:border-gray-700 rounded-xl max-w-full h-auto"
                                 height={256}
                                 src={qrCodeUrl}
                                 width={256}

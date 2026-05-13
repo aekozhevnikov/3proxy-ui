@@ -342,12 +342,14 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
 
     // Mobile Card Layout
     const renderMobileCard = (user: (typeof currentUsers)[0]) => (
-        <div key={user.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 mb-3 overflow-hidden">
-            <div className="flex flex-col gap-2 mb-2">
-                <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate flex-1 min-w-0">{user.username}</h3>
+        <div key={user.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-2 mb-2 overflow-hidden">
+            <div className="flex flex-col gap-1.5 mb-1.5">
+                <div className="flex items-center justify-between gap-1">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-xs truncate flex-1 min-w-0">
+                        {user.username}
+                    </h3>
                     <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium shrink-0 ${
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${
                             user.isActive
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                                 : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
@@ -357,42 +359,42 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
                         {user.isActive ? "Active" : "Deactivated"}
                     </span>
                 </div>
-                <div className="flex items-center justify-end gap-2 flex-wrap">
+                <div className="flex items-center justify-end gap-1.5 flex-wrap">
                     <button
-                        className="p-2 sm:p-3 flex items-center justify-center text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 rounded-full transition-colors"
+                        className="p-1.5 flex items-center justify-center text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 rounded-full transition-colors"
                         title="Share"
                         onClick={() => openShareModal(user)}
                     >
-                        <ShareIcon className="h-4 w-4" />
+                        <ShareIcon className="h-3 w-3" />
                     </button>
                     <button
-                        className="p-2 sm:p-3 flex items-center justify-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-1.5 flex items-center justify-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={testingUserId === user.id || !user.isActive}
                         title={user.isActive ? "Test Proxy" : "Test disabled for deactivated users"}
                         onClick={() => user.isActive && handleTestProxy(user.username, user.id)}
                     >
                         {testingUserId === user.id ? (
-                            <div className="h-4 w-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin" />
+                            <div className="h-3 w-3 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin" />
                         ) : (
-                            <PlayIcon className="h-4 w-4" />
+                            <PlayIcon className="h-3 w-3" />
                         )}
                     </button>
                     <button
-                        className="p-2 sm:p-3 flex items-center justify-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+                        className="p-1.5 flex items-center justify-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-full transition-colors"
                         title="Edit"
                         onClick={() => openEditModal(user)}
                     >
-                        <PencilIcon className="h-4 w-4" />
+                        <PencilIcon className="h-3 w-3" />
                     </button>
                     <button
-                        className="p-2 sm:p-3 flex items-center justify-center text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                        className="p-1.5 flex items-center justify-center text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-full transition-colors"
                         title="Delete"
                         onClick={() => openDeleteModal(user.id)}
                     >
-                        <TrashIcon className="h-4 w-4" />
+                        <TrashIcon className="h-3 w-3" />
                     </button>
-                    <button aria-label="Toggle details" className="p-1 shrink-0" onClick={() => toggleExpand(user.id)}>
-                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button aria-label="Toggle details" className="p-0.5 shrink-0" onClick={() => toggleExpand(user.id)}>
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
                         </svg>
                     </button>
@@ -400,32 +402,36 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
             </div>
 
             {(expandedUserIds.has(user.id) || expandedUserIds.size === currentUsers.length) && (
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2 space-y-1.5">
-                    <div className="flex justify-between text-xs gap-2">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-1.5 mt-1.5 space-y-1">
+                    <div className="flex justify-between text-[10px] gap-1">
                         <span className="text-gray-500 dark:text-gray-400 shrink-0">Data Usage:</span>
-                        <span className="text-gray-900 dark:text-white text-right break-all">{formatGB(Number(user.dataUsed))}</span>
-                    </div>
-                    <div className="flex justify-between text-xs gap-2">
-                        <span className="text-gray-500 dark:text-gray-400 shrink-0">Data Limit:</span>
-                        <span className="text-gray-900 dark:text-white flex items-center gap-1 justify-end">
-                            {user.dataLimit ? formatGB(Number(user.dataLimit)) : <LucideInfinity className="h-3 w-3" />}
+                        <span className="text-gray-900 dark:text-white text-right break-all">
+                            {formatGB(Number(user.dataUsed))}
                         </span>
                     </div>
-                    <div className="flex justify-between text-xs gap-2">
+                    <div className="flex justify-between text-[10px] gap-1">
+                        <span className="text-gray-500 dark:text-gray-400 shrink-0">Data Limit:</span>
+                        <span className="text-gray-900 dark:text-white flex items-center gap-0.5 justify-end">
+                            {user.dataLimit ? formatGB(Number(user.dataLimit)) : <LucideInfinity className="h-2.5 w-2.5" />}
+                        </span>
+                    </div>
+                    <div className="flex justify-between text-[10px] gap-1">
                         <span className="text-gray-500 dark:text-gray-400 shrink-0">IP Limit:</span>
                         <span className="text-gray-900 dark:text-white text-right">{user.ipLimit || 1}</span>
                     </div>
-                    <div className="flex justify-between text-xs gap-2">
+                    <div className="flex justify-between text-[10px] gap-1">
                         <span className="text-gray-500 dark:text-gray-400 shrink-0">Telegram:</span>
-                        <span className="text-gray-900 dark:text-white text-right break-all">{user.telegramUserId || "—"}</span>
-                    </div>
-                    <div className="flex justify-between text-xs gap-2">
-                        <span className="text-gray-500 dark:text-gray-400 shrink-0">Expires:</span>
-                        <span className="text-gray-900 dark:text-white flex items-center gap-1 justify-end">
-                            {user.expiresAt ? formatDate(user.expiresAt) : <LucideInfinity className="h-3 w-3" />}
+                        <span className="text-gray-900 dark:text-white text-right break-all">
+                            {user.telegramUserId || "—"}
                         </span>
                     </div>
-                    <div className="flex justify-between text-xs gap-2">
+                    <div className="flex justify-between text-[10px] gap-1">
+                        <span className="text-gray-500 dark:text-gray-400 shrink-0">Expires:</span>
+                        <span className="text-gray-900 dark:text-white flex items-center gap-0.5 justify-end">
+                            {user.expiresAt ? formatDate(user.expiresAt) : <LucideInfinity className="h-2.5 w-2.5" />}
+                        </span>
+                    </div>
+                    <div className="flex justify-between text-[10px] gap-1">
                         <span className="text-gray-500 dark:text-gray-400 shrink-0">Deactivated:</span>
                         <span className="text-gray-900 dark:text-white text-right break-all">
                             {user.deactivatedAt ? formatDate(user.deactivatedAt) : "Never"}
