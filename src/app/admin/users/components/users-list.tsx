@@ -342,12 +342,12 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
 
     // Mobile Card Layout
     const renderMobileCard = (user: (typeof currentUsers)[0]) => (
-        <div key={user.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-3">
-            <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate">{user.username}</h3>
+        <div key={user.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-3 mb-3 overflow-hidden">
+            <div className="flex flex-col gap-2 mb-2">
+                <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate flex-1 min-w-0">{user.username}</h3>
                     <span
-                        className={`inline-flex items-center px-3 py-2 rounded-full text-xs font-medium shrink-0 ${
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium shrink-0 ${
                             user.isActive
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                                 : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
@@ -357,7 +357,7 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
                         {user.isActive ? "Active" : "Deactivated"}
                     </span>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center justify-end gap-2 flex-wrap">
                     <button
                         className="p-2 sm:p-3 flex items-center justify-center text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 rounded-full transition-colors"
                         title="Share"
@@ -400,34 +400,34 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
             </div>
 
             {(expandedUserIds.has(user.id) || expandedUserIds.size === currentUsers.length) && (
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3 space-y-2">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Data Usage:</span>
-                        <span className="text-gray-900 dark:text-white">{formatGB(Number(user.dataUsed))}</span>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2 space-y-1.5">
+                    <div className="flex justify-between text-xs gap-2">
+                        <span className="text-gray-500 dark:text-gray-400 shrink-0">Data Usage:</span>
+                        <span className="text-gray-900 dark:text-white text-right break-all">{formatGB(Number(user.dataUsed))}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Data Limit:</span>
-                        <span className="text-gray-900 dark:text-white flex items-center gap-1">
-                            {user.dataLimit ? formatGB(Number(user.dataLimit)) : <LucideInfinity className="h-4 w-4" />}
+                    <div className="flex justify-between text-xs gap-2">
+                        <span className="text-gray-500 dark:text-gray-400 shrink-0">Data Limit:</span>
+                        <span className="text-gray-900 dark:text-white flex items-center gap-1 justify-end">
+                            {user.dataLimit ? formatGB(Number(user.dataLimit)) : <LucideInfinity className="h-3 w-3" />}
                         </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">IP Limit:</span>
-                        <span className="text-gray-900 dark:text-white">{user.ipLimit || 1}</span>
+                    <div className="flex justify-between text-xs gap-2">
+                        <span className="text-gray-500 dark:text-gray-400 shrink-0">IP Limit:</span>
+                        <span className="text-gray-900 dark:text-white text-right">{user.ipLimit || 1}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Telegram:</span>
-                        <span className="text-gray-900 dark:text-white">{user.telegramUserId || "—"}</span>
+                    <div className="flex justify-between text-xs gap-2">
+                        <span className="text-gray-500 dark:text-gray-400 shrink-0">Telegram:</span>
+                        <span className="text-gray-900 dark:text-white text-right break-all">{user.telegramUserId || "—"}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Expires:</span>
-                        <span className="text-gray-900 dark:text-white flex items-center gap-1">
-                            {user.expiresAt ? formatDate(user.expiresAt) : <LucideInfinity className="h-4 w-4" />}
+                    <div className="flex justify-between text-xs gap-2">
+                        <span className="text-gray-500 dark:text-gray-400 shrink-0">Expires:</span>
+                        <span className="text-gray-900 dark:text-white flex items-center gap-1 justify-end">
+                            {user.expiresAt ? formatDate(user.expiresAt) : <LucideInfinity className="h-3 w-3" />}
                         </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Deactivated:</span>
-                        <span className="text-gray-900 dark:text-white">
+                    <div className="flex justify-between text-xs gap-2">
+                        <span className="text-gray-500 dark:text-gray-400 shrink-0">Deactivated:</span>
+                        <span className="text-gray-900 dark:text-white text-right break-all">
                             {user.deactivatedAt ? formatDate(user.deactivatedAt) : "Never"}
                         </span>
                     </div>
