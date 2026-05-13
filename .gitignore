@@ -14,4 +14,5 @@ storybook-static
 data/
 *.bak
 .DS_Store
+docker-compose.yml
 prisma/sqlite/app.db
