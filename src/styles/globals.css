@@ -21,6 +21,17 @@ body {
   color: var(--color-foreground-dark);
 }
 
+/* Prevent horizontal overflow on very small screens (≤300px) */
+@media (max-width: 300px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  * {
+    min-width: 0 !important;
+  }
+}
+
 /* HeroUI DatePicker custom styles */
 [data-slot="calendar"] [data-slot="cell"] {
   border-radius: 9999px; /* rounded-full */
