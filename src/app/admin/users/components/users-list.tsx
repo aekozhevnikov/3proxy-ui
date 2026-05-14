@@ -393,7 +393,11 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
                     >
                         <TrashIcon className="h-3 w-3" />
                     </button>
-                    <button aria-label="Toggle details" className="p-0.5 shrink-0" onClick={() => toggleExpand(user.id)}>
+                    <button
+                        aria-label="Toggle details"
+                        className="p-0.5 shrink-0"
+                        onClick={() => toggleExpand(user.id)}
+                    >
                         <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
                         </svg>
@@ -412,7 +416,11 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
                     <div className="flex justify-between text-[10px] gap-1">
                         <span className="text-gray-500 dark:text-gray-400 shrink-0">Data Limit:</span>
                         <span className="text-gray-900 dark:text-white flex items-center gap-0.5 justify-end">
-                            {user.dataLimit ? formatGB(Number(user.dataLimit)) : <LucideInfinity className="h-2.5 w-2.5" />}
+                            {user.dataLimit ? (
+                                formatGB(Number(user.dataLimit))
+                            ) : (
+                                <LucideInfinity className="h-2.5 w-2.5" />
+                            )}
                         </span>
                     </div>
                     <div className="flex justify-between text-[10px] gap-1">
@@ -477,11 +485,11 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200 dark:divide-gray-700 dark:bg-gray-700">
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {filteredUsers.map((user) => (
                             <Fragment key={user.id}>
                                 {/* Main row */}
-                                <tr className="bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/50">
+                                <tr className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <div className="font-medium text-gray-900 dark:text-white text-sm">
                                             {user.username}
@@ -735,13 +743,17 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
 
                         {/* Status Filter ButtonGroup */}
                         <div className="flex items-center gap-2">
-                            <ButtonGroup size="lg" variant="tertiary">
-                                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                            <ButtonGroup size="sm" variant="tertiary">
+                                <Button className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2.5 py-1.5 sm:px-4 sm:py-2">
                                     <FunnelIcon />
                                     {statusFilter}
                                 </Button>
                                 <Dropdown>
-                                    <Button isIconOnly className="bg-blue-600 hover:bg-blue-700" size="lg">
+                                    <Button
+                                        isIconOnly
+                                        className="bg-blue-600 hover:bg-blue-700 px-2.5 py-1.5 sm:px-4 sm:py-2"
+                                        size="sm"
+                                    >
                                         <ChevronDownIcon />
                                     </Button>
                                     <Dropdown.Popover className="max-w-[290px]" placement="bottom end">
@@ -777,7 +789,7 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
                         </div>
 
                         <button
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full transition-colors"
+                            className="flex items-center gap-1.5 px-2 py-1 sm:px-4 sm:py-2 text-[10px] sm:text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full transition-colors"
                             onClick={openCreateModal}
                         >
                             <PlusIcon className="h-5 w-5" />
