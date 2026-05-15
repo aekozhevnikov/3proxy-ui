@@ -4,35 +4,35 @@ A comprehensive web-based administration interface for managing [3proxy](https:/
 
 ## Screenshots
 
-### Desktop (1440×900)
+### MacBook Air (1440×900)
 
 | Home | Login | Dashboard |
 |:---:|:---:|:---:|
-| ![Home](screenshots/home-desktop.png) | ![Login](screenshots/login-desktop.png) | ![Dashboard](screenshots/admin-dashboard-desktop.png) |
+| ![Home](screenshots/home-macbook.png) | ![Login](screenshots/login-macbook.png) | ![Dashboard](screenshots/admin-dashboard-macbook.png) |
 
 | Users List | Create User | Profile |
 |:---:|:---:|:---:|
-| ![Users](screenshots/admin-users-desktop.png) | ![Create](screenshots/admin-users-create-desktop.png) | ![Profile](screenshots/admin-profile-desktop.png) |
+| ![Users](screenshots/admin-users-macbook.png) | ![Create](screenshots/admin-users-create-macbook.png) | ![Profile](screenshots/admin-profile-macbook.png) |
 
-### Tablet (768×1024)
+### iPad Pro 11" (834×1194)
 
 | Home | Login | Dashboard |
 |:---:|:---:|:---:|
-| ![Home](screenshots/home-tablet.png) | ![Login](screenshots/login-tablet.png) | ![Dashboard](screenshots/admin-dashboard-tablet.png) |
+| ![Home](screenshots/home-ipad.png) | ![Login](screenshots/login-ipad.png) | ![Dashboard](screenshots/admin-dashboard-ipad.png) |
 
 | Users List | Create User | Profile |
 |:---:|:---:|:---:|
-| ![Users](screenshots/admin-users-tablet.png) | ![Create](screenshots/admin-users-create-tablet.png) | ![Profile](screenshots/admin-profile-tablet.png) |
+| ![Users](screenshots/admin-users-ipad.png) | ![Create](screenshots/admin-users-create-ipad.png) | ![Profile](screenshots/admin-profile-ipad.png) |
 
-### Mobile (300×812)
+### iPhone 15 Pro (393×852)
 
 | Home | Login | Dashboard |
 |:---:|:---:|:---:|
-| ![Home](screenshots/home-mobile.png) | ![Login](screenshots/login-mobile.png) | ![Dashboard](screenshots/admin-dashboard-mobile.png) |
+| ![Home](screenshots/home-iphone.png) | ![Login](screenshots/login-iphone.png) | ![Dashboard](screenshots/admin-dashboard-iphone.png) |
 
 | Users List | Create User | Profile |
 |:---:|:---:|:---:|
-| ![Users](screenshots/admin-users-mobile.png) | ![Create](screenshots/admin-users-create-mobile.png) | ![Profile](screenshots/admin-profile-mobile.png) |
+| ![Users](screenshots/admin-users-iphone.png) | ![Create](screenshots/admin-users-create-iphone.png) | ![Profile](screenshots/admin-profile-iphone.png) |
 
 ## Features
 

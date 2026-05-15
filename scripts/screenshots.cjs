@@ -14,10 +14,10 @@ const pages = [
   { path: "/admin/profile", name: "admin-profile" },
 ];
 
-const viewports = [
-  { name: "desktop", width: 1440, height: 900 },
-  { name: "tablet", width: 768, height: 1024 },
-  { name: "mobile", width: 300, height: 812 },
+const devices = [
+  { name: "macbook", device: null, viewport: { width: 1440, height: 900, deviceScaleFactor: 2, isMobile: false, hasTouch: false } },
+  { name: "ipad", device: "iPad Pro 11" },
+  { name: "iphone", device: "iPhone 15 Pro" },
 ];
 
 function httpPost(url, data) {
@@ -71,37 +71,38 @@ function httpPost(url, data) {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
-  for (const viewport of viewports) {
+  for (const d of devices) {
     const page = await browser.newPage();
-    await page.setViewport({
-      width: viewport.width,
-      height: viewport.height,
-      deviceScaleFactor: 2,
-    });
+    if (d.device) {
+      const device = puppeteer.KnownDevices[d.device];
+      await page.emulate(device);
+    } else {
+      await page.setViewport(d.viewport);
+    }
 
     // Try to login via form if API didn't set cookies
-    console.log(`[${viewport.name}] Ensuring logged in...`);
+    console.log(`[${d.name}] Ensuring logged in...`);
     try {
       await page.goto(`${BASE_URL}/login`, { waitUntil: "networkidle0", timeout: 15000 });
       // Check if we're on login page
       const url = page.url();
       if (url.includes("/login")) {
-        console.log(`[${viewport.name}] On login page, submitting form...`);
+        console.log(`[${d.name}] On login page, submitting form...`);
         await page.type('#username', "admin");
         await page.type('#password', "admin");
         await page.click('button[type="submit"]');
         await page.waitForNavigation({ waitUntil: "networkidle0", timeout: 10000 }).catch(() => {});
-        console.log(`[${viewport.name}] Logged in, now at: ${page.url()}`);
+        console.log(`[${d.name}] Logged in, now at: ${page.url()}`);
       } else {
-        console.log(`[${viewport.name}] Already logged in or redirected to: ${url}`);
+        console.log(`[${d.name}] Already logged in or redirected to: ${url}`);
       }
     } catch (err) {
-      console.log(`[${viewport.name}] Login attempt: ${err.message}`);
+      console.log(`[${d.name}] Login attempt: ${err.message}`);
     }
 
     for (const p of pages) {
       const url = `${BASE_URL}${p.path}`;
-      console.log(`[${viewport.name}] Screenshotting: ${url}`);
+      console.log(`[${d.name}] Screenshotting: ${url}`);
 
       try {
         await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -113,7 +114,7 @@ function httpPost(url, data) {
         // Small delay for any animations
         await new Promise((r) => setTimeout(r, 500));
 
-        const filename = `${p.name}-${viewport.name}.png`;
+        const filename = `${p.name}-${d.name}.png`;
         const filepath = path.join(OUTPUT_DIR, filename);
         await page.screenshot({ path: filepath, fullPage: false });
         console.log(`  ✓ Saved: ${filename}`);
