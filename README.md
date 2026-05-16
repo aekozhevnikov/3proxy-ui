@@ -4,35 +4,35 @@ A comprehensive web-based administration interface for managing [3proxy](https:/
 
 ## Screenshots
 
-### MacBook Air (1440×900)
+### MacBook Pro 14" (3024×1964)
 
 | Home | Login | Dashboard |
 |:---:|:---:|:---:|
-| ![Home](screenshots/home-macbook.png) | ![Login](screenshots/login-macbook.png) | ![Dashboard](screenshots/admin-dashboard-macbook.png) |
+| ![Home](screenshots/home-macbook-front.png) | ![Login](screenshots/login-macbook-front.png) | ![Dashboard](screenshots/admin-dashboard-macbook-front.png) |
 
 | Users List | Create User | Profile |
 |:---:|:---:|:---:|
-| ![Users](screenshots/admin-users-macbook.png) | ![Create](screenshots/admin-users-create-macbook.png) | ![Profile](screenshots/admin-profile-macbook.png) |
+| ![Users](screenshots/admin-users-macbook-front.png) | ![Create](screenshots/admin-users-create-macbook-front.png) | ![Profile](screenshots/admin-profile-macbook-front.png) |
 
-### iPad Pro 11" (834×1194)
+### iPad Pro 11" Portrait (1668×2388)
 
 | Home | Login | Dashboard |
 |:---:|:---:|:---:|
-| ![Home](screenshots/home-ipad.png) | ![Login](screenshots/login-ipad.png) | ![Dashboard](screenshots/admin-dashboard-ipad.png) |
+| ![Home](screenshots/home-ipad-portrait.png) | ![Login](screenshots/login-ipad-portrait.png) | ![Dashboard](screenshots/admin-dashboard-ipad-portrait.png) |
 
 | Users List | Create User | Profile |
 |:---:|:---:|:---:|
-| ![Users](screenshots/admin-users-ipad.png) | ![Create](screenshots/admin-users-create-ipad.png) | ![Profile](screenshots/admin-profile-ipad.png) |
+| ![Users](screenshots/admin-users-ipad-portrait.png) | ![Create](screenshots/admin-users-create-ipad-portrait.png) | ![Profile](screenshots/admin-profile-ipad-portrait.png) |
 
-### iPhone 15 Pro (393×852)
+### iPhone 15 Pro Portrait (1179×2556)
 
 | Home | Login | Dashboard |
 |:---:|:---:|:---:|
-| ![Home](screenshots/home-iphone.png) | ![Login](screenshots/login-iphone.png) | ![Dashboard](screenshots/admin-dashboard-iphone.png) |
+| ![Home](screenshots/home-iphone-portrait.png) | ![Login](screenshots/login-iphone-portrait.png) | ![Dashboard](screenshots/admin-dashboard-iphone-portrait.png) |
 
 | Users List | Create User | Profile |
 |:---:|:---:|:---:|
-| ![Users](screenshots/admin-users-iphone.png) | ![Create](screenshots/admin-users-create-iphone.png) | ![Profile](screenshots/admin-profile-iphone.png) |
+| ![Users](screenshots/admin-users-iphone-portrait.png) | ![Create](screenshots/admin-users-create-iphone-portrait.png) | ![Profile](screenshots/admin-profile-iphone-portrait.png) |
 
 ## Features
 

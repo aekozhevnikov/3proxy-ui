@@ -16,3 +16,4 @@ data/
 .DS_Store
 docker-compose.yml
 prisma/sqlite/app.db
+screenshots.cjs
