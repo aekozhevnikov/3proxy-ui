@@ -9,6 +9,10 @@ permissions:
   contents: read
   actions: read
 
+concurrency:
+  group: pre-release-tests
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
