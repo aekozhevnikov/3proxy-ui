@@ -1,4 +1,4 @@
-import { mocked } from '@/tests/unit/test-utils/mock-helpers';
+import { mocked } from "@/tests/unit/test-utils/mock-helpers";
 import { update3proxyConfig } from "@/src/core/actions/config";
 import { prisma } from "@/src/prisma/db";
 import { hashProxyPassword } from "@/src/core/password-hash";
@@ -6,38 +6,38 @@ import { hashProxyPassword } from "@/src/core/password-hash";
 jest.mock("@/src/prisma/db", () => ({
     prisma: {
         proxyUser: {
-            findMany: jest.fn(),
-        },
-    },
+            findMany: jest.fn()
+        }
+    }
 }));
 
 jest.mock("@/src/core/password-hash", () => ({
-    hashProxyPassword: jest.fn((password: string) => `hashed_${password}`),
+    hashProxyPassword: jest.fn((password: string) => `hashed_${password}`)
 }));
 
 jest.mock("fs", () => ({
     mkdirSync: jest.fn(),
-    writeFileSync: jest.fn(),
+    writeFileSync: jest.fn()
 }));
 
 jest.mock("child_process", () => ({
     exec: jest.fn((cmd, options, callback) => {
         callback(null, "", "");
     }),
-    promisify: () => jest.fn((fn) => jest.fn().mockResolvedValue({ stdout: "container123", stderr: "" })),
+    promisify: () => jest.fn(() => jest.fn().mockResolvedValue({ stdout: "container123", stderr: "" }))
 }));
 
 jest.mock("path", () => ({
     join: jest.fn((...args: string[]) => args.join("/")),
-    dirname: jest.fn(() => "/fake/path"),
+    dirname: jest.fn(() => "/fake/path")
 }));
 
 jest.mock("next/cache", () => ({
-    revalidatePath: jest.fn(),
+    revalidatePath: jest.fn()
 }));
 
 jest.mock("os", () => ({
-    platform: jest.fn().mockReturnValue("linux"),
+    platform: jest.fn().mockReturnValue("linux")
 }));
 
 const mockActiveUser = {
@@ -52,7 +52,7 @@ const mockActiveUser = {
     deactivatedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
-    dataUsed: BigInt(0),
+    dataUsed: BigInt(0)
 };
 
 const mockInactiveUser = {
@@ -67,7 +67,7 @@ const mockInactiveUser = {
     deactivatedAt: new Date("2024-01-15"),
     createdAt: new Date(),
     updatedAt: new Date(),
-    dataUsed: BigInt(0),
+    dataUsed: BigInt(0)
 };
 
 describe("update3proxyConfig", () => {

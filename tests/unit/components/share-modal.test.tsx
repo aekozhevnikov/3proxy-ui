@@ -1,7 +1,9 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
 jest.mock("@heroicons/react/24/outline", () => ({
-    XMarkIcon: ({ ...props }: React.SVGProps<SVGSVGElement>) => <svg data-testid="xmark-icon" {...props} />
+    XMarkIcon: ({ ...props }: React.SVGProps<SVGSVGElement>) => <svg data-testid="xmark-icon" {...props} />,
+    CheckIcon: ({ ...props }: React.SVGProps<SVGSVGElement>) => <svg data-testid="check-icon" {...props} />,
+    ClipboardIcon: ({ ...props }: React.SVGProps<SVGSVGElement>) => <svg data-testid="clipboard-icon" {...props} />
 }));
 
 jest.mock("@/src/core/toast-utils", () => ({
@@ -86,13 +88,11 @@ describe("ShareModal", () => {
             expect(screen.getByText("HTTPS Configuration")).toBeInTheDocument();
         });
 
-        const copyButton = screen
-            .getAllByRole("button")
-            .find((btn) => btn.querySelector("svg") !== null && !btn.closest(".sticky"));
-        fireEvent.click(copyButton!);
+        const copyButtons = screen.getAllByTestId("clipboard-icon");
+        fireEvent.click(copyButtons[0].closest("button")!);
 
         await waitFor(() => {
-            expect(mockWriteText).toHaveBeenCalled();
+            expect(mockWriteText).toHaveBeenCalledWith("https://user:pass@localhost:1234");
         });
     });
 
@@ -114,8 +114,6 @@ describe("ShareModal", () => {
     });
 
     it("closes modal on outside click", () => {
-        render(<ShareModal {...baseProps} />);
-
         const { container } = render(<ShareModal {...baseProps} />);
         fireEvent.mouseDown(container);
         expect(mockOnClose).toHaveBeenCalled();

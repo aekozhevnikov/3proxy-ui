@@ -59,7 +59,20 @@ describe("logs API", () => {
         };
 
         expect(data.success).toBe(true);
-        expect(data.logs).toEqual([{ raw: "log1" }]);
+        expect(data.logs).toEqual([
+            expect.objectContaining({
+                raw: "log1",
+                time_unix: 1710460800,
+                proxy: { type: "HTTP", port: 3128 },
+                error: { code: "0" },
+                auth: { user: "testuser" },
+                client: { ip: "127.0.0.1", port: 12345 },
+                server: { ip: "127.0.0.1", port: 3128 },
+                bytes: { sent: 100, received: 200 },
+                request: { hostname: "localhost" },
+                message: "Connection established",
+            }),
+        ]);
         expect(data.total).toBe(1);
         expect(data.filesScanned).toBe(1);
         expect(data.availableDates).toEqual(["2024-03-15"]);

@@ -24,8 +24,6 @@ jest.mock("@/src/components/icons", () => ({
     SunFilledIcon: ({ ...props }: React.SVGProps<SVGSVGElement>) => <svg data-testid="sun-icon" {...props} />,
 }));
 
-global.fetch = jest.fn();
-
 const originalHrefDescriptor = Object.getOwnPropertyDescriptor(
     window.Location.prototype,
     "href"

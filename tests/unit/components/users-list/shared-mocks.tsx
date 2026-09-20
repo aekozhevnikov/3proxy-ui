@@ -2,7 +2,7 @@ import { mocked, mockResponse } from '@/tests/unit/test-utils/mock-helpers';
 // Shared mock data and utilities for UsersList tests
 // jest.mock calls for common modules are in jest.setup.dom.js / jest.setup.js
 
-import { ProxyUser } from "@/src/core/definitions";
+import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/src/core/definitions";
 
 export const mockUsers: ProxyUser[] = [
     {

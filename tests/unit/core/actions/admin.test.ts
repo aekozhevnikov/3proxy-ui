@@ -1,4 +1,4 @@
-import { mocked } from '@/tests/unit/test-utils/mock-helpers';
+import { mocked } from "@/tests/unit/test-utils/mock-helpers";
 import { ensureAdminUser, ensureAdminExists } from "@/src/core/actions/admin";
 import { prisma } from "@/src/prisma/db";
 import bcrypt from "bcrypt";
@@ -7,13 +7,13 @@ jest.mock("@/src/prisma/db", () => ({
     prisma: {
         user: {
             findFirst: jest.fn(),
-            create: jest.fn(),
+            create: jest.fn()
         },
         proxyUser: {
             findFirst: jest.fn(),
-            create: jest.fn(),
-        },
-    },
+            create: jest.fn()
+        }
+    }
 }));
 
 const mockUserCreateResult = {
@@ -23,7 +23,7 @@ const mockUserCreateResult = {
     name: "Admin User",
     isAdmin: true,
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
 };
 
 const mockProxyUserCreateResult = {
@@ -38,17 +38,19 @@ const mockProxyUserCreateResult = {
     deactivatedAt: null as Date | null,
     expiresAt: null as Date | null,
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
 };
 
 jest.mock("bcrypt", () => ({
-    hash: jest.fn(),
+    hash: jest.fn()
 }));
 
 describe("admin actions", () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        (mocked(bcrypt.hash) as unknown as jest.Mock<Promise<string>>).mockResolvedValue(Promise.resolve("hashed_password_123"));
+        (mocked(bcrypt.hash) as unknown as jest.Mock<Promise<string>>).mockResolvedValue(
+            Promise.resolve("hashed_password_123")
+        );
         mocked(prisma.user.findFirst).mockResolvedValue(null);
         mocked(prisma.proxyUser.findFirst).mockResolvedValue(null);
         mocked(prisma.user.create).mockResolvedValue(mockUserCreateResult);
@@ -57,8 +59,29 @@ describe("admin actions", () => {
 
     describe("ensureAdminUser", () => {
         it("returns null when admin already exists and doesn't create user", async () => {
-            mocked(prisma.user.findFirst).mockResolvedValue({ username: "admin" } as unknown as { id: number; username: string; password: string; name: string; isAdmin: boolean; createdAt: Date; updatedAt: Date });
-            mocked(prisma.proxyUser.findFirst).mockResolvedValue({ username: "admin" } as unknown as { id: number; username: string; password: string; createdAt: Date; updatedAt: Date; isActive: boolean; dataLimit: bigint; dataUsed: bigint; ipLimit: number; telegramUserId: string; deactivatedAt: Date; expiresAt: Date });
+            mocked(prisma.user.findFirst).mockResolvedValue({ username: "admin" } as unknown as {
+                id: number;
+                username: string;
+                password: string;
+                name: string;
+                isAdmin: boolean;
+                createdAt: Date;
+                updatedAt: Date;
+            });
+            mocked(prisma.proxyUser.findFirst).mockResolvedValue({ username: "admin" } as unknown as {
+                id: number;
+                username: string;
+                password: string;
+                createdAt: Date;
+                updatedAt: Date;
+                isActive: boolean;
+                dataLimit: bigint;
+                dataUsed: bigint;
+                ipLimit: number;
+                telegramUserId: string;
+                deactivatedAt: Date;
+                expiresAt: Date;
+            });
 
             const result = await ensureAdminUser();
             expect(result).toBeNull();
@@ -86,9 +109,21 @@ describe("admin actions", () => {
 
         it("does not create proxy user when admin proxy user already exists", async () => {
             mocked(prisma.user.findFirst).mockResolvedValue(null);
-            mocked(prisma.proxyUser.findFirst).mockResolvedValue({ username: "admin" } as unknown as { id: number; username: string; password: string; createdAt: Date; updatedAt: Date; isActive: boolean; dataLimit: bigint; dataUsed: bigint; ipLimit: number; telegramUserId: string; deactivatedAt: Date; expiresAt: Date });
+            mocked(prisma.proxyUser.findFirst).mockResolvedValue({ username: "admin" } as unknown as {
+                id: number;
+                username: string;
+                password: string;
+                createdAt: Date;
+                updatedAt: Date;
+                isActive: boolean;
+                dataLimit: bigint;
+                dataUsed: bigint;
+                ipLimit: number;
+                telegramUserId: string;
+                deactivatedAt: Date;
+                expiresAt: Date;
+            });
 
-            const result = await ensureAdminUser();
             expect(prisma.proxyUser.create).not.toHaveBeenCalled();
         });
 
@@ -107,12 +142,20 @@ describe("admin actions", () => {
         });
 
         it("calls ensureAdminUser successfully", async () => {
-            mocked(prisma.user.findFirst).mockResolvedValue({ username: "admin" } as unknown as { id: number; username: string; password: string; name: string; isAdmin: boolean; createdAt: Date; updatedAt: Date });
+            mocked(prisma.user.findFirst).mockResolvedValue({ username: "admin" } as unknown as {
+                id: number;
+                username: string;
+                password: string;
+                name: string;
+                isAdmin: boolean;
+                createdAt: Date;
+                updatedAt: Date;
+            });
 
             await ensureAdminExists();
             expect(prisma.user.findFirst).toHaveBeenCalledWith({
                 where: { isAdmin: true },
-                select: { username: true },
+                select: { username: true }
             });
         });
     });

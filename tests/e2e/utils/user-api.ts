@@ -2,129 +2,137 @@
  * API client for admin operations
  */
 
-import { apiCall, createAdminSession, TEST_CONFIG, isHttpResponse, HttpResponse } from './helpers.js';
+import { apiCall, createAdminSession, isHttpResponse } from "./helpers.js";
 
 export interface UserData {
-  username: string;
-  password: string;
-  dataLimit?: number | null;
-  ipLimit?: number;
-  telegramUserId?: string | null;
-  isActive?: boolean;
-  expiresAt?: string | null;
+    username: string;
+    password: string;
+    dataLimit?: number | null;
+    ipLimit?: number;
+    telegramUserId?: string | null;
+    isActive?: boolean;
+    expiresAt?: string | null;
 }
 
 export interface ProxyUser {
-  id: number;
-  username: string;
-  isActive: boolean;
-  dataLimit: number | null;
-  dataUsed: number;
-  ipLimit: number;
-  expiresAt: string | null;
-  deactivatedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
+    id: number;
+    username: string;
+    isActive: boolean;
+    dataLimit: number | null;
+    dataUsed: number;
+    ipLimit: number;
+    expiresAt: string | null;
+    deactivatedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
 }
 
 function isProxyUser(obj: unknown): obj is ProxyUser {
-  if (typeof obj !== "object" || obj === null) return false;
-  const user = obj as Record<string, unknown>;
-  return (
-    typeof user.id === "number" &&
-    typeof user.username === "string" &&
-    typeof user.isActive === "boolean" &&
-    (typeof user.dataLimit === "number" || user.dataLimit === null) &&
-    typeof user.dataUsed === "number" &&
-    typeof user.ipLimit === "number" &&
-    (typeof user.expiresAt === "string" || user.expiresAt === null) &&
-    (typeof user.deactivatedAt === "string" || user.deactivatedAt === null) &&
-    typeof user.createdAt === "string" &&
-    typeof user.updatedAt === "string"
-  );
+    if (typeof obj !== "object" || obj === null) return false;
+    const user = obj as Record<string, unknown>;
+    return (
+        typeof user.id === "number" &&
+        typeof user.username === "string" &&
+        typeof user.isActive === "boolean" &&
+        (typeof user.dataLimit === "number" || user.dataLimit === null) &&
+        typeof user.dataUsed === "number" &&
+        typeof user.ipLimit === "number" &&
+        (typeof user.expiresAt === "string" || user.expiresAt === null) &&
+        (typeof user.deactivatedAt === "string" || user.deactivatedAt === null) &&
+        typeof user.createdAt === "string" &&
+        typeof user.updatedAt === "string"
+    );
 }
 
 function asProxyUser(obj: unknown): ProxyUser {
-  if (isProxyUser(obj)) return obj;
-  throw new Error(`Invalid ProxyUser data: ${JSON.stringify(obj)}`);
+    if (isProxyUser(obj)) return obj;
+    throw new Error(`Invalid ProxyUser data: ${JSON.stringify(obj)}`);
 }
 
 function asProxyUserList(obj: unknown): ProxyUser[] {
-  if (Array.isArray(obj) && obj.every(isProxyUser)) return obj;
-  throw new Error(`Invalid ProxyUser list data: ${JSON.stringify(obj)}`);
+    if (Array.isArray(obj) && obj.every(isProxyUser)) return obj;
+    throw new Error(`Invalid ProxyUser list data: ${JSON.stringify(obj)}`);
 }
 
 class UserApiClient {
-  private token: string | null = null;
+    private token: string | null = null;
 
-  async ensureAuthenticated(): Promise<void> {
-    if (!this.token) {
-      this.token = await createAdminSession();
-    }
-  }
-
-  async createUser(data: UserData): Promise<ProxyUser> {
-    await this.ensureAuthenticated();
-    const result = await apiCall(this.token!, '/api/admin/users', 'POST', data as unknown as Record<string, unknown>);
-
-    if (!isHttpResponse(result) || !result.success) {
-      throw new Error(`Failed to create user: ${isHttpResponse(result) ? result.error : String(result)}`);
+    async ensureAuthenticated(): Promise<void> {
+        if (!this.token) {
+            this.token = await createAdminSession();
+        }
     }
 
-    return asProxyUser(result);
-  }
+    async createUser(data: UserData): Promise<ProxyUser> {
+        await this.ensureAuthenticated();
+        const result = await apiCall(
+            this.token!,
+            "/api/admin/users",
+            "POST",
+            data as unknown as Record<string, unknown>
+        );
 
-  async getUser(id: number): Promise<ProxyUser> {
-    await this.ensureAuthenticated();
-    const result = await apiCall(this.token!, `/api/admin/users/${id}`);
+        if (!isHttpResponse(result) || !result.success) {
+            throw new Error(`Failed to create user: ${isHttpResponse(result) ? result.error : String(result)}`);
+        }
 
-    return asProxyUser(result);
-  }
-
-  async updateUser(id: number, data: Partial<UserData>): Promise<ProxyUser> {
-    await this.ensureAuthenticated();
-    const result = await apiCall(this.token!, `/api/admin/users/${id}`, 'PATCH', data as unknown as Record<string, unknown>);
-
-    if (!isHttpResponse(result) || !result.success) {
-      throw new Error(`Failed to update user: ${isHttpResponse(result) ? result.error : String(result)}`);
+        return asProxyUser(result);
     }
 
-    return asProxyUser(result);
-  }
+    async getUser(id: number): Promise<ProxyUser> {
+        await this.ensureAuthenticated();
+        const result = await apiCall(this.token!, `/api/admin/users/${id}`);
 
-  async deleteUser(id: number): Promise<void> {
-    await this.ensureAuthenticated();
-    const result = await apiCall(this.token!, `/api/admin/users/${id}`, 'DELETE');
-
-    if (!isHttpResponse(result) || !result.success) {
-      throw new Error(`Failed to delete user: ${isHttpResponse(result) ? result.error : String(result)}`);
-    }
-  }
-
-  async listUsers(): Promise<ProxyUser[]> {
-    await this.ensureAuthenticated();
-    const result = await apiCall(this.token!, '/api/admin/users');
-
-    if (!Array.isArray(result)) {
-      throw new Error('Failed to fetch users list');
+        return asProxyUser(result);
     }
 
-    return asProxyUserList(result);
-  }
+    async updateUser(id: number, data: Partial<UserData>): Promise<ProxyUser> {
+        await this.ensureAuthenticated();
+        const result = await apiCall(
+            this.token!,
+            `/api/admin/users/${id}`,
+            "PATCH",
+            data as unknown as Record<string, unknown>
+        );
 
-  async triggerMaintenance(): Promise<{ updatedCount: number; deactivatedCount: number }> {
-    await this.ensureAuthenticated();
-    const result = await apiCall(this.token!, '/api/users/maintenance', 'POST', {});
+        if (!isHttpResponse(result) || !result.success) {
+            throw new Error(`Failed to update user: ${isHttpResponse(result) ? result.error : String(result)}`);
+        }
 
-    if (!isHttpResponse(result) || !result.success) {
-      throw new Error(`Maintenance failed: ${isHttpResponse(result) ? result.error : String(result)}`);
+        return asProxyUser(result);
     }
 
-    return {
-      updatedCount: result.updatedCount as unknown as number,
-      deactivatedCount: result.deactivatedCount as unknown as number
-    };
-  }
+    async deleteUser(id: number): Promise<void> {
+        await this.ensureAuthenticated();
+        const result = await apiCall(this.token!, `/api/admin/users/${id}`, "DELETE");
+
+        if (!isHttpResponse(result) || !result.success) {
+            throw new Error(`Failed to delete user: ${isHttpResponse(result) ? result.error : String(result)}`);
+        }
+    }
+
+    async listUsers(): Promise<ProxyUser[]> {
+        await this.ensureAuthenticated();
+        const result = await apiCall(this.token!, "/api/admin/users");
+
+        if (!Array.isArray(result)) {
+            throw new Error("Failed to fetch users list");
+        }
+
+        return asProxyUserList(result);
+    }
+
+    async triggerMaintenance(): Promise<{ updatedCount: number; deactivatedCount: number }> {
+        await this.ensureAuthenticated();
+        const result = await apiCall(this.token!, "/api/users/maintenance", "POST", {});
+
+        if (!isHttpResponse(result) || !result.success) {
+            throw new Error(`Maintenance failed: ${isHttpResponse(result) ? result.error : String(result)}`);
+        }
+
+        return {
+            updatedCount: result.updatedCount as unknown as number,
+            deactivatedCount: result.deactivatedCount as unknown as number
+        };
+    }
 }
-
-export const userApi = new UserApiClient();

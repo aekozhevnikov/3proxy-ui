@@ -53,8 +53,6 @@ jest.mock("@/src/app/admin/profile/components/PasswordChangeSection", () => {
     };
 });
 
-global.fetch = jest.fn();
-
 describe("ProfileForm", () => {
     const mockCurrentUsername = "admin";
 

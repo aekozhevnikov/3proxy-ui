@@ -1,9 +1,6 @@
-// Shared mock data and utilities for proxy-user action tests
-// jest.mock calls must be in each test file for proper hoisting
-
 import { ProxyUser } from "@/src/core/definitions";
 
-export const mockUser: ProxyUser = {
+export const mockProxyUser: ProxyUser = {
     id: 1,
     username: "testuser",
     password: "hashedpass",
@@ -18,6 +15,40 @@ export const mockUser: ProxyUser = {
     dataUsed: 0,
 };
 
-export const mockData = {
-    mockUser,
+export const mockUsersList: ProxyUser[] = [
+    mockProxyUser,
+    {
+        ...mockProxyUser,
+        id: 2,
+        username: "anotheruser",
+    },
+];
+
+export const setupPrismaMock = (mockProxyUser: {
+    findMany: jest.Mock;
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+}) => {
+    jest.mock("@/prisma/db", () => {
+        return {
+            __esModule: true,
+            default: { proxyUser: mockProxyUser },
+            prisma: { proxyUser: mockProxyUser },
+        };
+    });
+};
+
+export const setupNextCacheMock = () => {
+    jest.mock("next/cache", () => ({
+        revalidatePath: jest.fn(),
+    }));
+};
+
+export const setupConfigMock = () => {
+    jest.mock("@/src/core/actions/config", () => ({
+        update3proxyConfig: jest.fn(),
+    }));
 };

@@ -21,10 +21,8 @@ async function runAllTests() {
             "Fail2ban Regex Pattern",
             "Auth Failure Banning",
             "Legitimate Traffic Ignored",
-            "Jail Configuration",
+            "Jail Configuration"
         ];
-
-        passed = tests.length;
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Unknown error";
         console.error("\n❌ Test setup failed:", message);

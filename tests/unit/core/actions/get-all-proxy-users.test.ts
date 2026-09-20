@@ -1,7 +1,5 @@
 import { mocked } from '@/tests/unit/test-utils/mock-helpers';
-import { getAllProxyUsers } from "@/src/core/actions/proxy-user";
 import prisma from "@/prisma/db";
-import { ProxyUser } from "@/src/core/definitions";
 
 jest.mock("@/prisma/db", () => {
     const mockProxyUser = {
@@ -26,6 +24,9 @@ jest.mock("next/cache", () => ({
 jest.mock("@/src/core/actions/config", () => ({
     update3proxyConfig: jest.fn(),
 }));
+
+import { getAllProxyUsers } from "@/src/core/actions/proxy-user";
+import { ProxyUser } from "@/src/core/definitions";
 
 const mockUser: ProxyUser = {
     id: 1,
@@ -71,7 +72,6 @@ describe("getAllProxyUsers", () => {
         mocked(prisma.proxyUser.findMany).mockResolvedValue([{ ...mockUser, dataLimit: null, dataUsed: 0n }]);
 
         const result = await getAllProxyUsers();
-
         expect(result[0].dataLimit).toBeNull();
     });
 });
