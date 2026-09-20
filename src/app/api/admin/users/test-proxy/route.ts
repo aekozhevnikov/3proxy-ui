@@ -57,14 +57,15 @@ export async function POST(request: NextRequest) {
         try {
             // First check Docker container (if used)
             const { stdout: dockerPs } = await execAsync(
-                "docker ps --filter 'name=3proxy' --format '{{.Names}}' 2>/dev/null"
+                "docker ps --filter 'name=3proxy' --format '{{.Names}}' 2>/dev/null",
+                { timeout: 5000 }
             );
 
             if (dockerPs.trim()) {
                 isRunning = true;
             } else {
                 // Otherwise check local process
-                await execAsync("pgrep -x 3proxy");
+                await execAsync("pgrep -x 3proxy", { timeout: 5000 });
                 isRunning = true;
             }
         } catch {
@@ -84,7 +85,8 @@ export async function POST(request: NextRequest) {
         try {
             // Try to get system status via local API
             const { stdout: statusJson } = await execAsync(
-                "curl -s --connect-timeout 2 http://localhost:3000/api/system/status 2>/dev/null || echo '{}'"
+                "curl -s --connect-timeout 2 --max-time 5 http://localhost:3000/api/system/status 2>/dev/null || echo '{}'",
+                { timeout: 6000 }
             );
             const statusData = JSON.parse(statusJson);
 
@@ -114,7 +116,7 @@ export async function POST(request: NextRequest) {
         if (socks5Port) protocols.push({ protocol: "socks5", port: socks5Port });
         if (httpPort && httpPort !== socks5Port) protocols.push({ protocol: "http", port: httpPort });
 
-        // Build URL with authentication
+        // Build URL with authentication (password is already hashed via MD5-crypt for 3proxy)
         const authString = `${encodeURIComponent(user.username)}:${encodeURIComponent(user.password)}`;
 
         // Test connection via curl (with authentication)
@@ -134,7 +136,7 @@ export async function POST(request: NextRequest) {
             const result = results[i];
 
             if (result.status === "fulfilled") {
-                tests.push(result.value as { protocol: string; success: boolean; error?: string });
+                tests.push(result.value);
             } else {
                 tests.push({ protocol: protocols[i].protocol, success: false, error: "Test failed" });
             }
@@ -152,13 +154,13 @@ export async function POST(request: NextRequest) {
                   : `Proxy test failed for user ${username}`,
             data: {
                 username,
-                tests: tests.reduce(
+                tests: tests.reduce<Record<string, { protocol: string; success: boolean; error?: string }>>(
                     (acc, test) => {
                         acc[test.protocol] = test;
 
                         return acc;
                     },
-                    {} as Record<string, { protocol: string; success: boolean; error?: string }>
+                    {}
                 ),
                 proxyConfig: {
                     host: proxyHost,

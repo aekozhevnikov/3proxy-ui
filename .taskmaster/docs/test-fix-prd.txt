@@ -1,0 +1,51 @@
+# PRD: Исправление тестов
+
+## Обзор
+Исправить 48 ошибок в 17 тестовых файлах. Ошибки связаны с несоответствием моков тестов и исходного кода, а также синтаксическими проблемами в тестах.
+
+## Анализ ошибок
+
+### Категория 1: Проблемы с моками Prisma (BigInt → Number)
+**Файлы:** tests/unit/core/actions/*.test.ts (get-proxy-user-by-id, create-proxy-user, update-proxy-user, get-all-proxy-users, delete-proxy-user, increment-data-usage, proxy-user)
+**Проблема:** Исходный код `src/core/actions/proxy-user.ts` конвертирует BigInt в Number через `Number()`, но тесты мокают значения как BigInt (10240n, 500n, 0n). Prisma возвращает BigInt для Decimal/BigInt полей.
+**Исправление:** В тестах нужно добавить `dataLimit: 10240n, dataUsed: 0n` в мок возвращаемые значения `findUnique`/`create`/`update`/`findMany`, чтобы код мог вызвать `Number()` над ними.
+
+### Категория 2: Traffic Parser (логика кэширования)
+**Файл:** tests/unit/lib/traffic-parser.test.ts
+**Проблема:** `readTrafficLogs` кэширует результат на 30 секунд. Тесты вызывают `readTrafficLogs` несколько раз и ожидают, что `fs.readFile` вызывается каждый раз, но кэш возвращает закешированный результат.
+**Исправление:** Добавить `clearTrafficCache()` перед каждым тестом или в `beforeEach`.
+
+### Категория 3: Log Parser (fs mock path)
+**Файлы:** tests/unit/core/log-parser.test.ts, tests/unit/core/log-parser/get-logs.test.ts, tests/unit/core/log-parser/stats.test.ts
+**Проблема:** Тесты мокают `fs` и `path`, но `src/core/log-parser.ts` импортирует из `@/src/lib/log-parser`, который использует синхронные `fs.existsSync`/`fs.readdirSync`/`fs.readFileSync`/`fs.statSync`, а не `fs.promises`. Тесты мокают синхронные функции, но исходный код также использует `fs.statSync` в `getLogStats`.
+**Исправление:** Убедиться, что моки покрывают все используемые в исходном коде функции.
+
+### Категория 4: Change Credentials API (несинхронные тесты)
+**Файлы:** tests/unit/api/auth/change-credentials/*.test.ts
+**Проблема:** Тесты имеют синтаксические ошибки - `it()` блоки не содержат вызов `POST()`, переменные `result` не определены.
+**Исправление:** Исправить структуру тестов: переместить вызовы `POST()` внутрь `it()` блоков, правильно обернуть async/await.
+
+### Категория 5: System Status API (import await)
+**Файл:** tests/unit/api/system/status.test.ts
+**Проблема:** Использует `await import()` на верхнем уровне файла (вне `it`/`describe`), а также синтаксическая ошибка в тесте `counts non-comment lines`.
+**Исправление:** Перенести импорт внутрь тестов или использовать стандартный `import`.
+
+### Категория 6: UsersList компонент (useUsers hook)
+**Файл:** tests/unit/components/users-list.test.tsx
+**Проблема:** Тест мокает `useUsers` с параметром `fetchEnabled`, но исходный код вызывает `useUsers({ initialUsers, fetchEnabled })`, а мок не учитывает `fetchEnabled`.
+**Исправление:** Убедиться, что мок правильно обрабатывает параметры.
+
+### Категория 7: ProfileForm компонент (password validation)
+**Файл:** tests/unit/components/profile-form.test.tsx
+**Проблема:** Тест "shows error when new passwords do not match" заключает ввод пароля до отправки формы, но проверка пароля происходит при отправке. Тест пытается ввести значения в поля после первой отправки.
+**Исправление:** Перенести ввод значений в поля до первой отправки формы.
+
+## Задачи
+
+1. Исправить тесты proxy-user actions (BigInt моки)
+2. Исправить traffic-parser тесты (кэширование)
+3. Исправить log-parser тесты (fs mock)
+4. Исправить change-credentials API тесты (синтаксис)
+5. Исправить system status API тест (import)
+6. Исправить users-list компонент тест
+7. Исправить profile-form компонент тест

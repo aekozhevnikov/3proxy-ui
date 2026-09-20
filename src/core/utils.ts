@@ -8,16 +8,6 @@ export function createPageTitle(title?: string): string {
     return `${title} - ${baseTitle}`;
 }
 
-export function formatBytes(bytes: number): string {
-    if (bytes === 0) return "0 B";
-
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB", "TB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-}
-
 export function formatGB(mb: number): string {
     return `${(mb / 1024).toFixed(2)} GB`;
 }
@@ -35,15 +25,31 @@ export function formatDate(date: Date | string | null | undefined): string {
     return `${day}.${month}.${year}`;
 }
 
-export function generateRandomPassword(length: number = 16): string {
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-    let password = "";
+export function formatBytes(bytes: number): string {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * charset.length);
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
 
-        password += charset[randomIndex];
-    }
+export function formatRelativeTime(dateString: string | null): string {
+    if (!dateString) return "Never";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
 
-    return password;
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+
+    return `${days}d ago`;
+}
+
+export function formatLogDate(timestamp: number): string {
+    return new Date(timestamp * 1000).toLocaleString();
 }

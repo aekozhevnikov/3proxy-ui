@@ -1,0 +1,34 @@
+# PRD: Добавление тестового покрытия для компонентов UI
+
+## Обзор
+Проект имеет неполное тестовое покрытие. Необходимо добавить unit-тесты для компонентов и страниц, которые пока не имеют тестов.
+
+## Список компонентов без тестов
+
+### Страницы (pages)
+1. `src/app/page.tsx` - Главная страница
+2. `src/app/login/page.tsx` - Страница логина (уже есть тест, но можно расширить)
+3. `src/app/admin/page.tsx` - Админ панель
+4. `src/app/admin/dashboard/page.tsx` - Дашборд
+5. `src/app/admin/profile/page.tsx` - Профиль (уже есть тест формы)
+6. `src/app/admin/users/page.tsx` - Страница пользователей
+7. `src/app/admin/users/create/page.tsx` - Создание пользователя
+8. `src/app/admin/users/[id]/edit/page.tsx` - Редактирование пользователя
+9. `src/app/not-found.tsx` - Страница 404
+
+### Компоненты
+1. `src/components/modals/donation-modal.tsx` - Модал доната
+2. `src/components/side-menu.tsx` - Боковое меню
+3. `src/components/side-menu-drawer.tsx` - Drawer бокового меню
+4. `src/components/footer.tsx` - Футер
+5. `src/components/icons.tsx` - Иконки
+6. `src/components/session-provider.tsx` - Провайдер сессии
+7. `src/components/custom-date-picker.tsx` - Date picker
+8. `src/app/admin/users/components/share-modal.tsx` - Модал поделиться
+9. `src/hooks/use-qr-code.tsx` - Хук QR кода
+
+## Требования
+- Использовать Jest + React Testing Library
+- Тестировать рендеринг, взаимодействие, валидацию форм
+- Достичь минимум 80% покрытия для каждого компонента
+- Следовать существующим паттернам тестирования в проекте

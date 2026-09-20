@@ -1,0 +1,18 @@
+PRD: Fix TypeScript Type Checking Errors
+
+## Description
+Fix all type errors reported by `npx tsc --noEmit` in the project. Exclude node_modules from fixes. Do not use `as never`, `as any`, or other unsafe type assertions.
+
+## Requirements
+1. Fix BigIntStats type error in tests/unit/api/system/status.test.ts
+2. Fix Response mock errors in all test files by creating a shared mockResponse helper
+3. Remove duplicate identifier imports in tests/unit/components/user-form/edit-mode.test.tsx
+4. Fix Dirent type error in tests/unit/lib/traffic-parser.test.ts
+5. Fix DashboardData type mismatch in tests/unit/pages/dashboard.test.tsx
+6. Fix unknown type assignment in tests/unit/pages/edit-user.test.tsx
+
+## Technical Notes
+- Use Object.defineProperty for process.env.NODE_ENV readonly issues
+- Create mockResponse utility in test helpers for consistent Response mocking
+- Use proper type casting without `as any` or `as never`
+- Ensure all changes pass `npx tsc --noEmit` with 0 errors

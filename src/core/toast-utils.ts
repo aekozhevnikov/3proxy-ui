@@ -2,8 +2,10 @@ import { toast, ToastOptions, ToastPosition } from "react-toastify";
 
 type ToastType = "success" | "error" | "warning" | "info";
 
+const TOAST_POSITION: ToastPosition = "top-center";
+
 const TOAST_OPTIONS: ToastOptions = {
-    position: "top-center" as ToastPosition,
+    position: TOAST_POSITION,
     autoClose: 2000,
     hideProgressBar: true,
     draggable: false,

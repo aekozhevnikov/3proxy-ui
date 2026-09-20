@@ -20,119 +20,15 @@
  *   startMaintenanceScheduler();
  */
 
-import https from "https";
-import http from "http";
-
 import cron from "node-cron";
+
+import { runMaintenance, log, formatMaintenanceSummary } from "@/src/lib/maintenance-runner";
 
 const SYNC_INTERVAL = process.env.TRAFFIC_SYNC_INTERVAL || "*/30 * * * *"; // Every 30 minutes
 const API_URL = process.env.API_URL || "http://localhost:3000";
 
 // Guard against multiple instantiations (HMR in dev)
 let isRunning = false;
-
-interface SyncResult {
-    success: boolean;
-    updatedCount?: number;
-    deactivatedCount?: number;
-    totalTraffic?: number;
-    sourceFile?: string;
-    error?: string;
-}
-
-async function runMaintenance(): Promise<SyncResult> {
-    const url = new URL(`${API_URL}/api/users/maintenance`);
-    const isHttps = url.protocol === "https:";
-    const lib = isHttps ? https : http;
-
-    return new Promise((resolve) => {
-        const options = {
-            hostname: url.hostname,
-            port: url.port || (isHttps ? 443 : 80),
-            path: url.pathname,
-            method: "POST",
-            timeout: 60000, // 60 seconds
-            headers: {
-                "Content-Type": "application/json"
-            }
-        };
-
-        const req = lib.request(options, (res) => {
-            let data = "";
-
-            res.on("data", (chunk) => {
-                data += chunk;
-            });
-            res.on("end", () => {
-                try {
-                    const parsed = JSON.parse(data);
-
-                    if (res.statusCode === 200 && parsed.success) {
-                        resolve({
-                            success: true,
-                            updatedCount: parsed.updatedCount,
-                            totalTraffic: parsed.totalTraffic,
-                            sourceFile: parsed.sourceFile
-                        });
-                    } else {
-                        resolve({
-                            success: false,
-                            error: parsed.error || `HTTP ${res.statusCode}`
-                        });
-                    }
-                } catch (e: unknown) {
-                    const error = e instanceof Error ? e : new Error(String(e));
-
-                    resolve({
-                        success: false,
-                        error: `Failed to parse response: ${error.message}`
-                    });
-                }
-            });
-        });
-
-        req.on("error", (err) => {
-            resolve({
-                success: false,
-                error: err.message
-            });
-        });
-
-        req.on("timeout", () => {
-            req.destroy();
-            resolve({
-                success: false,
-                error: "Request timeout after 60 seconds"
-            });
-        });
-
-        req.write("{}"); // Empty JSON body
-        req.end();
-    });
-}
-
-function log(message: string, type: "info" | "error" | "success" = "info") {
-    const timestamp = new Date().toISOString();
-    const prefix = `[${timestamp}] [${type.toUpperCase()}]`;
-
-    switch (type) {
-        case "error":
-            console.error(`${prefix} ${message}`);
-            break;
-        case "success":
-            break;
-        default:
-    }
-}
-
-function formatBytes(bytes: number): string {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB", "TB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
 
 export function startMaintenanceScheduler() {
     // Prevent multiple instances (HMR in dev)
@@ -152,15 +48,7 @@ export function startMaintenanceScheduler() {
         const result = await runMaintenance();
 
         if (result.success) {
-            const deactivatedMsg =
-                result.deactivatedCount && result.deactivatedCount > 0
-                    ? `, ${result.deactivatedCount} deactivated`
-                    : "";
-
-            log(
-                `Initial maintenance: ${result.updatedCount} users${deactivatedMsg}, ${formatBytes(result.totalTraffic || 0)} (${result.sourceFile})`,
-                "success"
-            );
+            log(`Initial maintenance: ${formatMaintenanceSummary(result).replace("Maintenance: ", "")}`, "success");
         } else {
             log(`Initial maintenance failed: ${result.error}`, "error");
         }
@@ -175,15 +63,7 @@ export function startMaintenanceScheduler() {
             const result = await runMaintenance();
 
             if (result.success) {
-                const deactivatedMsg =
-                    result.deactivatedCount && result.deactivatedCount > 0
-                        ? `, ${result.deactivatedCount} deactivated`
-                        : "";
-
-                log(
-                    `Maintenance successful: ${result.updatedCount} users${deactivatedMsg}, ${formatBytes(result.totalTraffic || 0)}`,
-                    "success"
-                );
+                log(`Maintenance successful: ${formatMaintenanceSummary(result).replace("Maintenance: ", "")}`, "success");
             } else {
                 log(`Maintenance failed: ${result.error}`, "error");
             }

@@ -268,16 +268,18 @@ async function runAllTests() {
             try {
                 await test.fn();
                 passed++;
-            } catch (error: any) {
-                console.error(`❌ ${test.name} FAILED:`, error.message);
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : "Unknown error";
+                console.error(`❌ ${test.name} FAILED:`, message);
                 failed++;
-                errors.push(error);
+                errors.push(error instanceof Error ? error : new Error(String(error)));
             }
         }
-    } catch (error: any) {
-        console.error("\n❌ Test setup failed:", error.message);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.error("\n❌ Test setup failed:", message);
         failed++;
-        errors.push(error);
+        errors.push(error instanceof Error ? error : new Error(String(error)));
     } finally {
         await cleanup();
     }

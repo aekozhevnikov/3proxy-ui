@@ -22,11 +22,21 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
         }
 
-        const payload = jwt.verify(sessionCookie, app.jwtSecret, {
+        const decoded = jwt.verify(sessionCookie, app.jwtSecret, {
             audience: "3proxy-ui",
             issuer: "3proxy-ui",
             algorithms: ["HS256"]
-        }) as { userId: number };
+        });
+
+        if (
+            typeof decoded !== "object" ||
+            decoded === null ||
+            !("userId" in decoded) ||
+            typeof decoded.userId !== "number"
+        ) {
+            return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+        }
+        const payload: { userId: number } = { userId: decoded.userId };
 
         // Get user from database
         const user = await prisma.user.findUnique({
@@ -62,9 +72,7 @@ export async function POST(request: NextRequest) {
 
         // Update password if provided
         if (newPassword) {
-            const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-            updateData.password = hashedPassword;
+            updateData.password = await bcrypt.hash(newPassword, 10);
         }
 
         const updatedUser = await prisma.user.update({

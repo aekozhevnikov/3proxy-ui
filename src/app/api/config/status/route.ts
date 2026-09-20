@@ -1,4 +1,3 @@
-import type { ProxyUser } from "@prisma/client";
 
 import { NextResponse } from "next/server";
 
@@ -20,7 +19,7 @@ export async function GET() {
         });
 
         // Build array of users for 3proxy
-        const proxyUsers = users.map((user: ProxyUser) => {
+        const proxyUsers = users.map((user) => {
             const flags: string[] = [];
 
             // Data limit in bytes (MB -> bytes)
@@ -50,7 +49,7 @@ export async function GET() {
         });
 
         // Build allow list (comma-separated usernames)
-        const allowList = users.map((u: ProxyUser) => u.username).join(",");
+        const allowList = users.map((u) => u.username).join(",");
 
         // Return JSON that will be used in mustache template
         return NextResponse.json({

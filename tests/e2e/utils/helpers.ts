@@ -20,8 +20,28 @@ const TEST_CONFIG = {
     }
 };
 
+export interface HttpResponse {
+    success?: boolean;
+    token?: string;
+    error?: string;
+    text?: string;
+    updatedCount?: number;
+    deactivatedCount?: number;
+    id?: number;
+    isActive?: boolean;
+    dataUsed?: number;
+    dataLimit?: number | null;
+    deactivatedAt?: string | null;
+    sourceFile?: string;
+    [key: string]: unknown;
+}
+
+function isHttpResponse(obj: unknown): obj is HttpResponse {
+    return typeof obj === "object" && obj !== null;
+}
+
 // Helper: HTTP request with retry
-async function httpRequest(url: string, options: RequestInit = {}): Promise<any> {
+async function httpRequest(url: string, options: RequestInit = {}): Promise<HttpResponse | string> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -38,7 +58,7 @@ async function httpRequest(url: string, options: RequestInit = {}): Promise<any>
             return await response.json();
         }
         return await response.text();
-    } catch (error: any) {
+    } catch (error) {
         clearTimeout(timeoutId);
         throw error;
     }
@@ -77,15 +97,20 @@ async function createAdminSession(): Promise<string> {
         }
     });
 
-    if (!response.success || !response.token) {
+    if (!isHttpResponse(response) || !response.success || !response.token) {
         throw new Error("Failed to create admin session");
     }
 
     return response.token;
 }
 
-// Helper: API call with auth
-async function apiCall(token: string, endpoint: string, method = "GET", body?: any): Promise<any> {
+// Helper: API call with auth (always returns HttpResponse)
+async function apiCall(
+    token: string,
+    endpoint: string,
+    method = "GET",
+    body?: Record<string, unknown>
+): Promise<HttpResponse> {
     const headers: Record<string, string> = {
         Authorization: `Bearer ${token}`
     };
@@ -94,11 +119,16 @@ async function apiCall(token: string, endpoint: string, method = "GET", body?: a
         headers["Content-Type"] = "application/json";
     }
 
-    return httpRequest(`${TEST_CONFIG.apiUrl}${endpoint}`, {
+    const result = await httpRequest(`${TEST_CONFIG.apiUrl}${endpoint}`, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined
     });
+
+    if (isHttpResponse(result)) {
+        return result;
+    }
+    return { text: result };
 }
 
 // Helper: Generate traffic through proxy
@@ -134,17 +164,29 @@ async function execInContainer(containerName: string, command: string): Promise<
             console.warn(`stderr from execInContainer: ${stderr}`);
         }
         return stdout;
-    } catch (error: any) {
-        throw new Error(`Failed to execute in container ${containerName}: ${command}\n${error.message}`);
+    } catch (error) {
+        const err = new Error(error instanceof Error ? error.message : String(error));
+        throw new Error(`Failed to execute in container ${containerName}: ${command}\n${err.message}`);
     }
 }
 
+interface Fail2banStatus {
+    bannedIPs: string[];
+    totalBanned: number;
+    currentlyBanned: number;
+    error?: string;
+}
+
 // Helper: Get fail2ban status
-async function getFail2banStatus(containerName: string, jailName: string = "3proxy-docker"): Promise<any> {
+async function getFail2banStatus(containerName: string, jailName: string = "3proxy-docker"): Promise<Fail2banStatus> {
     try {
         const output = await execInContainer(containerName, `fail2ban-client status ${jailName}`);
         const lines = output.split("\n");
-        const status: any = {};
+        const status: Fail2banStatus = {
+            bannedIPs: [],
+            totalBanned: 0,
+            currentlyBanned: 0
+        };
 
         for (const line of lines) {
             if (line.includes("Banned IP list")) {
@@ -157,9 +199,10 @@ async function getFail2banStatus(containerName: string, jailName: string = "3pro
         }
 
         return status;
-    } catch (error: any) {
-        if (error.message.includes("not running")) {
-            return { error: "jail_not_active" };
+    } catch (error) {
+        const err = new Error(error instanceof Error ? error.message : String(error));
+        if (err.message.includes("not running")) {
+            return { bannedIPs: [], totalBanned: 0, currentlyBanned: 0, error: "jail_not_active" };
         }
         throw error;
     }
@@ -170,14 +213,14 @@ async function waitForMaintenance(
     token: string,
     timeout = 120000,
     checkInterval = 5000
-): Promise<{ success: boolean; message?: string }> {
+): Promise<HttpResponse> {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
         try {
             // Trigger maintenance manually
             const result = await apiCall(token, "/api/users/maintenance", "POST", {});
-            if (result.success) {
+            if (isHttpResponse(result) && result.success) {
                 return result;
             }
         } catch (error) {
@@ -191,6 +234,7 @@ async function waitForMaintenance(
 
 export {
     TEST_CONFIG,
+    isHttpResponse,
     waitForService,
     createAdminSession,
     apiCall,

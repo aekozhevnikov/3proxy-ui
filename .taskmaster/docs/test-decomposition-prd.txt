@@ -1,0 +1,39 @@
+PRD: Декомпозиция тестовых файлов больше 200 строк
+
+Цель: Разделить крупные тестовые файлы (>200 строк) на более мелкие, логически связанные файлы для улучшения поддерживаемости и читаемости.
+
+Контекст: В проекте 3proxy-ui имеется 11 тестовых файлов с более чем 200 строками кода. Каждый файл необходимо разбить на логические модули.
+
+Файлы для декомпозиции:
+1. tests/fail2ban-test.ts (552 строки) — тест-раннер fail2ban интеграции
+2. tests/e2e/traffic-limit.test.ts (317 строк) — E2E тест Traffic Limit Enforcement
+3. tests/unit/core/actions/proxy-user.test.ts (316 строк) — unit тесты для proxy-user actions
+4. tests/unit/components/profile-form.test.tsx (305 строк) — тесты ProfileForm
+5. tests/e2e/fail2ban-blocking.test.ts (295 строк) — E2E тест fail2ban блокировки
+6. tests/unit/components/user-form.test.tsx (274 строки) — тесты UserForm
+7. tests/unit/components/login.test.tsx (256 строк) — тесты LoginPage
+8. tests/unit/api/auth/change-credentials.test.ts (244 строки) — тесты change-credentials API
+9. tests/unit/components/users-list.test.tsx (243 строки) — тесты UsersList
+10. tests/unit/pages/dashboard.test.tsx (228 строк) — тесты DashboardPage
+11. tests/unit/core/log-parser.test.ts (223 строки) — тесты log-parser
+
+Требования:
+- Сохранить все существующие тесты без потери покрытия
+- Выносить общие моки и константы в shared-файлы
+- Соблюдать структуру: describe блоки → отдельные файлы
+- Обновлять импорты после перемещения
+- Удалять исходные файлы после успешной декомпозиции
+
+Задачи:
+1. Декомпозировать fail2ban-test.ts на 5 тестовых файлов + helpers
+2. Декомпозировать traffic-limit.test.ts на логические модули
+3. Декомпозировать proxy-user.test.ts на 6 файлов по describe блокам
+4. Декомпозировать profile-form.test.tsx на 4 файла по логическим группам
+5. Декомпозировать fail2ban-blocking.test.ts
+6. Декомпозировать user-form.test.tsx на 3 файла
+7. Декомпозировать login.test.tsx на 2 файла
+8. Декомпозировать change-credentials.test.ts на 3 файла
+9. Декомпозировать users-list.test.tsx на 2 файла
+10. Декомпозировать dashboard.test.tsx на 2 файла
+11. Декомпозировать log-parser.test.ts на 4 файла
+12. Проверить что все тесты проходят после декомпозиции

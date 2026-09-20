@@ -42,9 +42,9 @@ export async function fetchProxyConfig(): Promise<{ domain: string; httpPort: st
 }
 
 /**
- * Generate Telegram proxy link with runtime config
+ * Generate HTTPS proxy configuration string with runtime config
  */
-export async function generateTelegramLink(
+export async function generateHttpsConfig(
     username: string,
     password: string,
     server?: string,
@@ -52,9 +52,9 @@ export async function generateTelegramLink(
 ): Promise<string> {
     const config = await fetchProxyConfig();
     const linkServer = server || config.domain;
-    const linkPort = port || Number(config.socksPort);
+    const linkPort = port || Number(config.httpPort);
 
-    return `https://t.me/socks?server=${linkServer}&port=${linkPort}&user=${username}&pass=${encodeURIComponent(password)}`;
+    return `https://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${linkServer}:${linkPort}`;
 }
 
 /**

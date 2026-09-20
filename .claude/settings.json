@@ -1,0 +1,14 @@
+{
+  "env": {
+    "ENABLE_TOOL_SEARCH": "auto:5"
+  },
+  "enableAllProjectMcpServers": true,
+  "language": "ru",
+  "alwaysThinkingEnabled": true,
+  "plansDirectory": "./.claude/docs/plans",
+  "systemPrompt": "Всегда отвечай на русском языке, независимо от языка вопроса.",
+  "defaultMode": "plan",
+  "enabledPlugins": {
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "./"
+      ],
+      "env": {}
+    },
+    "mcp-safari": {
+      "type": "stdio",
+      "command": "mcp-safari",
+      "args": [],
+      "env": {}
+    },
+    "image-viewer": {
+      "command": "npx",
+      "args": [
+        "inchat-image-viewer-mcp"
+      ],
+      "type": "stdio"
+    }
+  }
+}

@@ -47,3 +47,5 @@ prisma/*.db
 node_modules
 tsconfig.tsbuildinfo
 *.md
+
+screenshots.cjs

@@ -1,0 +1,141 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 50,
+        "title": "Set up shared mockResponse helper utility",
+        "description": "Create a reusable mockResponse helper in test helpers to consistently mock Response objects across all test files, eliminating duplicate Response mock errors.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Create a new file at tests/helpers/mockResponse.ts. Implement a function that returns a properly typed Response mock using jest.fn() and Object.defineProperty. The helper should accept optional overrides for status, statusText, headers, and body. Use proper TypeScript typing without 'as any' or 'as never'. Export the helper for use in all test files.",
+        "testStrategy": "Verify the mockResponse helper compiles without type errors using npx tsc --noEmit. Write a unit test that imports and uses the helper to ensure it returns a valid Response-like object with expected default properties.",
+        "subtasks": []
+      },
+      {
+        "id": 51,
+        "title": "Fix BigIntStats type error in system status test",
+        "description": "Resolve the BigIntStats type error in tests/unit/api/system/status.test.ts by using proper type handling for filesystem stat results.",
+        "status": "pending",
+        "dependencies": [
+          50
+        ],
+        "priority": "high",
+        "details": "In tests/unit/api/system/status.test.ts, locate the BigIntStats type error. Use proper type narrowing or type guards to handle BigIntStats vs Stats. Avoid unsafe type assertions. If mocking fs.stat, ensure the mock returns correctly typed objects that satisfy both Stats and BigIntStats interfaces where needed.",
+        "testStrategy": "Run npx tsc --noEmit and confirm no type errors are reported for tests/unit/api/system/status.test.ts. Execute the test file to ensure runtime behavior remains correct.",
+        "subtasks": []
+      },
+      {
+        "id": 52,
+        "title": "Fix Dirent type error in traffic parser test",
+        "description": "Resolve the Dirent type error in tests/unit/lib/traffic-parser.test.ts by ensuring proper typing of directory entry mocks.",
+        "status": "pending",
+        "dependencies": [
+          50
+        ],
+        "priority": "high",
+        "details": "In tests/unit/lib/traffic-parser.test.ts, identify the Dirent type error. Create properly typed mock objects for Dirent using jest.mock or manual mock factories. Ensure mock objects include all required properties of the Dirent interface. Use type-safe construction patterns without 'as any' or 'as never'.",
+        "testStrategy": "Run npx tsc --noEmit and confirm no type errors are reported for tests/unit/lib/traffic-parser.test.ts. Run the test suite to verify functionality is preserved.",
+        "subtasks": []
+      },
+      {
+        "id": 53,
+        "title": "Fix DashboardData type mismatch in dashboard test",
+        "description": "Resolve the DashboardData type mismatch in tests/unit/pages/dashboard.test.tsx by aligning mock data with the expected interface.",
+        "status": "pending",
+        "dependencies": [
+          50
+        ],
+        "priority": "high",
+        "details": "In tests/unit/pages/dashboard.test.tsx, examine the DashboardData type mismatch error. Update mock data objects to fully satisfy the DashboardData interface. Add missing properties or adjust types to match the interface definition. Use proper TypeScript object construction without unsafe assertions.",
+        "testStrategy": "Run npx tsc --noEmit and confirm no type errors are reported for tests/unit/pages/dashboard.test.tsx. Execute the test file to ensure all assertions still pass.",
+        "subtasks": []
+      },
+      {
+        "id": 54,
+        "title": "Fix unknown type assignment in edit-user test",
+        "description": "Resolve the unknown type assignment error in tests/unit/pages/edit-user.test.tsx by providing proper type annotations.",
+        "status": "pending",
+        "dependencies": [
+          50
+        ],
+        "priority": "high",
+        "details": "In tests/unit/pages/edit-user.test.tsx, locate the unknown type assignment error. Add explicit type annotations to variables or function parameters that are currently typed as unknown. Use proper TypeScript type inference or explicit interface declarations. Avoid using 'as any' or 'as never' to bypass the error.",
+        "testStrategy": "Run npx tsc --noEmit and confirm no type errors are reported for tests/unit/pages/edit-user.test.tsx. Run the test suite to verify all test cases pass.",
+        "subtasks": []
+      },
+      {
+        "id": 55,
+        "title": "Remove duplicate identifier imports in user-form edit-mode test",
+        "description": "Eliminate duplicate identifier import errors in tests/unit/components/user-form/edit-mode.test.tsx by cleaning up import statements.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "In tests/unit/components/user-form/edit-mode.test.tsx, identify and remove duplicate identifier imports. Consolidate imports from the same module into single import statements. Ensure all imported symbols are actually used in the test file. Verify no naming conflicts exist between imported identifiers.",
+        "testStrategy": "Run npx tsc --noEmit and confirm no duplicate identifier errors are reported for tests/unit/components/user-form/edit-mode.test.tsx. Verify all test cases still execute correctly.",
+        "subtasks": []
+      },
+      {
+        "id": 56,
+        "title": "Replace Response mocks with shared mockResponse helper across all test files",
+        "description": "Update all test files that currently use inline Response mocks to use the shared mockResponse helper for consistency and to eliminate Response mock type errors.",
+        "status": "pending",
+        "dependencies": [
+          50
+        ],
+        "priority": "high",
+        "details": "Search all test files for inline Response mock implementations. Replace each with calls to the mockResponse helper created in task 50. Ensure the helper provides all necessary properties and methods used by each test. Maintain test behavior while improving type safety and consistency.",
+        "testStrategy": "Run npx tsc --noEmit across the entire project and confirm no Response-related type errors remain. Execute all affected test files to ensure functionality is preserved.",
+        "subtasks": []
+      },
+      {
+        "id": 57,
+        "title": "Fix process.env.NODE_ENV readonly type issues using Object.defineProperty",
+        "description": "Resolve any process.env.NODE_ENV readonly type errors by using Object.defineProperty for safe property definition.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Search all test files for direct assignments to process.env.NODE_ENV that cause readonly type errors. Replace these assignments with Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true, configurable: true }). Ensure the property descriptor allows proper cleanup in afterEach hooks.",
+        "testStrategy": "Run npx tsc --noEmit and confirm no readonly property assignment errors related to process.env.NODE_ENV. Verify tests that depend on NODE_ENV values still function correctly.",
+        "subtasks": []
+      },
+      {
+        "id": 58,
+        "title": "Run full type check and verify zero errors",
+        "description": "Execute npx tsc --noEmit across the entire project to verify all type errors have been resolved with zero remaining errors.",
+        "status": "pending",
+        "dependencies": [
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57
+        ],
+        "priority": "high",
+        "details": "Run npx tsc --noEmit from the project root. Review the complete output for any remaining type errors. If errors are found, categorize them and address any that were missed in previous tasks. Ensure node_modules is properly excluded from type checking via tsconfig.json.",
+        "testStrategy": "Confirm npx tsc --noEmit exits with code 0 and produces no error output. Document any remaining issues if they exist.",
+        "subtasks": []
+      },
+      {
+        "id": 59,
+        "title": "Run full test suite to verify no regressions",
+        "description": "Execute the complete test suite to ensure all type fixes did not introduce any runtime regressions or test failures.",
+        "status": "pending",
+        "dependencies": [
+          58
+        ],
+        "priority": "high",
+        "details": "Run the project's test command (e.g., npm test or npx jest). Monitor for any test failures that may have been introduced by the type fixes. Pay special attention to tests that were modified in previous tasks. Ensure all tests pass and coverage remains consistent.",
+        "testStrategy": "Confirm all tests pass with exit code 0. Compare test results with baseline to identify any regressions. Verify code coverage metrics remain stable.",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2026-09-19T15:37:39.061Z",
+      "updated": "2026-09-19T15:37:39.061Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

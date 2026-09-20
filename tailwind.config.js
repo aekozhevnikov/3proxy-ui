@@ -26,9 +26,10 @@ export default {
                 }
             },
             fontFamily: {
-                sans: ["'Vazirmatn'", "system-ui", "sans-serif"],
-                system: ["system-ui"],
-                cursive: ["cursive"]
+                sans: ["Go-Mono", "sans-serif"]
+                // system: ["system-ui"],
+                // cursive: ["cursive"],
+                // mono: ["Go-Mono", "ui-monospace", "monospace"]
             }
         }
     },

@@ -263,7 +263,6 @@ docker run -d -p 3000:3000 \
 
 ### Docker Compose (Recommended)
 ```yaml
-version: '3.8'
 services:
   app:
     build: .

@@ -1,6 +1,22 @@
+import type { LogType } from "@/src/core/definitions";
+
 import { NextRequest, NextResponse } from "next/server";
 
 import { getLogs, getAvailableLogDates, getLogStats } from "@/src/core/log-parser";
+
+const VALID_LOG_TYPES: ReadonlySet<string> = new Set(["all", "PROXY", "SOCKS", "ADMIN"]);
+
+function validateLogType(value: string | null): value is LogType {
+    if (value === null) return false;
+    return VALID_LOG_TYPES.has(value);
+}
+
+function parseLogType(value: string | null): LogType {
+    if (validateLogType(value)) {
+        return value;
+    }
+    return "all";
+}
 
 export async function GET(request: NextRequest) {
     try {
@@ -10,7 +26,7 @@ export async function GET(request: NextRequest) {
             startDate: searchParams.get("startDate") || undefined,
             endDate: searchParams.get("endDate") || undefined,
             username: searchParams.get("username") || undefined,
-            logType: (searchParams.get("logType") as "all" | "PROXY" | "SOCKS" | "ADMIN") || "all",
+            logType: parseLogType(searchParams.get("logType")),
             limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 1000,
             offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : 0
         };

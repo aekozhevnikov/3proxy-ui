@@ -57,8 +57,9 @@ export async function generateHttpTraffic(
       // Small delay between requests
       await new Promise(resolve => setTimeout(resolve, 100));
 
-    } catch (error: any) {
-      console.warn(`  Request ${i + 1} failed:`, error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.warn(`  Request ${i + 1} failed:`, message);
     }
   }
 

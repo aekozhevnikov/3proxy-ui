@@ -13,6 +13,17 @@ export interface LogEntry {
     bytes?: { sent?: number; received?: number };
 }
 
+export interface TrafficEntry {
+    sent: number;
+    received: number;
+    requests: number;
+}
+
+export interface TrafficParseResult {
+    trafficMap: Map<string, TrafficEntry>;
+    totalTraffic: number;
+}
+
 // Cache for 30 seconds to avoid re-reading logs on every request
 let cache: { data: Map<string, UserTrafficStats>; timestamp: number } | null = null;
 const CACHE_TTL = 30000; // 30 seconds
@@ -78,7 +89,7 @@ export async function readTrafficLogs(): Promise<Map<string, UserTrafficStats>> 
                     if (!line.trim()) continue;
 
                     // Try to parse as JSON first (LogFormat JSON)
-                    let parsed: LogEntry = null;
+                    let parsed: LogEntry | null = null;
 
                     try {
                         parsed = JSON.parse(line);
@@ -113,7 +124,7 @@ export async function readTrafficLogs(): Promise<Map<string, UserTrafficStats>> 
 
                     // Parse traditional text format: "IP:PORT - - [timestamp] "METHOD PATH HTTP/VERSION" status bytes_sent bytes_received"
                     // Example: "192.168.1.100:8080 - - [24/Mar/2026:12:34:56] "CONNECT google.com:443 HTTP/1.1" 200 1234 5678"
-                    const match = line.match(/^(\S+).*?"\S+\s+\S+"\s+(\d+)\s+(\d+)\s+(\d+)/);
+                    const match = line.match(/^(\S+).*?"[^"]*"\s+(\d+)\s+(\d+)\s+(\d+)/);
 
                     if (!match) continue;
 
@@ -177,4 +188,65 @@ export async function getUserTraffic(usernameOrIp: string): Promise<UserTrafficS
  */
 export function clearTrafficCache() {
     cache = null;
+}
+
+/**
+ * Parse 3proxy log lines and extract traffic statistics.
+ * Handles both JSON format and traditional text format.
+ * Returns a map of username/IP to traffic entry and total traffic.
+ */
+export function parseTrafficLogs(lines: string[]): TrafficParseResult {
+    const trafficMap = new Map<string, { sent: number; received: number; requests: number }>();
+
+    let totalTraffic = 0;
+
+    for (const line of lines) {
+        if (!line.trim()) continue;
+
+        let username: string | null = null;
+        let sent = 0;
+        let received = 0;
+
+        // Try JSON format first (LogFormat JSON)
+        try {
+            const entry = JSON.parse(line);
+
+            if (entry && entry.auth && entry.bytes) {
+                username = entry.auth.user;
+                sent = entry.bytes.sent || 0;
+                received = entry.bytes.received || 0;
+            }
+        } catch {
+            // Not JSON, fall back to text format
+        }
+
+        if (!username) {
+            const match = line.match(/^(\S+).*?"[^"]*"\s+(\d+)\s+(\d+)\s+(\d+)/);
+
+            if (!match) continue;
+
+            const ipPort = match[1];
+
+            sent = parseInt(match[3], 10);
+            received = parseInt(match[4], 10);
+
+            username = ipPort.includes(":") ? ipPort.split(":")[0] : ipPort;
+        }
+
+        if (!username) continue;
+
+        const totalUsed = sent + received;
+
+        totalTraffic += totalUsed;
+
+        const current = trafficMap.get(username) || { sent: 0, received: 0, requests: 0 };
+
+        trafficMap.set(username, {
+            sent: current.sent + sent,
+            received: current.received + received,
+            requests: current.requests + 1
+        });
+    }
+
+    return { trafficMap, totalTraffic };
 }

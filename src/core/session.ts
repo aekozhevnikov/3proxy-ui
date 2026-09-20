@@ -4,9 +4,21 @@ import { cookies } from "next/headers";
 import { app } from "@/src/core/config";
 import { SessionPayload } from "@/src/core/definitions";
 
+function isSessionPayload(payload: unknown): payload is SessionPayload {
+    if (typeof payload !== "object" || payload === null) return false;
+    const record = <Record<string, unknown>>payload;
+
+    return (
+        "userId" in record &&
+        typeof record.userId === "number" &&
+        "username" in record &&
+        typeof record.username === "string"
+    );
+}
+
 export async function currentSession(): Promise<{ isAuthorized: boolean; userId?: number; username?: string }> {
     try {
-        let sessionCookie: string | null = null;
+        let sessionCookie: string | null;
 
         if (typeof window !== "undefined") {
             // Client-side
@@ -28,7 +40,11 @@ export async function currentSession(): Promise<{ isAuthorized: boolean; userId?
             audience: "3proxy-ui",
             issuer: "3proxy-ui",
             algorithms: ["HS256"]
-        }) as SessionPayload;
+        });
+
+        if (!isSessionPayload(payload)) {
+            return { isAuthorized: false };
+        }
 
         return { isAuthorized: true, userId: payload.userId, username: payload.username };
     } catch {

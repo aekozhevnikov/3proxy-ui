@@ -1,0 +1,26 @@
+# CI Workflow: Add Test Gates Before Build and Release
+
+## Objective
+All GitHub Actions workflows that build or release the project must run the unit test suite before proceeding.
+
+## Scope
+- Files: .github/workflows/build.yml and .github/workflows/release.yml only
+- Tests: `npm run test:unit` (Jest unit tests in tests/unit/)
+- Exclude: fail2ban docker tests (require Docker daemon + network access)
+
+## Workflows to Update
+
+### 1. Build workflow (build.yml)
+- Job: build
+- Action: Add "Run unit tests" step after "Install dependencies" and before "Compile scripts"
+- Command: npm run test:unit
+
+### 2. Release workflow (release.yml)
+- Job: publish
+- Action: Add "Run unit tests" step after checkout and Node setup, before "Build and Push Docker Image"
+- Command: npm run test:unit
+
+## Acceptance Criteria
+- build.yml: test step exists and fails workflow on test failure
+- release.yml: test step exists in publish job and fails workflow on test failure
+- No unrelated workflow changes

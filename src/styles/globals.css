@@ -3,10 +3,42 @@
 
 @config "../../tailwind.config.js";
 
+@font-face {
+  font-family: "Go-Mono";
+  src: url("/fonts/Go-Mono.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
-/* Set default font */
-html {
-  font-family: var(--font-sans), serif;
+@font-face {
+  font-family: "Go-Mono";
+  src: url("/fonts/Go-Mono-Bold.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Go-Mono";
+  src: url("/fonts/Go-Mono-Italic.ttf") format("truetype");
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Go-Mono";
+  src: url("/fonts/Go-Mono-Bold-Italic.ttf") format("truetype");
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+@layer base {
+  html {
+    font-family: "Go-Mono", sans-serif;
+  }
 }
 
 /* Apply background and foreground colors */
@@ -19,6 +51,27 @@ body {
 .dark body {
   background-color: var(--color-background-dark);
   color: var(--color-foreground-dark);
+}
+
+/* Table background consistency — ensure tbody/tr stay white in light mode
+   and dark in dark mode, overriding Safari's prefers-color-scheme: dark fallback */
+@layer components {
+  html.light table tbody,
+  html.light table tbody tr {
+    background-color: #ffffff;
+  }
+  html.dark table tbody,
+  html.dark table tbody tr {
+    background-color: #111827;
+  }
+  html.dark table thead,
+  html.dark table thead th {
+    background-color: #111827;
+  }
+  html.light table thead,
+  html.light table thead th {
+    background-color: #ffffff;
+  }
 }
 
 /* Prevent horizontal overflow on very small screens (≤300px) */

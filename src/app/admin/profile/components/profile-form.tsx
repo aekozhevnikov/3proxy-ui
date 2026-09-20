@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import PasswordChangeSection from "./PasswordChangeSection";
+
 interface ProfileFormProps {
     currentUsername: string;
 }
@@ -59,7 +61,6 @@ export default function ProfileForm({ currentUsername }: ProfileFormProps) {
             setConfirmPassword("");
 
             if (username !== currentUsername) {
-                // Username changed, refresh to update UI
                 setTimeout(() => router.refresh(), 1500);
             }
         } catch (err) {
@@ -97,63 +98,14 @@ export default function ProfileForm({ currentUsername }: ProfileFormProps) {
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Your login username</p>
             </div>
 
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Change Password</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    Leave password fields empty to keep current password
-                </p>
-
-                <div className="space-y-4">
-                    <div>
-                        <label
-                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                            htmlFor="currentPassword"
-                        >
-                            Current Password
-                        </label>
-                        <input
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 bg-white text-gray-900 dark:text-white"
-                            id="currentPassword"
-                            type="password"
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                            htmlFor="newPassword"
-                        >
-                            New Password (optional)
-                        </label>
-                        <input
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 bg-white text-gray-900 dark:text-white"
-                            id="newPassword"
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                            htmlFor="confirmPassword"
-                        >
-                            Confirm New Password
-                        </label>
-                        <input
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 bg-white text-gray-900 dark:text-white"
-                            id="confirmPassword"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
-                    </div>
-                </div>
-            </div>
+            <PasswordChangeSection
+                confirmPassword={confirmPassword}
+                currentPassword={currentPassword}
+                newPassword={newPassword}
+                onConfirmPasswordChange={setConfirmPassword}
+                onCurrentPasswordChange={setCurrentPassword}
+                onNewPasswordChange={setNewPassword}
+            />
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button

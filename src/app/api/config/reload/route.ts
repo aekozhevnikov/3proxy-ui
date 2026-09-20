@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const exec = (cmd: string): Promise<{ stdout: string; stderr: string }> => {
     return new Promise((resolve, reject) => {
-        execCb(cmd, (error, stdout, stderr) => {
+        execCb(cmd, { timeout: 5000 }, (error, stdout, stderr) => {
             if (error) reject(error);
             else resolve({ stdout, stderr });
         });
@@ -41,14 +41,14 @@ export async function POST(): Promise<Response> {
                 message: "Configuration reloaded and container restarted",
                 output: result.stdout || "Container restarted"
             });
-        } else {
-            // No container - config file is updated by other endpoints, no action needed
-            return NextResponse.json({
-                success: true,
-                message: "Configuration updated (no container to restart)",
-                output: "File system updated"
-            });
         }
+
+        // No container - config file is updated by other endpoints, no action needed
+        return NextResponse.json({
+            success: true,
+            message: "Configuration updated (no container to restart)",
+            output: "File system updated"
+        });
     } catch (e) {
         console.error("Config reload error:", e);
 

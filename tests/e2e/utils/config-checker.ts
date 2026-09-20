@@ -131,8 +131,9 @@ export async function verifyJailStatus(containerName: string): Promise<{ active:
       bannedCount,
       bannedIPs
     };
-  } catch (error: any) {
-    if (error.message.includes('not running') || error.message.includes('No such jail')) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    if (message.includes('not running') || message.includes('No such jail')) {
       return {
         active: false,
         bannedCount: 0,

@@ -8,8 +8,18 @@ import path from "path";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/src/prisma/db";
+import { hashProxyPassword } from "@/src/core/password-hash";
 
 const execAsync = promisify(exec);
+
+const execWithTimeout = (cmd: string, timeout = 5000): Promise<{ stdout: string; stderr: string }> => {
+    return new Promise((resolve, reject) => {
+        exec(cmd, { timeout }, (error, stdout, stderr) => {
+            if (error) reject(error);
+            else resolve({ stdout, stderr });
+        });
+    });
+};
 
 export async function update3proxyConfig(): Promise<{ success: boolean; message: string; userCount: number }> {
     try {
@@ -27,12 +37,12 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
         // Build array of users for .proxyauth file
         const lines = users.map((user) => {
             if (user.isActive) {
-                return `${user.username}:${user.password}`;
+                return `${user.username}:CR:${hashProxyPassword(user.password)}`;
             } else {
                 // For deactivated users, include a comment with deactivation timestamp
                 const dateStr = user.deactivatedAt ? user.deactivatedAt.toISOString() : "";
 
-                return `# DEACTIVATED ${dateStr}: ${user.username}:${user.password}`;
+                return `# DEACTIVATED ${dateStr}: ${user.username}:CR:${hashProxyPassword(user.password)}`;
             }
         });
 
@@ -61,7 +71,7 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
 
             console.debug("[config] Searching for 3proxy Docker container...");
             try {
-                const { stdout } = await execAsync("docker ps --filter 'name=3proxy' --format '{{.ID}}' | head -1");
+                const { stdout } = await execWithTimeout("docker ps --filter 'name=3proxy' --format '{{.ID}}' | head -1");
 
                 containerId = stdout.trim();
                 if (containerId) {
@@ -73,7 +83,7 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
 
             if (!containerId) {
                 try {
-                    const { stdout } = await execAsync(
+                    const { stdout } = await execWithTimeout(
                         "docker ps --filter 'name=vpn-3proxy' --format '{{.ID}}' | head -1"
                     );
 
@@ -88,14 +98,14 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
 
             if (containerId) {
                 console.debug(`[config] Restarting container ${containerId}...`);
-                await execAsync(`docker restart ${containerId}`);
+                await execWithTimeout(`docker restart ${containerId}`, 10000);
                 console.debug(`[config] Container ${containerId} restarted successfully`);
             } else {
                 console.debug("[config] WARNING: No 3proxy Docker container found, config file updated only");
                 console.debug("[config] 3proxy may need to be restarted manually or may auto-reload on file change");
             }
         } catch (error) {
-            console.warn("[config] Could not restart 3proxy container:", error.message);
+            console.warn("[config] Could not restart 3proxy container:", error instanceof Error ? error.message : String(error));
         }
 
         revalidatePath("/admin/users");

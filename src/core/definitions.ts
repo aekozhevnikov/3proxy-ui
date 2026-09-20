@@ -81,6 +81,9 @@ export interface Server {
     updatedAt: Date | null;
 }
 
+// Log type for filtering
+export type LogType = "all" | "PROXY" | "SOCKS" | "ADMIN";
+
 // Config version for tracking config changes
 export interface ConfigVersion {
     id: number;

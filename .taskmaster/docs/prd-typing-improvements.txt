@@ -1,0 +1,52 @@
+Product Requirements Document: TypeScript Typing Improvements
+================================================================
+Date: 2026-09-16
+
+## Overview
+Replace `any` and `never` types with proper TypeScript types, and replace all `as` type assertions with generic template-literal types `<string>` where applicable.
+
+## Goals
+1. Remove all `any` type annotations from the codebase
+2. Remove all `never` type annotations (none found in this project currently, but keep in mind)
+3. Replace all `as` type assertions with proper typing using `<string>` template-literal pattern
+4. Ensure type safety is maintained or improved after changes
+5. Run tests to verify no regressions
+
+## Scope
+
+### Source files (src/) — Production code
+- src/core/logger.ts — `process.env.LOG_LEVEL as LogLevel`
+- src/core/session.ts — `as SessionPayload`
+- src/core/toast-utils.ts — `"top-center" as ToastPosition`
+- src/app/api/admin/users/test-proxy/route.ts — `{} as Record<string, ...>`
+- src/app/admin/users/components/share-modal.tsx — `event.target as Node`
+- src/lib/log-parser.ts — `JSON.parse(line) as LogEntry`
+- src/prisma/db.ts — `globalThis as unknown as { prisma: ... }`
+- src/lib/logs-finder.ts — `] as const` (this is fine, leave as is)
+
+### Test files — Unit and E2E tests
+- All `as jest.Mock` casts (these are a testing pattern, evaluate carefully)
+- All `(value: any)` parameter types in test utilities
+- All `resolveFetch: (value: any) => void` patterns
+- All mock component prop typing `({ ...props }: any)`
+- `(window as any).location.href` — browser mock pattern
+
+### Scripts
+- scripts/build.ts — `import * as fs` (namespace import, leave as is)
+
+## Non-Goals
+- Changing import * as patterns (these are namespace imports, not type casts)
+- Changing `import { exec as execCb }` (these are imports with aliases)
+- Changing `as const` assertions (these are safe and idiomatic)
+- Changing `as jest.Mock` in tests (this is a testing pattern that may need different approach)
+
+## Implementation Plan
+1. Create proper types for environment variables (Logger, etc.)
+2. Replace `any` types in function parameters with proper interfaces or type aliases
+3. Replace `as` type assertions with type-safe alternatives:
+   - For env vars: use typeof checks or typed wrappers
+   - For JSON.parse: use type guards or Zod schemas
+   - For DOM events: use proper event handler types
+   - For tests: use Record<string, unknown> or proper interface types
+4. Run TypeScript compiler to verify type correctness
+5. Run all tests to ensure no regressions
