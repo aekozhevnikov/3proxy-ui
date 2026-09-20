@@ -63,7 +63,10 @@ export function startMaintenanceScheduler() {
             const result = await runMaintenance();
 
             if (result.success) {
-                log(`Maintenance successful: ${formatMaintenanceSummary(result).replace("Maintenance: ", "")}`, "success");
+                log(
+                    `Maintenance successful: ${formatMaintenanceSummary(result).replace("Maintenance: ", "")}`,
+                    "success"
+                );
             } else {
                 log(`Maintenance failed: ${result.error}`, "error");
             }
