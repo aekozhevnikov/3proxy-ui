@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-09-20
+
+### Fixed
+
+- Simplify release.yml to use `github.ref_name` for tag detection in workflow_run context
+- Fix duplicate changelog entries in release process
+
+## [0.2.0] - 2026-09-20
+
+### Changed
+
+- Major version bump after workflow fixes
+- Release workflow now uses `github.ref_name` for tag resolution
+
+## [0.1.9] - 2026-09-20
+
+### Fixed
+
+- Robust tag detection in release.yml with git fallback
+- Fix VERSION being empty for Docker build
+
+## [0.1.8] - 2026-09-20
+
+### Fixed
+
+- Use `github.event.workflow_run.tag_name` in release.yml
+- Fix tag variable not being passed to `gh release create`
+
 ## [0.1.7] - 2026-09-20
 
 ### Fixed
@@ -88,7 +116,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - Initial version
 
-[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.1.7...HEAD
+[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.1.9...v0.2.0
+[0.1.9]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.1.8...v0.1.9
+[0.1.8]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.1.4...v0.1.5
