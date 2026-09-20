@@ -5,12 +5,24 @@
 
 import { getFail2banStatus } from "./shared-mocks.js";
 import { CONTAINER_NAME, LEGIT_IP } from "./shared-mocks.js";
-import { appendLog, sleep } from "./log-helper.ts";
+import { appendLog, sleep } from "./log-helper";
 
 async function testLegitimateTrafficIgnored() {
     for (let i = 0; i < 5; i++) {
-        await appendLog("200", { ip: LEGIT_IP, username: "legituser", bytesSent: 1024, bytesReceived: 2048, message: "OK" });
-        await appendLog("00000", { ip: LEGIT_IP, username: "legituser", bytesSent: 1024, bytesReceived: 2048, message: "OK" });
+        await appendLog("200", {
+            ip: LEGIT_IP,
+            username: "legituser",
+            bytesSent: 1024,
+            bytesReceived: 2048,
+            message: "OK"
+        });
+        await appendLog("00000", {
+            ip: LEGIT_IP,
+            username: "legituser",
+            bytesSent: 1024,
+            bytesReceived: 2048,
+            message: "OK"
+        });
         await sleep(500);
     }
 

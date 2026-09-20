@@ -5,7 +5,7 @@
 
 import { getFail2banStatus, execInContainer } from "./shared-mocks.js";
 import { CONTAINER_NAME, TEST_IP } from "./shared-mocks.js";
-import { appendLog, sleep } from "./log-helper.ts";
+import { appendLog, sleep } from "./log-helper";
 
 async function testAuthFailureBanning() {
     await appendLog("407");

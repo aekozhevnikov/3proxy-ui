@@ -111,18 +111,18 @@ describe("system/status API", () => {
     it("counts non-comment lines in proxyauth as user count", async () => {
         const proxyauthPath = path.join(process.cwd(), "3proxy", "users", ".proxyauth");
 
-        mocked(fs.stat).mockImplementation((p: string) => {
+        mocked(fs.stat).mockImplementation(((p: string) => {
             if (p === proxyauthPath) {
                 return Promise.resolve(createMockStats(100, new Date("2025-01-01")));
             }
             return Promise.reject(new Error("Not found"));
-        });
-        mocked(fs.readFile).mockImplementation((p: string) => {
+        }) as never);
+        mocked(fs.readFile).mockImplementation(((p: string) => {
             if (p === proxyauthPath) {
                 return Promise.resolve("user1:pass1:tags\nuser2:pass2:tags\n# comment line\n");
             }
             return Promise.reject(new Error("Not found"));
-        });
+        }) as never);
 
         const result = await GET();
         const data = await result.json() as { users: { count: number; proxyauthSize: number } };
