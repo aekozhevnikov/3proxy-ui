@@ -1,21 +1,28 @@
 name: Release & Publish
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  workflow_run:
+    workflows: ["Pre-Release Tests"]
+    types:
+      - completed
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref_name }}
+          tag: ${{ github.event.workflow_run.head_commit.ref_name }}
         run: |
           gh release create "$tag" \
               --repo="$GITHUB_REPOSITORY" \
@@ -23,6 +30,7 @@ jobs:
               --generate-notes
 
   publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -40,7 +48,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          VERSION=${{ github.ref_name }}
+          VERSION=${{ github.event.workflow_run.head_commit.ref_name }}
           VERSION=${VERSION#v} # Remove leading 'v' if it exists
 
           docker buildx build \
