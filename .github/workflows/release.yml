@@ -24,11 +24,16 @@ jobs:
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref_name }}
         run: |
-          gh release create "$tag" \
+          # Get tag from the triggering workflow run
+          TAG="${{ github.event.workflow_run.ref_name }}"
+          if [ -z "$TAG" ]; then
+            TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || git tag --sort=-v:refname | head -1)
+          fi
+          echo "Releasing tag: $TAG"
+          gh release create "$TAG" \
               --repo="$GITHUB_REPOSITORY" \
-              --title="${tag#v}" \
+              --title="${TAG#v}" \
               --generate-notes
 
   publish:
@@ -53,8 +58,13 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          VERSION=${{ github.ref_name }}
-          VERSION=${VERSION#v}
+          # Get tag from the triggering workflow run
+          TAG="${{ github.event.workflow_run.ref_name }}"
+          if [ -z "$TAG" ]; then
+            TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || git tag --sort=-v:refname | head -1)
+          fi
+          VERSION=${TAG#v}
+          echo "Building Docker image for version: $VERSION"
 
           docker buildx build \
             --platform linux/amd64 \
