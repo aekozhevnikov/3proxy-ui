@@ -1,6 +1,3 @@
-import { formatBytes } from "@/src/core/utils";
-import { formatLogDate } from "@/src/core/utils";
-
 export type { LogEntry, LogFilter } from "@/src/lib/log-parser";
 
 export {

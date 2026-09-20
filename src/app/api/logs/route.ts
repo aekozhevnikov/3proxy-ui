@@ -8,6 +8,7 @@ const VALID_LOG_TYPES: ReadonlySet<string> = new Set(["all", "PROXY", "SOCKS", "
 
 function validateLogType(value: string | null): value is LogType {
     if (value === null) return false;
+
     return VALID_LOG_TYPES.has(value);
 }
 
@@ -15,6 +16,7 @@ function parseLogType(value: string | null): LogType {
     if (validateLogType(value)) {
         return value;
     }
+
     return "all";
 }
 

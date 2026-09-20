@@ -3,42 +3,17 @@
 
 @config "../../tailwind.config.js";
 
-@font-face {
-  font-family: "Go-Mono";
-  src: url("/fonts/Go-Mono.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Go-Mono";
-  src: url("/fonts/Go-Mono-Bold.ttf") format("truetype");
-  font-weight: bold;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Go-Mono";
-  src: url("/fonts/Go-Mono-Italic.ttf") format("truetype");
-  font-weight: normal;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Go-Mono";
-  src: url("/fonts/Go-Mono-Bold-Italic.ttf") format("truetype");
-  font-weight: bold;
-  font-style: italic;
-  font-display: swap;
-}
-
 @layer base {
   html {
     font-family: "Go-Mono", sans-serif;
   }
+}
+
+:root {
+  --color-background: #ffffff;
+  --color-foreground: #111827;
+  --color-background-dark: #111827;
+  --color-foreground-dark: #f9fafb;
 }
 
 /* Apply background and foreground colors */

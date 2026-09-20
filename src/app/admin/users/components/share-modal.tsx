@@ -43,7 +43,7 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (modalRef.current && !modalRef.current.contains(            event.target as EventTarget & Node)) {
+            if (modalRef.current && !modalRef.current.contains(event.target as EventTarget & Node)) {
                 onClose();
             }
         };

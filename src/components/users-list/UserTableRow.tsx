@@ -33,9 +33,7 @@ export default function UserTableRow({
         <>
             <tr className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                 <td className="px-3 py-3 whitespace-nowrap">
-                    <div className="font-medium text-gray-900 dark:text-white text-sm">
-                        {user.username}
-                    </div>
+                    <div className="font-medium text-gray-900 dark:text-white text-sm">{user.username}</div>
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap text-center">
                     <span
@@ -44,11 +42,7 @@ export default function UserTableRow({
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                                 : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
                         }`}
-                        title={
-                            user.deactivatedAt
-                                ? `Deactivated: ${formatDate(user.deactivatedAt)}`
-                                : undefined
-                        }
+                        title={user.deactivatedAt ? `Deactivated: ${formatDate(user.deactivatedAt)}` : undefined}
                     >
                         {user.isActive ? "Active" : "Deactivated"}
                     </span>
@@ -95,18 +89,8 @@ export default function UserTableRow({
                         className="p-1 shrink-0 lg:hidden"
                         onClick={() => toggleExpand(user.id)}
                     >
-                        <svg
-                            className="w-5 h-5 text-gray-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                d="M19 9l-7 7-7-7"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                            />
+                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
                         </svg>
                     </button>
                 </td>
@@ -132,9 +116,7 @@ export default function UserTableRow({
                             </div>
                             <div className="flex items-center gap-1">
                                 <span className="text-gray-500 dark:text-gray-400">IP Limit:</span>
-                                <span className="font-medium text-gray-900 dark:text-white">
-                                    {user.ipLimit || 1}
-                                </span>
+                                <span className="font-medium text-gray-900 dark:text-white">{user.ipLimit || 1}</span>
                             </div>
                             <div className="flex items-center gap-1">
                                 <span className="text-gray-500 dark:text-gray-400">Expires:</span>

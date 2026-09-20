@@ -12,11 +12,6 @@ export interface UserSession {
     userId: number | undefined;
 }
 
-// Icon props
-export type IconSvgProps = SVGProps<SVGSVGElement> & {
-    size?: number;
-};
-
 // 3proxy ProxyUser types
 export interface ProxyUser {
     id: number;
@@ -66,28 +61,5 @@ export interface User {
     updatedAt: Date | null;
 }
 
-// Server type for 3proxy servers
-export interface Server {
-    id: number;
-    name: string;
-    hostnameOrIp: string;
-    portForNewAccessKeys: number;
-    apiUrl: string | null;
-    apiId: string | null;
-    apiCertSha256: string | null;
-    apiCreatedAt: Date | null;
-    isAvailable: boolean;
-    createdAt: Date;
-    updatedAt: Date | null;
-}
-
 // Log type for filtering
 export type LogType = "all" | "PROXY" | "SOCKS" | "ADMIN";
-
-// Config version for tracking config changes
-export interface ConfigVersion {
-    id: number;
-    version: number;
-    config?: string | null;
-    updatedAt: Date;
-}

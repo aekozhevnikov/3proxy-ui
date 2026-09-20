@@ -48,11 +48,7 @@ export default function UserExpirationSection({
             </div>
 
             <div>
-                <CustomDatePicker
-                    label="Select expiration date"
-                    value={expiresAt}
-                    onChange={onExpiresAtChange}
-                />
+                <CustomDatePicker label="Select expiration date" value={expiresAt} onChange={onExpiresAtChange} />
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Leave empty for no expiration</p>
             </div>
         </>

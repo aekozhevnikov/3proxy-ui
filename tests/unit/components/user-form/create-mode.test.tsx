@@ -2,6 +2,11 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import UserForm from "@/src/app/admin/users/components/user-form";
 import { setupMocks, baseProps, mockOnCreate } from "./shared-mocks";
 
+const submitForm = () => fireEvent.submit(screen.getByRole("button", { name: /save/i }).closest("form")!);
+
+const fillField = (placeholder: RegExp | string, value: string) =>
+    fireEvent.change(screen.getByPlaceholderText(placeholder), { target: { value } });
+
 describe("UserForm Create mode", () => {
     beforeEach(() => {
         setupMocks();
@@ -15,38 +20,28 @@ describe("UserForm Create mode", () => {
         expect(screen.getByPlaceholderText(/confirm password/i)).toBeInTheDocument();
     });
 
-    it("shows error when username is empty on submit", async () => {
+    it.each([
+        { username: "", expected: "Username is required" },
+        { username: "testuser", expected: "Password is required" },
+    ])("shows error when $username is missing on submit", async ({ username, expected }) => {
         render(<UserForm {...baseProps} />);
 
-        fireEvent.submit(screen.getByRole("button", { name: /save/i }).closest("form")!);
+        if (username) {
+            fillField("Enter username (max 64 characters)", username);
+        }
 
-        expect(await screen.findByText("Username is required")).toBeInTheDocument();
-    });
+        submitForm();
 
-    it("shows error when password is empty on submit", async () => {
-        render(<UserForm {...baseProps} />);
-
-        fireEvent.change(screen.getByPlaceholderText("Enter username (max 64 characters)"), {
-            target: { value: "testuser" },
-        });
-        fireEvent.submit(screen.getByRole("button", { name: /save/i }).closest("form")!);
-
-        expect(await screen.findByText("Password is required")).toBeInTheDocument();
+        expect(await screen.findByText(expected)).toBeInTheDocument();
     });
 
     it("shows error when passwords do not match", async () => {
         render(<UserForm {...baseProps} />);
 
-        fireEvent.change(screen.getByPlaceholderText("Enter username (max 64 characters)"), {
-            target: { value: "testuser" },
-        });
-        fireEvent.change(screen.getByPlaceholderText(/enter password/i), {
-            target: { value: "pass123" },
-        });
-        fireEvent.change(screen.getByPlaceholderText(/confirm password/i), {
-            target: { value: "pass456" },
-        });
-        fireEvent.submit(screen.getByRole("button", { name: /save/i }).closest("form")!);
+        fillField("Enter username (max 64 characters)", "testuser");
+        fillField(/enter password/i, "pass123");
+        fillField(/confirm password/i, "pass456");
+        submitForm();
 
         expect(await screen.findByText("Passwords do not match")).toBeInTheDocument();
     });
@@ -55,16 +50,10 @@ describe("UserForm Create mode", () => {
         mockOnCreate.mockResolvedValue(undefined);
         render(<UserForm {...baseProps} />);
 
-        fireEvent.change(screen.getByPlaceholderText("Enter username (max 64 characters)"), {
-            target: { value: "newuser" },
-        });
-        fireEvent.change(screen.getByPlaceholderText(/enter password/i), {
-            target: { value: "password123" },
-        });
-        fireEvent.change(screen.getByPlaceholderText(/confirm password/i), {
-            target: { value: "password123" },
-        });
-        fireEvent.submit(screen.getByRole("button", { name: /save/i }).closest("form")!);
+        fillField("Enter username (max 64 characters)", "newuser");
+        fillField(/enter password/i, "password123");
+        fillField(/confirm password/i, "password123");
+        submitForm();
 
         await waitFor(() => {
             expect(mockOnCreate).toHaveBeenCalledWith(
@@ -79,17 +68,13 @@ describe("UserForm Create mode", () => {
 
     it("renders generate password button", () => {
         render(<UserForm {...baseProps} />);
-
-        expect(
-            screen.getByRole("button", { name: /generate secure password/i })
-        ).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /generate secure password/i })).toBeInTheDocument();
     });
 
     it("calls onCancel when Cancel button clicked", () => {
         render(<UserForm {...baseProps} />);
 
-        const buttons = screen.getAllByRole("button");
-        const cancelButton = buttons.find((btn) => btn.textContent === "Cancel");
+        const cancelButton = screen.getAllByRole("button").find((btn) => btn.textContent === "Cancel");
         fireEvent.click(cancelButton!);
         expect(baseProps.onCancel).toHaveBeenCalled();
     });

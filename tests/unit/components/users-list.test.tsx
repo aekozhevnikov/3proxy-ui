@@ -1,20 +1,20 @@
-import { mocked, mockResponse } from '@/tests/unit/test-utils/mock-helpers';
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { mocked, mockResponse } from "@/tests/unit/test-utils/mock-helpers";
+import { render, screen } from "@testing-library/react";
 import UsersList from "@/src/app/admin/users/components/users-list";
 import { ProxyUser } from "@/src/core/definitions";
 
 jest.mock("next/navigation", () => ({
-    useRouter: () => ({ push: jest.fn() }),
+    useRouter: () => ({ push: jest.fn() })
 }));
 
 global.fetch = jest.fn();
 
 jest.mock("@/src/core/toast-utils", () => ({
-    showToast: jest.fn(),
+    showToast: jest.fn()
 }));
 
 jest.mock("@/src/core/actions/proxy-user", () => ({
-    createProxyUser: jest.fn(),
+    createProxyUser: jest.fn()
 }));
 
 jest.mock("@heroicons/react/24/outline", () => ({
@@ -25,11 +25,11 @@ jest.mock("@heroicons/react/24/outline", () => ({
     PlayIcon: () => <svg data-testid="play-icon" />,
     PlusIcon: () => <svg data-testid="plus-icon" />,
     ShareIcon: () => <svg data-testid="share-icon" />,
-    TrashIcon: () => <svg data-testid="trash-icon" />,
+    TrashIcon: () => <svg data-testid="trash-icon" />
 }));
 
 jest.mock("lucide-react", () => ({
-    Infinity: () => <svg data-testid="infinity-icon" />,
+    Infinity: () => <svg data-testid="infinity-icon" />
 }));
 
 jest.mock("@/src/app/admin/users/components/share-modal", () => {
@@ -43,7 +43,15 @@ jest.mock("@/src/app/admin/users/components/share-modal", () => {
 });
 
 jest.mock("@/src/app/admin/users/components/user-form", () => {
-    return function MockUserForm({ onCancel, onCreate, onUpdate }: { onCancel: () => void; onCreate?: (data: Record<string, unknown>) => void; onUpdate?: (data: Record<string, unknown>) => void }) {
+    return function MockUserForm({
+        onCancel,
+        onCreate,
+        onUpdate
+    }: {
+        onCancel: () => void;
+        onCreate?: (data: Record<string, unknown>) => void;
+        onUpdate?: (data: Record<string, unknown>) => void;
+    }) {
         return (
             <div data-testid="user-form">
                 <button onClick={onCancel}>Cancel</button>
@@ -59,8 +67,8 @@ jest.mock("@/src/hooks/useUsers", () => ({
         users: initialUsers || [],
         loading: false,
         error: null,
-        refetch: jest.fn(),
-    }),
+        refetch: jest.fn()
+    })
 }));
 
 jest.mock("@/src/hooks/useUserModals", () => ({
@@ -76,8 +84,8 @@ jest.mock("@/src/hooks/useUserModals", () => ({
         openDeleteModal: jest.fn(),
         closeDeleteModal: jest.fn(),
         openShareModal: jest.fn(),
-        closeShareModal: jest.fn(),
-    }),
+        closeShareModal: jest.fn()
+    })
 }));
 
 jest.mock("@/src/hooks/useUsersActions", () => ({
@@ -100,8 +108,8 @@ jest.mock("@/src/hooks/useUsersActions", () => ({
         testingUserId: null,
         isDeleting: false,
         toggleExpand: jest.fn(),
-        toggleExpandAll: jest.fn(),
-    }),
+        toggleExpandAll: jest.fn()
+    })
 }));
 
 jest.mock("@/src/components/users-list/UserHeader", () => {
@@ -154,7 +162,7 @@ describe("UsersList", () => {
             dataUsed: 0,
             deactivatedAt: null,
             createdAt: new Date("2024-01-01"),
-            updatedAt: new Date("2024-01-01"),
+            updatedAt: new Date("2024-01-01")
         },
         {
             id: 2,
@@ -168,7 +176,7 @@ describe("UsersList", () => {
             dataUsed: 0,
             deactivatedAt: new Date("2024-06-01"),
             createdAt: new Date("2024-01-01"),
-            updatedAt: new Date("2024-01-01"),
+            updatedAt: new Date("2024-01-01")
         },
         {
             id: 3,
@@ -182,8 +190,8 @@ describe("UsersList", () => {
             dataUsed: 0,
             deactivatedAt: null,
             createdAt: new Date("2024-01-01"),
-            updatedAt: new Date("2024-01-01"),
-        },
+            updatedAt: new Date("2024-01-01")
+        }
     ];
 
     beforeEach(() => {

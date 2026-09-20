@@ -32,9 +32,7 @@ export default function SystemInfoCard({ systemStatus }: SystemInfoCardProps) {
                 </div>
                 <div className="flex justify-between">
                     <span className="text-sm text-gray-500 dark:text-gray-400">Last Update</span>
-                    <span className="text-sm text-gray-900 dark:text-white">
-                        {new Date().toLocaleTimeString()}
-                    </span>
+                    <span className="text-sm text-gray-900 dark:text-white">{new Date().toLocaleTimeString()}</span>
                 </div>
                 <div className="flex justify-between">
                     <span className="text-sm text-gray-500 dark:text-gray-400">Traffic Sync</span>

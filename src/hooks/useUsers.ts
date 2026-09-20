@@ -70,7 +70,7 @@ export function useUsers(options?: UseUsersOptions): UseUsersResult {
                 const errorMsg = err instanceof Error ? err.message : "Failed to create user";
 
                 showToast(errorMsg, "error");
-                throw err;
+                setError(errorMsg);
             }
         },
         [fetchUsers]
@@ -100,7 +100,7 @@ export function useUsers(options?: UseUsersOptions): UseUsersResult {
                 const errorMsg = err instanceof Error ? err.message : "Failed to update user";
 
                 showToast(errorMsg, "error");
-                throw err;
+                setError(errorMsg);
             }
         },
         [fetchUsers]
@@ -126,7 +126,7 @@ export function useUsers(options?: UseUsersOptions): UseUsersResult {
                 const errorMsg = err instanceof Error ? err.message : "Failed to delete user";
 
                 showToast(errorMsg, "error");
-                throw err;
+                setError(errorMsg);
             }
         },
         [fetchUsers]

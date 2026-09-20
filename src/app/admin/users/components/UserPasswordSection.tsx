@@ -28,11 +28,11 @@ export default function UserPasswordSection({
                     </p>
                 </div>
                 <PasswordInput
+                    showGenerate
                     className="text-sm"
                     id="newPassword"
                     label="New Password (optional)"
                     placeholder="Enter new password or click Generate"
-                    showGenerate
                     value={password}
                     onChange={(e) => onPasswordChange(e.target.value)}
                     onPasswordGenerated={onPasswordGenerated}
@@ -53,10 +53,10 @@ export default function UserPasswordSection({
         <>
             <PasswordInput
                 required
+                showGenerate
                 id="password"
                 label="Password *"
                 placeholder="Enter password (max 128 characters) or click Generate"
-                showGenerate
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}
                 onPasswordGenerated={(pwd) => {

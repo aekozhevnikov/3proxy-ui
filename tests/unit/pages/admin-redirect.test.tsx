@@ -1,9 +1,8 @@
-import { mocked } from '@/tests/unit/test-utils/mock-helpers';
-import { render } from "@testing-library/react";
+import { mocked } from "@/tests/unit/test-utils/mock-helpers";
 
 jest.mock("next/navigation", () => ({
     redirect: jest.fn(),
-    __esModule: true,
+    __esModule: true
 }));
 
 import { redirect } from "next/navigation";

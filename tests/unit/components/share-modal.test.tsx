@@ -1,25 +1,23 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
 jest.mock("@heroicons/react/24/outline", () => ({
-    CheckIcon: ({ ...props }: React.SVGProps<SVGSVGElement>) => <svg data-testid="check-icon" {...props} />,
-    ClipboardIcon: ({ ...props }: React.SVGProps<SVGSVGElement>) => <svg data-testid="clipboard-icon" {...props} />,
-    XMarkIcon: ({ ...props }: React.SVGProps<SVGSVGElement>) => <svg data-testid="xmark-icon" {...props} />,
+    XMarkIcon: ({ ...props }: React.SVGProps<SVGSVGElement>) => <svg data-testid="xmark-icon" {...props} />
 }));
 
 jest.mock("@/src/core/toast-utils", () => ({
-    showToast: jest.fn(),
+    showToast: jest.fn()
 }));
 
 jest.mock("@/src/core/proxy-config", () => ({
     generateHttpConfig: jest.fn().mockResolvedValue("http://user:pass@localhost:1234"),
     generateHttpsConfig: jest.fn().mockResolvedValue("https://user:pass@localhost:1234"),
-    generateSocksConfig: jest.fn().mockResolvedValue("socks5://user:pass@localhost:1234"),
+    generateSocksConfig: jest.fn().mockResolvedValue("socks5://user:pass@localhost:1234")
 }));
 
 const mockWriteText = jest.fn().mockResolvedValue(undefined);
 Object.defineProperty(global.navigator, "clipboard", {
     value: { writeText: mockWriteText },
-    configurable: true,
+    configurable: true
 });
 
 import ShareModal from "@/src/app/admin/users/components/share-modal";
@@ -31,7 +29,7 @@ describe("ShareModal", () => {
         username: "testuser",
         password: "testpass123",
         isOpen: true,
-        onClose: mockOnClose,
+        onClose: mockOnClose
     };
 
     beforeEach(() => {
@@ -88,9 +86,9 @@ describe("ShareModal", () => {
             expect(screen.getByText("HTTPS Configuration")).toBeInTheDocument();
         });
 
-        const copyButton = screen.getAllByRole("button").find(
-            (btn) => btn.querySelector("svg") !== null && !btn.closest(".sticky")
-        );
+        const copyButton = screen
+            .getAllByRole("button")
+            .find((btn) => btn.querySelector("svg") !== null && !btn.closest(".sticky"));
         fireEvent.click(copyButton!);
 
         await waitFor(() => {
@@ -105,9 +103,9 @@ describe("ShareModal", () => {
             expect(screen.getByText("HTTPS Configuration")).toBeInTheDocument();
         });
 
-        const copyButton = screen.getAllByRole("button").find(
-            (btn) => btn.querySelector("svg") !== null && !btn.closest(".sticky")
-        );
+        const copyButton = screen
+            .getAllByRole("button")
+            .find((btn) => btn.querySelector("svg") !== null && !btn.closest(".sticky"));
         fireEvent.click(copyButton!);
 
         await waitFor(() => {

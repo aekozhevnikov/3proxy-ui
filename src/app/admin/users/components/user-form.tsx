@@ -176,7 +176,8 @@ export default function UserForm({ user, onCreate, onUpdate, onCancel = () => {}
             // Navigate back to users list
             router.push("/admin/users");
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred");
+            const errorMessage = err instanceof Error ? err.message : "An error occurred";
+            setError(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -193,11 +194,11 @@ export default function UserForm({ user, onCreate, onUpdate, onCancel = () => {}
             <UserBasicFields username={username} onUsernameChange={setUsername} />
 
             <UserPasswordSection
-                password={password}
                 confirmPassword={confirmPassword}
                 isEdit={isEdit}
-                onPasswordChange={setPassword}
+                password={password}
                 onConfirmPasswordChange={setConfirmPassword}
+                onPasswordChange={setPassword}
                 onPasswordGenerated={(pwd) => {
                     setPassword(pwd);
                     setConfirmPassword(pwd);
@@ -205,20 +206,20 @@ export default function UserForm({ user, onCreate, onUpdate, onCancel = () => {}
             />
 
             <UserLimitsSection
-                isActive={isActive}
-                onIsActiveChange={setIsActive}
-                telegramUserId={telegramUserId}
-                onTelegramUserIdChange={setTelegramUserId}
                 ipLimit={ipLimit}
+                isActive={isActive}
+                telegramUserId={telegramUserId}
                 onIpLimitChange={setIpLimit}
+                onIsActiveChange={setIsActive}
+                onTelegramUserIdChange={setTelegramUserId}
             />
 
             <UserExpirationSection
                 dataLimit={dataLimit}
                 dataLimitUnit={dataLimitUnit}
+                expiresAt={expiresAt}
                 onDataLimitChange={setDataLimit}
                 onDataLimitUnitChange={setDataLimitUnit}
-                expiresAt={expiresAt}
                 onExpiresAtChange={setExpiresAt}
             />
 

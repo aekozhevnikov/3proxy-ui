@@ -1,7 +1,6 @@
 "use server";
 
 import { exec } from "child_process";
-import { promisify } from "util";
 import fs from "fs";
 import path from "path";
 
@@ -9,8 +8,6 @@ import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/src/prisma/db";
 import { hashProxyPassword } from "@/src/core/password-hash";
-
-const execAsync = promisify(exec);
 
 const execWithTimeout = (cmd: string, timeout = 5000): Promise<{ stdout: string; stderr: string }> => {
     return new Promise((resolve, reject) => {
@@ -71,7 +68,9 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
 
             console.debug("[config] Searching for 3proxy Docker container...");
             try {
-                const { stdout } = await execWithTimeout("docker ps --filter 'name=3proxy' --format '{{.ID}}' | head -1");
+                const { stdout } = await execWithTimeout(
+                    "docker ps --filter 'name=3proxy' --format '{{.ID}}' | head -1"
+                );
 
                 containerId = stdout.trim();
                 if (containerId) {
@@ -105,7 +104,10 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
                 console.debug("[config] 3proxy may need to be restarted manually or may auto-reload on file change");
             }
         } catch (error) {
-            console.warn("[config] Could not restart 3proxy container:", error instanceof Error ? error.message : String(error));
+            console.warn(
+                "[config] Could not restart 3proxy container:",
+                error instanceof Error ? error.message : String(error)
+            );
         }
 
         revalidatePath("/admin/users");

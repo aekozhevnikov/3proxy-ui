@@ -2,36 +2,9 @@ import { prisma } from "@/src/prisma/db";
 import { logger } from "@/src/core/logger";
 import { sendTelegramNotification } from "@/src/lib/telegram-notifications";
 
-export interface ExpirationProcessResult {
-    deactivatedCount: number;
-    updatedCount: number;
-}
-
 export interface TrafficSyncParams {
     trafficMap: Map<string, { sent: number; received: number; requests: number }>;
     now: Date;
-}
-
-export async function addTelegramNotifications(
-    users: Array<{
-        telegramUserId: string | null;
-        username: string;
-        dataUsed: number;
-        dataLimit: number;
-        reason: string;
-    }>
-): Promise<void> {
-    for (const user of users) {
-        if (!user.telegramUserId) continue;
-
-        await sendTelegramNotification({
-            telegramUserId: user.telegramUserId,
-            username: user.username,
-            dataUsed: user.dataUsed,
-            dataLimit: user.dataLimit,
-            reason: user.reason
-        });
-    }
 }
 
 export async function processExpiration(now: Date): Promise<{

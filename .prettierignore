@@ -1,0 +1,10 @@
+node_modules
+.next
+dist
+build
+.git
+coverage
+*.log
+.DS_Store
+public/fonts
+src/styles/globals.css

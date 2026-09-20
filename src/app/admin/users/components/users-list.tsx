@@ -2,11 +2,9 @@
 
 import { useMemo } from "react";
 
-import ShareModal from "./share-modal";
-import UserForm from "./user-form";
-
 import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/src/core/definitions";
 import { useUsers } from "@/src/hooks/useUsers";
+import ShareModal from "./share-modal";
 import { useUserModals } from "@/src/hooks/useUserModals";
 import { useUsersActions } from "@/src/hooks/useUsersActions";
 import UserHeader from "@/src/components/users-list/UserHeader";
@@ -15,8 +13,6 @@ import UserMobileCard from "@/src/components/users-list/UserMobileCard";
 import UserEmptyState from "@/src/components/users-list/UserEmptyState";
 import DeleteConfirmModal from "@/src/components/users-list/DeleteConfirmModal";
 import UserModal from "@/src/components/users-list/UserModal";
-
-type StatusFilter = "all" | "active" | "deactivated";
 
 interface UsersListProps {
     users?: ProxyUser[];
@@ -141,10 +137,10 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
 
             {editingUser && (
                 <UserModal
-                    user={editingUser}
-                    title="Edit User"
                     description={`Editing user: ${editingUser.username}`}
                     isOpen={Boolean(editingUser)}
+                    title="Edit User"
+                    user={editingUser}
                     onClose={closeEditModal}
                     onUpdate={async (data: EditProxyUserRequest) => {
                         await handleUpdateUser(data, closeEditModal);
@@ -163,9 +159,9 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
 
             {isCreateModalOpen && (
                 <UserModal
-                    title="Create Proxy User"
                     description="Add a new proxy user with custom settings"
                     isOpen={isCreateModalOpen}
+                    title="Create Proxy User"
                     onClose={closeCreateModal}
                     onCreate={async (data: NewProxyUserRequest) => {
                         await handleCreateUser(data, closeCreateModal);

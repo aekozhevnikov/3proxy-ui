@@ -38,9 +38,7 @@ export default function SystemStatusCard({ systemStatus }: SystemStatusCardProps
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-600 dark:text-gray-400">Memory</span>
                             <span className="text-sm text-gray-900 dark:text-white">
-                                {systemStatus.status.memoryUsage
-                                    ? formatBytes(systemStatus.status.memoryUsage)
-                                    : "N/A"}
+                                {systemStatus.status.memoryUsage ? formatBytes(systemStatus.status.memoryUsage) : "N/A"}
                             </span>
                         </div>
                     </>

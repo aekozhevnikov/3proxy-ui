@@ -14,8 +14,8 @@ import {
 
 export async function GET() {
     try {
-        let is3proxyRunning = false;
-        let pid: number | null = null;
+        let is3proxyRunning: boolean;
+        let pid: number | null;
         let containerInfo: { id: string; name: string } | null = null;
 
         pid = await get3proxyPid();
@@ -57,7 +57,7 @@ export async function GET() {
 
         // Get 3proxy.cfg info
         const configPath = path.join(process.cwd(), "3proxy", "3proxy.cfg");
-        let configExists = false;
+        let configExists: boolean;
         let configModified: string | null = null;
 
         try {

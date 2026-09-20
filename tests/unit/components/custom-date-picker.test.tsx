@@ -7,7 +7,7 @@ jest.mock("@internationalized/date", () => ({
         const [year, month, day] = str.split("-").map(Number);
         return { year, month, day };
     }),
-    DateValue: class DateValue {},
+    DateValue: class DateValue {}
 }));
 
 // Mock HeroUI and I18nProvider completely - we only test the logic
@@ -17,28 +17,13 @@ jest.mock("@heroui/react", () => ({
         Group: () => null,
         Input: () => null,
         Suffix: () => null,
-        Segment: () => null,
+        Segment: () => null
     },
     Calendar: () => null,
-    CalendarHeader: () => null,
-    CalendarGrid: () => null,
-    CalendarGridHeader: () => null,
-    CalendarHeaderCell: () => null,
-    CalendarGridBody: () => null,
-    CalendarCell: () => null,
-    CalendarYearPickerGrid: () => null,
-    CalendarYearPickerGridBody: () => null,
-    CalendarYearPickerCell: () => null,
-    CalendarYearPickerTrigger: () => null,
-    CalendarYearPickerTriggerHeading: () => null,
-    CalendarYearPickerTriggerIndicator: () => null,
-    CalendarNavButton: () => null,
-    Label: () => null,
+    Label: () => null
 }));
 
-jest.mock("@react-aria/i18n", () => ({
-    I18nProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
+jest.mock("@react-aria/i18n", () => ({}));
 
 describe("CustomDatePicker logic", () => {
     describe("parseDate integration", () => {

@@ -64,7 +64,8 @@ export default function ProfileForm({ currentUsername }: ProfileFormProps) {
                 setTimeout(() => router.refresh(), 1500);
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred");
+            const errorMessage = err instanceof Error ? err.message : "An error occurred";
+            setError(errorMessage);
         } finally {
             setIsSubmitting(false);
         }

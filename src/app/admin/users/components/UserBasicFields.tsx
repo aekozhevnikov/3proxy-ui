@@ -1,7 +1,5 @@
 "use client";
 
-import { ProxyUser } from "@/src/core/definitions";
-
 interface UserBasicFieldsProps {
     username: string;
     onUsernameChange: (username: string) => void;

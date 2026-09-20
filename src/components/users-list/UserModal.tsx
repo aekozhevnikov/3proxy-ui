@@ -14,15 +14,7 @@ interface UserModalProps {
     onUpdate?: (data: EditProxyUserRequest) => Promise<ProxyUser | void>;
 }
 
-export default function UserModal({
-    user,
-    title,
-    description,
-    isOpen,
-    onClose,
-    onCreate,
-    onUpdate
-}: UserModalProps) {
+export default function UserModal({ user, title, description, isOpen, onClose, onCreate, onUpdate }: UserModalProps) {
     if (!isOpen) {
         return null;
     }
@@ -35,12 +27,7 @@ export default function UserModal({
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{description}</p>
                 </div>
                 <div className="p-6">
-                    <UserForm
-                        user={user}
-                        onCancel={onClose}
-                        onCreate={onCreate}
-                        onUpdate={onUpdate}
-                    />
+                    <UserForm user={user} onCancel={onClose} onCreate={onCreate} onUpdate={onUpdate} />
                 </div>
             </div>
         </div>

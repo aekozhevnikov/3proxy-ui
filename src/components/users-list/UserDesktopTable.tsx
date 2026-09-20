@@ -65,14 +65,14 @@ export default function UserDesktopTable({
                         {users.map((user) => (
                             <UserTableRow
                                 key={user.id}
-                                user={user}
                                 expandedUserIds={expandedUserIds}
                                 testingUserId={testingUserId}
+                                toggleExpand={toggleExpand}
+                                user={user}
+                                onDelete={onDelete}
+                                onEdit={onEdit}
                                 onShare={onShare}
                                 onTestProxy={onTestProxy}
-                                onEdit={onEdit}
-                                onDelete={onDelete}
-                                toggleExpand={toggleExpand}
                             />
                         ))}
                     </tbody>
