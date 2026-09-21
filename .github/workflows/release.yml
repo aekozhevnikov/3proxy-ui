@@ -59,7 +59,7 @@ jobs:
           VERSION=${VERSION#v}
 
           docker buildx build \
-            --platform linux/amd64 \
+            --platform linux/amd64,linux/arm64 \
             --tag ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:$VERSION \
             --tag ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:latest \
             --push .

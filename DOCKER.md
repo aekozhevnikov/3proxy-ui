@@ -1,6 +1,6 @@
 # 3proxy Admin UI — Docker Deployment
 
-Docker Hub: [hungryking/3proxy-ui](https://hub.docker.com/r/hungryking/3proxy-ui)
+Docker Hub: [aekozh/3proxy-ui](https://hub.docker.com/r/hungryking/3proxy-ui)
 
 A web-based administration interface for managing [3proxy](https://github.com/3proxy/3proxy) proxy servers. This Docker image bundles the Next.js application, fail2ban, and all dependencies into a single container.
 
@@ -15,9 +15,9 @@ docker run -d \
   -e JWT_SECRET="your-secret-at-least-32-characters-long" \
   -e PROXY_DOMAIN="proxy.example.com" \
   -v 3proxy-data:/app/data \
-  -v 3proxy-logs:/etc/3proxy/logs \
+  -v ./3proxy/logs:/etc/3proxy/logs \
   --restart unless-stopped \
-  hungryking/3proxy-ui:latest
+  aekozh/3proxy-ui:latest
 ```
 
 Then open http://localhost:3000 in your browser.
@@ -33,7 +33,7 @@ version: "3.8"
 
 services:
   3proxy-ui:
-    image: hungryking/3proxy-ui:latest
+    image: aekozh/3proxy-ui:latest
     container_name: 3proxy-ui
     ports:
       - "3000:3000"   # Web UI
@@ -51,12 +51,11 @@ services:
       - FAIL2BAN_FINDTIME=600
     volumes:
       - 3proxy-data:/app/data
-      - 3proxy-logs:/etc/3proxy/logs
+      - ./3proxy/logs:/etc/3proxy/logs
     restart: unless-stopped
 
 volumes:
   3proxy-data:
-  3proxy-logs:
 ```
 
 ## Environment Variables
