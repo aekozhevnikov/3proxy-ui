@@ -118,4 +118,76 @@ describe("ShareModal", () => {
         fireEvent.mouseDown(container);
         expect(mockOnClose).toHaveBeenCalled();
     });
+
+    it("renders Copy All Configs button", async () => {
+        render(<ShareModal {...baseProps} />);
+
+        await screen.findByText("HTTPS Configuration");
+
+        expect(screen.getByText("All Configurations")).toBeInTheDocument();
+    });
+
+    it("renders Copy Proxy Data button", async () => {
+        render(<ShareModal {...baseProps} />);
+
+        await screen.findByText("HTTPS Configuration");
+
+        expect(screen.getByText("Proxy Connection Data")).toBeInTheDocument();
+    });
+
+    it("copies all configs to clipboard when Copy All Configs clicked", async () => {
+        render(<ShareModal {...baseProps} />);
+
+        await screen.findByText("HTTPS Configuration");
+
+        const allConfigsSection = screen.getByText("All Configurations").closest("div")!;
+        const copyButton = allConfigsSection.querySelector("button")!;
+        fireEvent.click(copyButton);
+
+        await waitFor(() => {
+            expect(mockWriteText).toHaveBeenCalledWith(
+                expect.stringContaining("=== HTTPS Configuration ===")
+            );
+            expect(mockWriteText).toHaveBeenCalledWith(
+                expect.stringContaining("=== HTTP Configuration ===")
+            );
+            expect(mockWriteText).toHaveBeenCalledWith(
+                expect.stringContaining("=== SOCKS5 Configuration ===")
+            );
+            expect(mockWriteText).toHaveBeenCalledWith(
+                expect.stringContaining("https://user:pass@localhost:1234")
+            );
+            expect(mockWriteText).toHaveBeenCalledWith(
+                expect.stringContaining("http://user:pass@localhost:1234")
+            );
+            expect(mockWriteText).toHaveBeenCalledWith(
+                expect.stringContaining("socks5://user:pass@localhost:1234")
+            );
+        });
+    });
+
+    it("copies proxy data to clipboard when Copy Proxy Data clicked", async () => {
+        render(<ShareModal {...baseProps} />);
+
+        await screen.findByText("HTTPS Configuration");
+
+        const proxyDataSection = screen.getByText("Proxy Connection Data").closest("div")!;
+        const copyButton = proxyDataSection.querySelector("button")!;
+        fireEvent.click(copyButton);
+
+        await waitFor(() => {
+            expect(mockWriteText).toHaveBeenCalledWith(
+                expect.stringContaining("IP:")
+            );
+            expect(mockWriteText).toHaveBeenCalledWith(
+                expect.stringContaining("PORTS: HTTP: 3128, HTTPS: 3128, SOCKS5: 1080")
+            );
+            expect(mockWriteText).toHaveBeenCalledWith(
+                expect.stringContaining("USERNAME: testuser")
+            );
+            expect(mockWriteText).toHaveBeenCalledWith(
+                expect.stringContaining("PASSWORD: testpass123")
+            );
+        });
+    });
 });

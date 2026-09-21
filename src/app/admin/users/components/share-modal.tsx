@@ -13,13 +13,15 @@ interface ShareModalProps {
     onClose: () => void;
 }
 
-type CopyType = "http" | "https" | "socks";
+type CopyType = "http" | "https" | "socks" | "all" | "proxy-data";
 
 export default function ShareModal({ username, password, isOpen, onClose }: ShareModalProps) {
     const [copied, setCopied] = useState<Record<CopyType, boolean>>({
         http: false,
         https: false,
-        socks: false
+        socks: false,
+        all: false,
+        "proxy-data": false
     });
     const modalRef = useRef<HTMLDivElement>(null);
 
@@ -68,6 +70,31 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
         } catch {
             showToast("Failed to copy", "error");
         }
+    };
+
+    const copyAllConfigs = async () => {
+        if (!links.https || !links.http || !links.socks) return;
+        const allText = [
+            "=== HTTPS Configuration ===",
+            links.https,
+            "",
+            "=== HTTP Configuration ===",
+            links.http,
+            "",
+            "=== SOCKS5 Configuration ===",
+            links.socks,
+        ].join("\n");
+        await copyToClipboard(allText, "all");
+    };
+
+    const copyProxyData = async () => {
+        const proxyData = [
+            "IP: ",
+            "PORTS: HTTP: 3128, HTTPS: 3128, SOCKS5: 1080",
+            `USERNAME: ${username}`,
+            `PASSWORD: ${password}`,
+        ].join("\n");
+        await copyToClipboard(proxyData, "proxy-data");
     };
 
     if (!isOpen) return null;
@@ -141,6 +168,37 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
                                 )}
                             </button>
                         </div>
+                    </div>
+
+                    {/* Copy All Configs Button */}
+                    <div className="flex items-center justify-between flex-wrap gap-2 pt-2">
+                        <h4 className="font-medium text-gray-900 dark:text-white">All Configurations</h4>
+                        <button
+                            className="flex items-center gap-2 px-3 py-3 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full transition-colors text-sm whitespace-nowrap"
+                            disabled={!links.https || !links.http || !links.socks}
+                            onClick={copyAllConfigs}
+                        >
+                            {copied.all ? (
+                                <CheckIcon className="h-4 w-4" />
+                            ) : (
+                                <ClipboardIcon className="h-4 w-4" />
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Copy Proxy Data Button */}
+                    <div className="flex items-center justify-between flex-wrap gap-2 pt-2">
+                        <h4 className="font-medium text-gray-900 dark:text-white">Proxy Connection Data</h4>
+                        <button
+                            className="flex items-center gap-2 px-3 py-3 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full transition-colors text-sm whitespace-nowrap"
+                            onClick={copyProxyData}
+                        >
+                            {copied["proxy-data"] ? (
+                                <CheckIcon className="h-4 w-4" />
+                            ) : (
+                                <ClipboardIcon className="h-4 w-4" />
+                            )}
+                        </button>
                     </div>
                 </div>
             </div>
