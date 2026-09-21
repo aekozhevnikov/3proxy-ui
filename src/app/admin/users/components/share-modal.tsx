@@ -82,7 +82,7 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
             links.http,
             "",
             "=== SOCKS5 Configuration ===",
-            links.socks,
+            links.socks
         ].join("\n");
         await copyToClipboard(allText, "all");
     };
@@ -92,7 +92,7 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
             "IP: ",
             "PORTS: HTTP: 3128, HTTPS: 3128, SOCKS5: 1080",
             `USERNAME: ${username}`,
-            `PASSWORD: ${password}`,
+            `PASSWORD: ${password}`
         ].join("\n");
         await copyToClipboard(proxyData, "proxy-data");
     };
@@ -105,7 +105,7 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
                 ref={modalRef}
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full max-h-[90vh] overflow-y-auto"
             >
-                <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+                <div className="sticky top-0 bg-grey-200 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">Share Proxy Configuration</h2>
                     <button
                         className="rounded-full px-3 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -178,11 +178,7 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
                             disabled={!links.https || !links.http || !links.socks}
                             onClick={copyAllConfigs}
                         >
-                            {copied.all ? (
-                                <CheckIcon className="h-4 w-4" />
-                            ) : (
-                                <ClipboardIcon className="h-4 w-4" />
-                            )}
+                            {copied.all ? <CheckIcon className="h-4 w-4" /> : <ClipboardIcon className="h-4 w-4" />}
                         </button>
                     </div>
 
