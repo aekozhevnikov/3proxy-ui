@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.9] - 2026-09-21
+
+### Fixed
+
+- ShareModal UI improvements
+- Update next-env.d.ts
+
+## [0.2.8] - 2026-09-21
+
+### Added
+
+- Copy All Configs button in ShareModal
+- Copy Proxy Data button in ShareModal
+- Tests for new ShareModal features
+
+## [0.2.7] - 2026-09-21
+
+### Changed
+
+- Workflow trigger improvements
+
 ## [0.2.6] - 2026-09-21
 
 ### Changed
@@ -148,7 +169,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - Initial version
 
-[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.6...HEAD
+[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.9...HEAD
+[0.2.9]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.8...v0.2.9
+[0.2.8]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.7...v0.2.8
+[0.2.7]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.3...v0.2.4

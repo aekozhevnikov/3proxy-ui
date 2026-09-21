@@ -117,7 +117,7 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
 
                 <div className="p-6 space-y-4">
                     {/* HTTPS Configuration */}
-                    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 overflow-hidden">
+                    <div className="bg-gray-200 dark:bg-gray-900 rounded-full px-4 py-2 overflow-hidden">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                             <h4 className="font-medium text-gray-900 dark:text-white">HTTPS Configuration</h4>
                             <button
@@ -135,7 +135,7 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
                     </div>
 
                     {/* HTTP Configuration */}
-                    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 overflow-hidden">
+                    <div className="bg-gray-200 dark:bg-gray-900 rounded-full px-4 py-2 overflow-hidden">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                             <h4 className="font-medium text-gray-900 dark:text-white">HTTP Configuration</h4>
                             <button
@@ -153,7 +153,7 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
                     </div>
 
                     {/* SOCKS5 Configuration */}
-                    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 overflow-hidden">
+                    <div className="bg-gray-200 dark:bg-gray-900 rounded-full px-4 py-2 overflow-hidden">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                             <h4 className="font-medium text-gray-900 dark:text-white">SOCKS5 Configuration</h4>
                             <button
@@ -171,30 +171,34 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
                     </div>
 
                     {/* Copy All Configs Button */}
-                    <div className="flex items-center justify-between flex-wrap gap-2 pt-2">
-                        <h4 className="font-medium text-gray-900 dark:text-white">All Configurations</h4>
-                        <button
-                            className="flex items-center gap-2 px-3 py-3 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full transition-colors text-sm whitespace-nowrap"
-                            disabled={!links.https || !links.http || !links.socks}
-                            onClick={copyAllConfigs}
-                        >
-                            {copied.all ? <CheckIcon className="h-4 w-4" /> : <ClipboardIcon className="h-4 w-4" />}
-                        </button>
+                    <div className="bg-gray-200 dark:bg-gray-900 rounded-full px-4 py-2 overflow-hidden">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                            <h4 className="font-medium text-gray-900 dark:text-white">All Configurations</h4>
+                            <button
+                                className="flex items-center gap-2 px-3 py-3 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full transition-colors text-sm whitespace-nowrap"
+                                disabled={!links.https || !links.http || !links.socks}
+                                onClick={copyAllConfigs}
+                            >
+                                {copied.all ? <CheckIcon className="h-4 w-4" /> : <ClipboardIcon className="h-4 w-4" />}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Copy Proxy Data Button */}
-                    <div className="flex items-center justify-between flex-wrap gap-2 pt-2">
-                        <h4 className="font-medium text-gray-900 dark:text-white">Proxy Connection Data</h4>
-                        <button
-                            className="flex items-center gap-2 px-3 py-3 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full transition-colors text-sm whitespace-nowrap"
-                            onClick={copyProxyData}
-                        >
-                            {copied["proxy-data"] ? (
-                                <CheckIcon className="h-4 w-4" />
-                            ) : (
-                                <ClipboardIcon className="h-4 w-4" />
-                            )}
-                        </button>
+                    <div className="bg-gray-200 dark:bg-gray-900 rounded-full px-4 py-2 overflow-hidden">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                            <h4 className="font-medium text-gray-900 dark:text-white">Proxy Connection Data</h4>
+                            <button
+                                className="flex items-center gap-2 px-3 py-3 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full transition-colors text-sm whitespace-nowrap"
+                                onClick={copyProxyData}
+                            >
+                                {copied["proxy-data"] ? (
+                                    <CheckIcon className="h-4 w-4" />
+                                ) : (
+                                    <ClipboardIcon className="h-4 w-4" />
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
