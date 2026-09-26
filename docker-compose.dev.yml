@@ -19,7 +19,9 @@ services:
     ports:
       - "3001:3000"   # Web UI
     environment:
-      - JWT_SECRET=981f761acc3584b64fd72cddf17fd25f511a445af68b5c2b698897a72e88077d
+      - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in .env, at least 32 characters}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env before first start}
       - PROXY_DOMAIN=proxy.example.com
       - HTTP_PORT=3128
       - SOCKS_PORT=1080

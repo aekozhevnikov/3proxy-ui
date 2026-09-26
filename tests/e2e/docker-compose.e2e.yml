@@ -30,6 +30,8 @@ services:
       - "3000:3000"   # Web UI
     environment:
       - JWT_SECRET=test-secret-key-minimum-32-characters-long
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
       - PROXY_DOMAIN=test.local
       - HTTP_PORT=3128
       - SOCKS_PORT=1080
@@ -63,6 +65,8 @@ services:
       - "3000:3000"   # Web UI
     environment:
       - JWT_SECRET=test-secret-key-minimum-32-characters-long
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
       - PROXY_DOMAIN=test.local
       - HTTP_PORT=3128
       - SOCKS_PORT=1080

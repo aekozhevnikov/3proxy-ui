@@ -2,28 +2,28 @@
  * @jest-environment node
  */
 
-import { mocked } from '@/tests/unit/test-utils/mock-helpers';
+import { mocked } from "@/tests/unit/test-utils/mock-helpers";
 import { GET, POST } from "@/src/app/api/admin/users/route";
 import { NextRequest } from "next/server";
 
 jest.mock("@/src/prisma/db", () => {
     const mockProxyUser = {
         findMany: jest.fn(),
-        count: jest.fn(),
+        count: jest.fn()
     };
     return {
         __esModule: true,
         default: { proxyUser: mockProxyUser },
-        prisma: { proxyUser: mockProxyUser },
+        prisma: { proxyUser: mockProxyUser }
     };
 });
 
 jest.mock("@/src/core/session", () => ({
-    currentSession: jest.fn(),
+    currentSession: jest.fn()
 }));
 
 jest.mock("@/src/core/actions/proxy-user", () => ({
-    createProxyUser: jest.fn(),
+    createProxyUser: jest.fn()
 }));
 
 import { prisma } from "@/src/prisma/db";
@@ -34,7 +34,7 @@ const createRequest = (body: Record<string, unknown>) => {
     return new NextRequest("http://localhost/api/admin/users", {
         method: "POST",
         body: JSON.stringify(body),
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" }
     });
 };
 
@@ -67,13 +67,15 @@ describe("admin/users API", () => {
                 deactivatedAt: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                dataUsed: 0,
+                dataUsed: 0
             });
 
-            const result = await POST(createRequest({
-                username: "newuser",
-                password: "pass123",
-            }));
+            const result = await POST(
+                createRequest({
+                    username: "newuser",
+                    password: "pass123"
+                })
+            );
             const data = await result.json();
 
             expect(result.status).toBe(200);
@@ -84,14 +86,18 @@ describe("admin/users API", () => {
         it("returns 500 on error", async () => {
             mocked(createProxyUser).mockRejectedValue(new Error("Creation failed"));
 
-            const result = await POST(createRequest({
-                username: "newuser",
-                password: "pass123",
-            }));
+            const result = await POST(
+                createRequest({
+                    username: "newuser",
+                    password: "pass123"
+                })
+            );
             const data = await result.json();
 
             expect(result.status).toBe(500);
-            expect(data.error).toBe("Creation failed");
+            // The internal message is logged server-side, not returned: Prisma
+            // text reaches the browser otherwise, carrying schema and paths.
+            expect(data.error).toBe("Failed to create user");
         });
     });
 
@@ -122,7 +128,7 @@ describe("admin/users API", () => {
                 total: 10,
                 active: 8,
                 inactive: 2,
-                withDataLimit: 5,
+                withDataLimit: 5
             });
         });
 
@@ -140,8 +146,8 @@ describe("admin/users API", () => {
                     deactivatedAt: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    dataUsed: 0n,
-                },
+                    dataUsed: 0n
+                }
             ]);
 
             const request = new NextRequest("http://localhost/api/admin/users");
@@ -162,7 +168,7 @@ describe("admin/users API", () => {
             const data = await result.json();
 
             expect(result.status).toBe(500);
-            expect(data.error).toBe("DB error");
+            expect(data.error).toBe("Failed to fetch users");
         });
     });
 });

@@ -2,20 +2,20 @@
  * @jest-environment node
  */
 
-import { mocked } from '@/tests/unit/test-utils/mock-helpers';
+import { mocked } from "@/tests/unit/test-utils/mock-helpers";
 import { GET, PUT, DELETE } from "@/src/app/api/admin/users/[id]/route";
 import { NextRequest } from "next/server";
 import { getProxyUserById, deleteProxyUser, updateProxyUser } from "@/src/core/actions/proxy-user";
 import { ProxyUser } from "@/src/core/definitions";
 
 jest.mock("@/src/core/session", () => ({
-    currentSession: jest.fn(),
+    currentSession: jest.fn()
 }));
 
 jest.mock("@/src/core/actions/proxy-user", () => ({
     getProxyUserById: jest.fn(),
     deleteProxyUser: jest.fn(),
-    updateProxyUser: jest.fn(),
+    updateProxyUser: jest.fn()
 }));
 
 import { currentSession } from "@/src/core/session";
@@ -43,7 +43,7 @@ describe("admin/users/[id] API", () => {
             mocked(getProxyUserById).mockResolvedValue({
                 id: 1,
                 username: "testuser",
-                isActive: true,
+                isActive: true
             } as ProxyUser);
 
             const request = new NextRequest("http://localhost/api/admin/users/1");
@@ -87,7 +87,7 @@ describe("admin/users/[id] API", () => {
 
             const request = new NextRequest("http://localhost/api/admin/users/1", {
                 method: "PUT",
-                body: JSON.stringify({ username: "updated" }),
+                body: JSON.stringify({ username: "updated" })
             });
             const result = await PUT(request, { params: mockParams });
             const data = await result.json();
@@ -99,12 +99,12 @@ describe("admin/users/[id] API", () => {
         it("updates user successfully", async () => {
             mocked(updateProxyUser).mockResolvedValue({
                 id: 1,
-                username: "updated",
+                username: "updated"
             } as ProxyUser);
 
             const request = new NextRequest("http://localhost/api/admin/users/1", {
                 method: "PUT",
-                body: JSON.stringify({ username: "updated", password: "newpass" }),
+                body: JSON.stringify({ username: "updated", password: "newpass" })
             });
             const result = await PUT(request, { params: mockParams });
             const data = await result.json();
@@ -119,13 +119,13 @@ describe("admin/users/[id] API", () => {
 
             const request = new NextRequest("http://localhost/api/admin/users/1", {
                 method: "PUT",
-                body: JSON.stringify({ username: "updated" }),
+                body: JSON.stringify({ username: "updated" })
             });
             const result = await PUT(request, { params: mockParams });
             const data = await result.json();
 
             expect(result.status).toBe(500);
-            expect(data.error).toBe("Update failed");
+            expect(data.error).toBe("Failed to update user");
         });
     });
 
@@ -138,7 +138,7 @@ describe("admin/users/[id] API", () => {
             mocked(currentSession).mockResolvedValue({ isAuthorized: false });
 
             const request = new NextRequest("http://localhost/api/admin/users/1", {
-                method: "DELETE",
+                method: "DELETE"
             });
             const result = await DELETE(request, { params: mockParams });
             const data = await result.json();
@@ -151,7 +151,7 @@ describe("admin/users/[id] API", () => {
             mocked(deleteProxyUser).mockResolvedValue(undefined);
 
             const request = new NextRequest("http://localhost/api/admin/users/1", {
-                method: "DELETE",
+                method: "DELETE"
             });
             const result = await DELETE(request, { params: mockParams });
             const data = await result.json();
@@ -165,7 +165,7 @@ describe("admin/users/[id] API", () => {
             mocked(deleteProxyUser).mockRejectedValue(new Error("Failed to delete user"));
 
             const request = new NextRequest("http://localhost/api/admin/users/1", {
-                method: "DELETE",
+                method: "DELETE"
             });
             const result = await DELETE(request, { params: mockParams });
             const data = await result.json();

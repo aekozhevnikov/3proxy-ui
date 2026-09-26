@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentSession } from "@/src/core/session";
 import { createProxyUser } from "@/src/core/actions/proxy-user";
 import { prisma } from "@/src/prisma/db";
+import { logger } from "@/src/core/logger";
 import { isValidationError } from "@/src/core/errors";
 
 // Disable caching for all responses in this route
@@ -35,10 +36,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: (error as Error).message }, { status: 400 });
         }
 
-        return NextResponse.json(
-            { error: error instanceof Error ? error.message : "Failed to create user" },
-            { status: 500 }
-        );
+        logger.error("[api/users] create failed:", error);
+
+        return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
     }
 }
 
@@ -99,9 +99,8 @@ export async function GET(request: NextRequest) {
             }))
         });
     } catch (error) {
-        return NextResponse.json(
-            { error: error instanceof Error ? error.message : "Failed to fetch users" },
-            { status: 500 }
-        );
+        logger.error("[api/users] list failed:", error);
+
+        return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
     }
 }

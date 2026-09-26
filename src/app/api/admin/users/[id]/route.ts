@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { currentSession } from "@/src/core/session";
 import { getProxyUserById, deleteProxyUser, updateProxyUser } from "@/src/core/actions/proxy-user";
+import { logger } from "@/src/core/logger";
 import { isValidationError } from "@/src/core/errors";
 
 // Disable caching for GET requests
@@ -61,10 +62,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json({ error: (error as Error).message }, { status: 400 });
         }
 
-        return NextResponse.json(
-            { error: error instanceof Error ? error.message : "Failed to update user" },
-            { status: 500 }
-        );
+        logger.error("[api/users] update failed:", error);
+
+        return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
     }
 }
 

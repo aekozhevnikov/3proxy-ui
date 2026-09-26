@@ -45,9 +45,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
             password: user.password
         });
     } catch (error) {
-        return NextResponse.json(
-            { error: error instanceof Error ? error.message : "Failed to fetch user credentials" },
-            { status: 500 }
-        );
+        logger.error("[share] credential read failed:", error);
+
+        return NextResponse.json({ error: "Failed to fetch user credentials" }, { status: 500 });
     }
 }

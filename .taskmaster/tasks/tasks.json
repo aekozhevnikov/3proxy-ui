@@ -201,7 +201,7 @@
         "id": "11",
         "title": "Harden session and authentication mechanisms",
         "description": "Add rate limiting and logging to POST /api/auth/login. Fix the session cookie secure flag to use a single shared constant. Invalidate old JWTs on password change. Re-read the user from the database in currentSession to reflect deletions and role changes.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "details": "Implement a failed-attempt counter per username and IP with exponential backoff in /api/auth/login. Log every login attempt and outcome. Create a shared constant for the cookie secure flag and use it in login, logout, and change-credentials. Add a session version or passwordChangedAt field to User and check it in currentSession. Modify currentSession to re-read the user after JWT verification.",
@@ -237,7 +237,8 @@
             "parentTaskId": 11,
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-09-26T23:55:05.688Z"
       },
       {
         "id": "12",
@@ -394,9 +395,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-26T23:25:32.230Z",
+      "lastModified": "2026-09-26T23:55:05.688Z",
       "taskCount": 19,
-      "completedCount": 12,
+      "completedCount": 13,
       "tags": [
         "master"
       ]

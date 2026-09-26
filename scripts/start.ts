@@ -7,8 +7,15 @@ const child = spawn("node", [serverPath], {
     cwd: process.cwd(),
     env: {
         ...process.env,
-        HOST: process.env.HOST || "0.0.0.0",
-        HOSTNAME: process.env.HOSTNAME || "0.0.0.0"
+        HOST: "0.0.0.0",
+        // Next's standalone server binds to HOSTNAME, and Docker sets that to
+        // the container id, so the old `process.env.HOSTNAME || "0.0.0.0"`
+        // fallback never fired and the server listened only on the container's
+        // bridge address, leaving the loopback self-calls in the panel refused.
+        // Set it outright here rather than in the image: a platform that
+        // re-injects HOSTNAME (ECS, Fargate) can override an image ENV, but not
+        // this.
+        HOSTNAME: "0.0.0.0"
     }
 });
 

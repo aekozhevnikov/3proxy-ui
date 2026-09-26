@@ -31,7 +31,7 @@ Thumbs.db
 .env.*.local
 
 # Database dev files
-prisma/*.db
+prisma/**/*.db
 
 # Exclude all 3proxy files EXCEPT the needed configs
 # We'll explicitly include the ones we need in the Dockerfile COPY commands
