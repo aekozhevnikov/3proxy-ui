@@ -19,15 +19,18 @@ ENV PROXY_DOMAIN=localhost \
     SOCKS_PORT=1080 \
     JWT_SECRET=please-change-this-secret-in-production-at-least-32-chars
 
+# Build tools must be present before npm ci: a package with no prebuild for the
+# target platform falls back to node-gyp and compiles from source.
+RUN apk add --no-cache python3 make g++ sqlite-dev
+
 COPY package-lock.json package.json ./
-RUN npm install --no-cache
+RUN npm ci
 
 COPY . ./
 
-# Combined build stage: build tools, prisma, compile, build, prune, cleanup
+# Combined build stage: prisma, compile, build, prune, cleanup
 # All in one RUN to reduce layer count and improve compression
-RUN apk add --no-cache python3 make g++ sqlite-dev \
-    && npx prisma generate \
+RUN npx prisma generate \
     && npm run compile \
     && npm run build:docker \
     && npm prune --production --no-optional \

@@ -12,9 +12,73 @@ jobs:
   test:
     uses: ./.github/workflows/pre-release-tests.yml
 
-  publish:
+  build:
     needs: test
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            arch: arm64
+            runner: ubuntu-24.04-arm
+    concurrency:
+      group: build-${{ matrix.platform }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-${{ matrix.platform }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}-buildx-
+          fail_ci_cache_error: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      # Every platform builds on a runner of its own architecture, so node, npm
+      # and the native prebuilds run natively. Emulating arm64 with QEMU crashes
+      # those binaries with SIGILL and leaves buildx waiting on a dead step.
+      - name: Build and Push Docker Image
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          VERSION=${VERSION#v}
+
+          docker buildx build \
+            --platform ${{ matrix.platform }} \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --tag ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:${VERSION}-${{ matrix.arch }} \
+            --push .
+
+          # The cache is promoted to the saved key only after a successful build,
+          # so an interrupted or failed build can never poison the next release.
+          rm -rf /tmp/.buildx-cache /tmp/.buildx-cache-new
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  publish:
+    # Runs only after both architectures reached Docker Hub, so a published
+    # release always points at a complete multi-arch image.
+    needs: [test, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     concurrency:
       group: publish
       cancel-in-progress: true
@@ -32,20 +96,22 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Build and Push Docker Image
+      - name: Merge platforms into a multi-arch manifest
+        env:
+          VERSION: ${{ github.ref_name }}
         run: |
-          VERSION=${{ github.ref_name }}
           VERSION=${VERSION#v}
 
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --tag ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:$VERSION \
+          docker buildx imagetools create \
+            --tag ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:${VERSION} \
             --tag ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:latest \
-            --push .
+            ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:${VERSION}-amd64 \
+            ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:${VERSION}-arm64
 
       - name: Verify the image is on Docker Hub
+        env:
+          VERSION: ${{ github.ref_name }}
         run: |
-          VERSION=${{ github.ref_name }}
           VERSION=${VERSION#v}
 
           # The release below only runs once this succeeds, so a failed or skipped
@@ -79,6 +145,7 @@ jobs:
     # release always has a downloadable image behind it.
     needs: [test, publish]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     concurrency:
       group: release
       cancel-in-progress: true
