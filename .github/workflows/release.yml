@@ -70,7 +70,7 @@ jobs:
 
           # The cache is promoted to the saved key only after a successful build,
           # so an interrupted or failed build can never poison the next release.
-          rm -rf /tmp/.buildx-cache /tmp/.buildx-cache-new
+          rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   publish:
