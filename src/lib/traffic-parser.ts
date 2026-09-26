@@ -76,7 +76,7 @@ export async function readTrafficLogs(): Promise<Map<string, UserTrafficStats>> 
         // Read all log files
         const files = await fs.readdir(logsDir);
 
-        logFiles = files.filter((file) => file.endsWith(".log"));
+        logFiles = files.filter((file) => file.startsWith("3proxy.log") || file.endsWith(".log"));
 
         for (const file of logFiles) {
             const filePath = path.join(logsDir, file);

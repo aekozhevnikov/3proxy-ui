@@ -1,6 +1,6 @@
 {
     "name": "3proxy-admin",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "private": true,
     "type": "module",
     "overrides": {
@@ -19,10 +19,12 @@
         "setup": "node ./dist/scripts/setup.js",
         "seed": "prisma db seed",
         "test:unit": "jest --passWithNoTests",
-        "test:fail2ban": "npm run compile && node ./dist/tests/fail2ban-test.js",
-        "test:e2e": "npm run compile && tsx tests/e2e/traffic-limit.test.ts",
-        "test:e2e:fail2ban": "npm run compile && tsx tests/e2e/fail2ban-blocking.test.ts",
-        "test:all": "npm run test:unit && npm run test:fail2ban && npm run test:e2e"
+        "test:integration": "jest --selectProjects integration",
+        "test:fail2ban": "jest --selectProjects fail2ban",
+        "test:e2e": "npm run compile && tsx tests/e2e/index.ts",
+        "test:e2e:traffic": "npm run compile && tsx tests/e2e/traffic-limit/run-all.test.ts",
+        "test:e2e:fail2ban": "npm run compile && tsx tests/e2e/fail2ban-blocking/run-all.test.ts",
+        "test:all": "npm run test:unit && npm run test:e2e"
     },
     "dependencies": {
         "@heroui/react": "^3.0.1",
@@ -31,31 +33,20 @@
         "@prisma/client": "^6.19.2",
         "@tailwindcss/postcss": "^4.2.2",
         "bcrypt": "^6.0.0",
-        "blueimp-md5": "^2.19.0",
         "clsx": "2.1.1",
-        "date-fns": "^4.1.0",
         "globals": "^17.5.0",
-        "intl-messageformat": "^10.7.10",
         "jose": "^5.9.6",
         "jsonwebtoken": "^9.0.3",
         "lucide-react": "^1.7.0",
-        "moment": "^2.30.1",
         "nano-md5": "^1.0.5",
         "next": "^16.2.1",
         "next-themes": "^0.2.1",
-        "prisma": "^6.19.2",
         "qr-code-styling": "^1.8.4",
-        "qrcode": "^1.5.4",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-hook-form": "^7.54.2",
         "react-toastify": "^11.0.5",
-        "slugify": "^1.6.6",
-        "telegraf": "^4.16.3",
-        "typescript-eslint": "^8.58.2",
-        "uuid": "^11.0.3",
-        "winston": "^3.18.3",
-        "winston-daily-rotate-file": "^5.0.0"
+        "prisma": "^6.19.2"
     },
     "devDependencies": {
         "@heroicons/react": "^2.2.0",
@@ -88,17 +79,14 @@
         "jest": "^30.3.0",
         "jest-environment-jsdom": "^30.5.1",
         "node-cron": "^3.0.3",
-        "playwright": "^1.58.2",
         "postcss": "8.4.38",
         "prettier": "3.3.3",
-        "puppeteer": "^24.43.1",
         "tailwind-variants": "0.1.20",
         "tailwindcss": "^4.2.2",
         "ts-jest": "^29.4.12",
         "tsc-alias": "^1.8.0",
         "tsx": "^4.21.0",
         "typescript": "5.6.3",
-        "undici": "^7.25.0",
         "vite": "^8.0.2"
     }
 }

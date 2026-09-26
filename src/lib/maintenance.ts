@@ -71,9 +71,10 @@ export async function processTrafficLimits({
 
         if (!user) continue;
 
-        const newDataUsed = Number(user.dataUsed) + totalUsed;
+        const totalUsedBytes = BigInt(totalUsed);
+        const newDataUsed = user.dataUsed + totalUsedBytes;
         const shouldDeactivate =
-            user.dataLimit !== null && newDataUsed >= Number(user.dataLimit) && user.isActive === true;
+            user.dataLimit !== null && newDataUsed >= BigInt(Number(user.dataLimit) * 1024 * 1024) && user.isActive === true;
 
         await prisma.proxyUser.update({
             where: { id: user.id },
@@ -96,14 +97,14 @@ export async function processTrafficLimits({
                 await sendTelegramNotification({
                     telegramUserId: user.telegramUserId,
                     username: user.username,
-                    dataUsed: newDataUsed,
+                    dataUsed: Number(newDataUsed),
                     dataLimit: Number(user.dataLimit!),
                     reason: "data limit exceeded"
                 });
             }
 
             logger.debug(
-                `[maintenance] User ${user.username} deactivated due to exceeding data limit (${newDataUsed / 1024 / 1024} MB / ${Number(user.dataLimit) / 1024 / 1024} MB)`
+                `[maintenance] User ${user.username} deactivated due to exceeding data limit (${Number(newDataUsed) / 1024 / 1024} MB / ${Number(user.dataLimit) / 1024 / 1024} MB)`
             );
         }
 

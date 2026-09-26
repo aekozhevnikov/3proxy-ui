@@ -1,24 +1,22 @@
 /**
  * E2E Test: Manual Maintenance Trigger
- * Tests that maintenance can be triggered manually via API
+ *
+ * Проверяет контракт ответа POST /api/users/maintenance.
  */
+import { apiCall, createAdminSession } from "./shared-setup.js";
 
-import {
-    createAdminSession,
-    apiCall,
-} from "./shared-setup.js";
+export async function testManualMaintenanceTrigger(): Promise<void> {
+    const token = await createAdminSession();
 
-async function testManualMaintenanceTrigger() {
-    const adminToken = await createAdminSession();
-
-    const result = await apiCall(adminToken, "/api/users/maintenance", "POST", {});
+    const result = await apiCall(token, "/api/users/maintenance", "POST", {});
 
     if (!result.success) {
         throw new Error(`Maintenance should succeed: ${result.error}`);
     }
+    if (typeof result.updatedCount !== "number") {
+        throw new Error(`Maintenance should report updatedCount, got: ${JSON.stringify(result)}`);
+    }
+    if (typeof result.totalTraffic !== "number") {
+        throw new Error(`Maintenance should report totalTraffic, got: ${JSON.stringify(result)}`);
+    }
 }
-
-testManualMaintenanceTrigger().catch((error) => {
-    console.error("Manual maintenance trigger test failed:", error);
-    process.exit(1);
-});

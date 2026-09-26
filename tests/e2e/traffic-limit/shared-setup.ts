@@ -1,4 +1,7 @@
 // Shared setup/cleanup for traffic-limit E2E tests
+//
+// Окружение описано в tests/e2e/docker-compose.e2e.yml, управляется через
+// utils/environment.ts — здесь только адаптация к API остальных тестов набора.
 
 import {
     apiCall,
@@ -8,78 +11,117 @@ import {
     TEST_CONFIG,
     waitForService,
 } from "../utils/helpers.js";
+import {
+    downService,
+    resetRuntimeState,
+    teardown,
+    TRAFFIC_CONTAINER,
+    TRAFFIC_SERVICE,
+    upService,
+} from "../utils/environment.js";
+import { UserApiClient } from "../utils/user-api.js";
 
-const CONTAINER_NAME = "3proxy-ui-e2e-test";
+const CONTAINER_NAME = TRAFFIC_CONTAINER;
 
+/** Поднимает стек traffic-набора и дожидается готовности API и админ-сессии. */
 export async function setupTestEnvironment() {
-    try {
-        await execAsync("docker --version");
-    } catch (error) {
-        throw new Error("Docker is required for E2E tests. Please install Docker first.");
-    }
+    await upService(TRAFFIC_SERVICE);
 
-    const buildCmd = `docker build -t 3proxy-ui:e2e-test .`;
-    await execAsync(buildCmd);
+    console.log("Waiting for service to be ready...");
+    await waitForService(TEST_CONFIG.apiUrl, 180000);
+    console.log("Service is ready!");
 
-    try {
-        await execAsync(`docker rm -f ${CONTAINER_NAME} 2>/dev/null || true`);
-    } catch {
-        // Ignore
-    }
+    // entrypoint.sh создаёт админа (admin/admin) и прогоняет миграции,
+    // поэтому достаточно дождаться успешного логина.
+    await waitForAdminSession();
 
-    const runCmd = [
-        "docker run -d",
-        `--name ${CONTAINER_NAME}`,
-        "--privileged",
-        "-e DATABASE_URL=file:/app/data/test.db",
-        "-e NEXT_PUBLIC_API_URL=http://localhost:3000",
-        "-e API_URL=http://localhost:3000",
-        "-e JWT_SECRET=test-secret-key-minimum-32-characters-long",
-        "-e ENABLE_FAIL2BAN=true",
-        "-e FAIL2BAN_BANTIME=60",
-        "-e FAIL2BAN_FINDTIME=10",
-        "-e FAIL2BAN_MAXRETRY=2",
-        "-e TRAFFIC_SYNC_INTERVAL=*/1 * * * *",
-        "-p 3000:3000",
-        "-p 3128:3128",
-        "-p 1080:1080",
-        "-v e2e_data:/app/data",
-        "-v e2e_logs:/etc/3proxy/logs",
-        "-v e2e_fail2ban:/var/lib/fail2ban",
-        "3proxy-ui:e2e-test",
-    ].join(" ");
-
-    await execAsync(runCmd);
-
-    await waitForService(TEST_CONFIG.apiUrl, 120000);
-
-    await execInContainer(CONTAINER_NAME, "npx prisma migrate deploy && npx prisma generate");
+    await warmUpBackgroundTasks();
 }
 
-export async function cleanupTestEnvironment() {
-    try {
-        await execAsync(`docker stop ${CONTAINER_NAME} 2>/dev/null || true`);
+/**
+ * Фоновые задачи, включая планировщик maintenance, стартуют при первом
+ * рендере корневого layout — то есть при первом запросе к странице. Тесты
+ * работают только через API, поэтому layout не рендерится и планировщик
+ * молча не запускается. Один GET / его запускает.
+ */
+async function warmUpBackgroundTasks(): Promise<void> {
+    const deadline = Date.now() + 60000;
+    let lastStatus = 0;
+
+    while (Date.now() < deadline) {
+        try {
+            const response = await fetch(`${TEST_CONFIG.apiUrl}/`, { signal: AbortSignal.timeout(30000) });
+
+            if (response.ok) {
+                // Даём время зарегистрировать cron-задачу и выполнить первый прогон.
+                await new Promise((resolve) => setTimeout(resolve, 3000));
+
+                return;
+            }
+
+            lastStatus = response.status;
+        } catch (error) {
+            lastStatus = 0;
+        }
+
         await new Promise((resolve) => setTimeout(resolve, 2000));
-        await execAsync(`docker rm -f ${CONTAINER_NAME} 2>/dev/null || true`);
-    } catch (error) {
-        if (error instanceof Error) {
-            console.warn("Cleanup warning:", error.message);
+    }
+
+    throw new Error(
+        `Warm-up request to ${TEST_CONFIG.apiUrl}/ never succeeded (last status: ${lastStatus}). ` +
+            "Фоновые задачи, включая планировщик maintenance, запускаются только при рендере страницы."
+    );
+}
+
+/** Админ появляется не сразу: /api/auth/login начинает отвечать после setup.js. */
+async function waitForAdminSession(timeout = 60000): Promise<void> {
+    const startTime = Date.now();
+    let lastError: unknown;
+
+    while (Date.now() - startTime < timeout) {
+        try {
+            await createAdminSession();
+
+            return;
+        } catch (error) {
+            lastError = error;
+            await new Promise((resolve) => setTimeout(resolve, 2000));
         }
     }
 
-    try {
-        await execAsync("docker rmi 3proxy-ui:e2e-test 2>/dev/null || true");
-    } catch {
-        // Ignore
-    }
+    throw new Error(
+        `Admin session not available after ${timeout}ms: ${
+            lastError instanceof Error ? lastError.message : String(lastError)
+        }`
+    );
+}
 
-    try {
-        await execAsync("docker volume rm e2e_data 2>/dev/null || true");
-        await execAsync("docker volume rm e2e_logs 2>/dev/null || true");
-        await execAsync("docker volume rm e2e_fail2ban 2>/dev/null || true");
-    } catch {
-        // Ignore
+export async function cleanupTestEnvironment() {
+    await downService(TRAFFIC_SERVICE);
+    await teardown();
+    console.log("Test environment cleaned up");
+}
+
+/**
+ * Удаляет пользователя, если он остался с прошлого прогона: createProxyUser
+ * падает на дубликате имени. deleteUser в API принимает id, а не имя.
+ */
+export async function removeUserIfExists(users: UserApiClient, username: string): Promise<void> {
+    const all = await users.listUsers();
+    const existing = all.find((user) => user.username === username);
+
+    if (existing) {
+        await users.deleteUser(existing.id);
     }
 }
 
-export { CONTAINER_NAME, createAdminSession, apiCall, execAsync, execInContainer, TEST_CONFIG };
+export {
+    CONTAINER_NAME,
+    UserApiClient,
+    apiCall,
+    createAdminSession,
+    execAsync,
+    execInContainer,
+    resetRuntimeState,
+    TEST_CONFIG,
+};

@@ -7,6 +7,7 @@ export default {
         "^@src/(.*)$": "<rootDir>/src/$1"
     },
     testPathIgnorePatterns: ["/node_modules/", "/.next/", "/dist/", "/tests/e2e/"],
+    testRegex: ["/tests/unit/.*\\.test\\.(ts|tsx)$", "/tests/integration/.*\\.db\\.test\\.(ts|tsx)$"],
     transform: {
         "^.+\\.(t|j)sx?$": ["ts-jest", { tsconfig: "tsconfig.json", diagnostics: false }]
     },
@@ -56,6 +57,19 @@ export default {
                 "^@/(.*)$": "<rootDir>/$1",
                 "^@src/(.*)$": "<rootDir>/src/$1",
                 "^@heroui/react$": "<rootDir>/tests/__mocks__/heroui-react.js"
+            },
+            transform: {
+                "^.+\\.(t|j)sx?$": ["ts-jest", { tsconfig: "tsconfig.json", diagnostics: false }]
+            }
+        },
+        {
+            displayName: "integration",
+            testEnvironment: "node",
+            setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+            testMatch: ["<rootDir>/tests/integration/**/*.db.test.ts"],
+            moduleNameMapper: {
+                "^@/(.*)$": "<rootDir>/$1",
+                "^@src/(.*)$": "<rootDir>/src/$1"
             },
             transform: {
                 "^.+\\.(t|j)sx?$": ["ts-jest", { tsconfig: "tsconfig.json", diagnostics: false }]

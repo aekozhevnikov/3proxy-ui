@@ -42,6 +42,23 @@ jest.mock("path", () => ({
     dirname: jest.fn((p: string) => p.split("/").slice(0, -1).join("/"))
 }));
 
+// Роут читает лог через смещения, а не целиком. Сам разбор логов и работа со
+// смещениями покрыты отдельно (tests/integration/lib/traffic-sync.test.ts).
+jest.mock("@/src/lib/traffic-sync", () => ({
+    readSyncState: jest.fn(async () => ({ offsets: {}, existed: true })),
+    writeSyncState: jest.fn(async () => undefined),
+    seedOffsets: jest.fn(() => ({})),
+    identifyLogFile: jest.fn(async () => ({ key: "0:0", size: 0 })),
+    readNewLogContent: jest.fn(async (filePath: string) => {
+        const content = await require("fs").promises.readFile(filePath, "utf-8");
+
+        return {
+            lines: content.split("\n").filter((line: string) => line.trim().length > 0),
+            nextOffset: content.length
+        };
+    })
+}));
+
 const prisma = require("@/src/prisma/db").prisma;
 const fs = require("fs").promises;
 
@@ -97,7 +114,7 @@ describe("maintenance API", () => {
         const mockUser = {
             id: 1,
             username: "testuser",
-            dataUsed: 0,
+            dataUsed: BigInt(0),
             dataLimit: 1000000,
             isActive: true,
             telegramUserId: null,
@@ -130,8 +147,8 @@ describe("maintenance API", () => {
         const mockUser = {
             id: 1,
             username: "limituser",
-            dataUsed: 900000,
-            dataLimit: 1000000,
+            dataUsed: BigInt(0),
+            dataLimit: BigInt(0), // 0 MB limit = 0 bytes, so any traffic exceeds
             isActive: true,
             telegramUserId: null,
             password: "hashed"

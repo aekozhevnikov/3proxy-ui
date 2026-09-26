@@ -19,3 +19,23 @@ node_modules/
 
 # Build artifacts
 .next/
+
+# Root .gitignore excludes "3proxy" and "*.log", which also matches the E2E
+# fixtures. They are test inputs and must be committed.
+!test-fixtures/logs/
+!test-fixtures/logs/*.log
+!test-fixtures/3proxy/
+!test-fixtures/3proxy/3proxy.cfg
+!test-fixtures/3proxy/fail2ban/
+!test-fixtures/3proxy/fail2ban/*.conf
+!test-fixtures/3proxy/users/
+!test-fixtures/3proxy/users/.gitkeep
+!test-fixtures/3proxy/logs/
+!test-fixtures/3proxy/logs/.gitkeep
+
+# Runtime state written by E2E runs stays ignored.
+# 3proxy rotates its log on start, so the directory fills with 3proxy.log.YYYY.MM.DD
+# in addition to 3proxy.log — ignore everything there except the .gitkeep.
+test-fixtures/3proxy/logs/*
+!test-fixtures/3proxy/logs/.gitkeep
+test-fixtures/3proxy/users/.proxyauth

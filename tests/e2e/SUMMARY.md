@@ -6,15 +6,35 @@
 
 ```
 tests/e2e/
-├── traffic-limit.test.ts       # Main test: traffic limit blocking
-├── fail2ban-blocking.test.ts   # Test: IP blocking via fail2ban
-├── index.ts                    # Running all tests
+├── traffic-limit.test.ts       # Entry point: delegates to traffic-limit/run-all.test.ts
+├── fail2ban-blocking.test.ts   # Entry point: delegates to fail2ban-blocking/run-all.test.ts
+├── index.ts                    # Unified runner (traffic | fail2ban | all)
+├── traffic-limit/
+│   ├── run-all.test.ts                 # Suite runner: setup -> tests -> cleanup
+│   ├── shared-setup.ts                 # Environment lifecycle for the traffic stack
+│   ├── real-proxy-traffic-test.ts      # Real requests through 3proxy end to end
+│   ├── traffic-limit-enforcement.test.ts
+│   ├── expiration-deactivation.test.ts
+│   ├── manual-maintenance-test.ts
+│   └── scheduler-test.ts
+├── fail2ban-blocking/
+│   ├── run-all.test.ts                 # Suite runner
+│   ├── shared-mocks.ts                 # Environment lifecycle for the fail2ban stack
+│   ├── log-helper.ts                   # Auth success/failure log entries
+│   ├── regex-validation.test.ts
+│   ├── jail-configuration.test.ts
+│   ├── auth-failure-banning.test.ts
+│   └── legitimate-traffic-ignored.test.ts
 ├── utils/
+│   ├── environment.ts          # Compose lifecycle, paths, state reset
 │   ├── helpers.ts              # Helper functions (Docker, HTTP, wait)
-│   ├── proxy-traffic-generator.ts  # Traffic generator for simulation
-│   ├── user-api.ts             # API client for user management
-│   └── config-checker.ts       # Fail2ban/3proxy configuration check
-├── docker-compose.e2e.yml      # Docker Compose configuration
+│   ├── three-proxy-log.ts      # Log entries in the real 3proxy logformat
+│   ├── proxy-traffic-generator.ts  # Real traffic through the proxy (curl)
+│   └── user-api.ts             # API client for user management
+├── test-fixtures/
+│   ├── logs/                   # Static 3proxy logs for the integration tests
+│   └── 3proxy/                 # 3proxy config + runtime dirs mounted by the stack
+├── docker-compose.e2e.yml      # E2E stack, based on docker-compose.dev.yml
 ├── cleanup-all.sh              # Full cleanup of test artifacts
 ├── verify-setup.sh             # Environment readiness check
 ├── package.json                # Dependencies for E2E tests
@@ -28,31 +48,26 @@ tests/e2e/
 
 ## ✅ What Is Tested
 
-### 1. Traffic Limit Enforcement (`traffic-limit.test.ts`)
+### 1. Traffic suite (`traffic-limit/`)
 
-- ✅ Creating user with traffic limit (100 MB)
-- ✅ Generating traffic by writing to 3proxy.log (JSON format)
-- ✅ Exceeding the limit (110 MB)
-- ✅ Running maintenance endpoint (manual and via scheduler)
-- ✅ User deactivation when limit exceeded
-- ✅ Updating `.proxyauth` file (commenting out deactivated users)
+- ✅ Real requests through 3proxy, log entry produced by 3proxy itself
+- ✅ `dataUsed` in the database reflects the logged traffic
+- ✅ Creating user with traffic limit (100 MB, stored in MB)
+- ✅ Exceeding the limit and deactivation by limit
+- ✅ Updating `.proxyauth` (deactivated user commented out, no active entry left)
 - ✅ Checking `deactivatedAt` timestamp
-- ✅ Sending Telegram notifications (mock)
 - ✅ Deactivation by `expiresAt` expiry
 - ✅ Manual maintenance run via API
-- ✅ Scheduler operation (scheduler) - checking `.proxyauth` file
+- ✅ Scheduler picks up traffic without a manual trigger
 
-### 2. Fail2ban IP Blocking (`fail2ban-blocking.test.ts`)
+### 2. Fail2ban suite (`fail2ban-blocking/`)
 
 - ✅ Checking jail configuration (ports, bantime, findtime, maxretry)
 - ✅ Validating regex pattern failregex (407/403 + <HOST>)
 - ✅ Validating ignoreregex (ignoring 200/00000)
-- ✅ Generating logs with 407 and 403 errors
-- ✅ Waiting for fail2ban processing (sleep 10s)
-- ✅ Checking that IP got banned via `fail2ban-client status`
+- ✅ Waiting for fail2ban to ban the IP
 - ✅ Checking iptables rules (`iptables -L f2b-3proxy-docker`)
-- ✅ Test that legitimate traffic (200/00000) is NOT banned
-- ✅ Checking auto-unban configuration (bantime)
+- ✅ Test that legitimate traffic (00000) is NOT banned
 
 ## 🚀 How to Run
 
@@ -95,28 +110,21 @@ bash tests/e2e/cleanup-all.sh
 
 ### How Tests Work
 
-1. **Build image**: `docker build -t 3proxy-ui:e2e-test .`
-2. **Start container**:
+1. **Bring the stack up** from `docker-compose.e2e.yml` (base is `docker-compose.dev.yml`):
    ```bash
-   docker run -d --name 3proxy-ui-e2e-test \
-     --privileged \
-     -e ENABLE_FAIL2BAN=true \
-     -e FAIL2BAN_BANTIME=30 \
-     -e FAIL2BAN_MAXRETRY=2 \
-     -p 3000:3000 -p 3128:3128 -p 1080:1080 \
-     -v e2e_data:/app/data \
-     -v e2e_logs:/etc/3proxy/logs \
-     -v e2e_fail2ban:/var/lib/fail2ban
+   docker compose -p 3proxy-e2e-test -f tests/e2e/docker-compose.e2e.yml up -d --build 3proxy-ui-e2e
    ```
-3. **Wait for API readiness**: poll `/api/auth/session` up to 120s
-4. **Execute test scenarios**:
-   - Creating users via API (admin auth)
-   - Writing logs directly to container (`docker exec ... echo >> /etc/3proxy/logs/3proxy.log`)
+   `utils/environment.ts` wipes volumes and truncates the runtime logs first, so each run starts
+   from an empty database and empty logs.
+2. **Wait for API readiness**: poll `/api/auth/session`, then confirm an admin session works
+   (the entrypoint seeds `admin`/`admin`).
+3. **Execute test scenarios**:
+   - Creating users via `UserApiClient`
+   - Real requests through 3proxy (`curl -x`) or log entries written into the container
    - Manual maintenance call (`POST /api/users/maintenance`)
-   - Checking user status
-   - Checking `.proxyauth` file
+   - Checking user status, `dataUsed` and the `.proxyauth` file
    - For fail2ban: `fail2ban-client status`, `iptables -L`
-5. **Cleanup**: `docker rm -f`, `docker volume rm`
+4. **Cleanup**: `docker compose down -v` plus a log/proxyauth reset
 
 ### Why E2E Scripts, Not Jest
 
@@ -158,13 +166,12 @@ bash tests/e2e/cleanup-all.sh
 
 #### Traffic Limit
 - [x] User creation
-- [x] Traffic accumulation from logs
+- [x] Real traffic through 3proxy and its accumulation from logs
 - [x] Limit exceeded → deactivation
 - [x] Writing to `.proxyauth` (commenting)
-- [x] Telegram notification (mock)
 - [x] Deactivation by `expiresAt`
 - [x] Manual maintenance run
-- [x] Automatic scheduler (waiting)
+- [x] Automatic scheduler (asserted: `dataUsed` grows without a manual trigger)
 
 #### Fail2ban
 - [x] Jail configuration (ports, limits)
@@ -172,7 +179,6 @@ bash tests/e2e/cleanup-all.sh
 - [x] IP ban after N 407/403 errors
 - [x] iptables check
 - [x] Ignoring 200/00000
-- [x] Automatic unban after bantime
 
 #### API
 - [x] /api/admin/users (CRUD)
@@ -180,25 +186,30 @@ bash tests/e2e/cleanup-all.sh
 - [x] JWT authentication flow
 - [x] Database assertions
 
-### Not Covered (will be unit tests)
+### Covered by unit/integration tests instead
 
-- [ ] Unit tests for `scheduler.ts` (node-cron mock)
-- [ ] Unit tests for `maintenance` endpoint (prisma mock)
-- [ ] Unit tests for `log-parser.ts` (different log formats)
-- [ ] Unit tests for `proxy-config.ts` (config generation)
+- [x] `log-parser.ts` — different log formats (`tests/unit/core/log-parser/`)
+- [x] `traffic-parser.ts` — JSON and text log formats, including rotated files
+- [x] `maintenance` endpoint and `processTrafficLimits` — prisma mocked / real SQLite
+- [x] BigInt precision of `dataUsed` (`tests/integration/lib/maintenance.db.test.ts`)
+
+### Not Covered
+
 - [ ] React components (UI tests)
+- [ ] fail2ban automatic unban after `bantime` expires (only the configured value is asserted)
 
 ## 📝 How to Add a New Test
 
-1. Create file in `tests/e2e/` or `tests/e2e/your-test.test.ts`
-2. Use utilities from `utils/`:
+1. Create a file in `tests/e2e/traffic-limit/` or `tests/e2e/fail2ban-blocking/`
+2. Export a single `test*` function; do not run anything on import
+3. Use the utilities from `utils/` and the suite's `shared-*` module:
    ```typescript
-   import { createAdminSession, apiCall, execInContainer } from './utils/helpers';
+   import { createAdminSession, apiCall, execInContainer } from "../utils/helpers.js";
+   import { appendLogEntry, buildLogEntry } from "../utils/three-proxy-log.js";
    ```
-3. Write async functions with `console.log` for status
-4. Use `throw new Error('...')` for assertions
-5. Add description to `README.md` and `SUMMARY.md`
-6. Add script to `package.json` if needed
+4. Use `throw new Error("...")` for assertions
+5. Register the test in the suite's `run-all.test.ts`
+6. Add a description to `README.md` and `SUMMARY.md`
 
 ## 🔍 Debugging
 
@@ -220,10 +231,10 @@ tail -f /etc/3proxy/logs/3proxy.log
 fail2ban-client status 3proxy-docker
 
 # Check databases
-sqlite3 /app/data/test.db "SELECT username, isActive, dataUsed, dataLimit FROM proxyUser;"
+sqlite3 /app/data/e2e.db "SELECT username, isActive, dataUsed, dataLimit FROM proxyUser;"
 
 # Check .proxyauth
-cat /app/3proxy/users/.proxyauth
+cat /etc/3proxy/users/.proxyauth
 ```
 
 ### View Container Logs

@@ -1,7 +1,19 @@
 import { exec } from "child_process";
-import { promisify } from "util";
 
-const execAsync = promisify(exec);
+// Сборка образа и вывод compose легко превышают дефолтный maxBuffer в 1 МБ,
+// из-за чего exec падает на ECONNRESET/ENOBUFS на длинном выводе.
+const execAsync = (command: string): Promise<{ stdout: string; stderr: string }> =>
+    new Promise((resolve, reject) => {
+        exec(command, { maxBuffer: 32 * 1024 * 1024 }, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+
+                return;
+            }
+
+            resolve({ stdout, stderr });
+        });
+    });
 
 // Test configuration
 const TEST_CONFIG = {
@@ -11,12 +23,18 @@ const TEST_CONFIG = {
     testUser: {
         username: "e2etestuser",
         password: "TestPassword123!",
-        dataLimit: 104857600, // 100 MB in bytes
+        dataLimit: 100, // Поля dataLimit хранится в МБ (см. user-form.ts)
         telegramUserId: "123456789"
+    },
+    expiredUser: {
+        username: "expiredtestuser",
+        password: "TestPassword123!",
+        dataLimit: 100,
+        telegramUserId: "123456790"
     },
     adminUser: {
         username: "admin",
-        password: "admin123"
+        password: "admin"
     }
 };
 
@@ -84,24 +102,30 @@ async function waitForService(url: string, timeout = 60000): Promise<void> {
 }
 
 // Helper: Create admin session
+// Приложение авторизуется cookie-сессией (currentSession() читает cookie "session"),
+// поэтому логин возвращает JWT в Set-Cookie, а не в теле ответа.
 async function createAdminSession(): Promise<string> {
-    const loginData = new URLSearchParams();
-    loginData.append("username", TEST_CONFIG.adminUser.username);
-    loginData.append("password", TEST_CONFIG.adminUser.password);
-
-    const response = await httpRequest(`${TEST_CONFIG.apiUrl}/api/auth/login`, {
+    const response = await fetch(`${TEST_CONFIG.apiUrl}/api/auth/login`, {
         method: "POST",
-        body: loginData,
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            username: TEST_CONFIG.adminUser.username,
+            password: TEST_CONFIG.adminUser.password
+        }),
+        signal: AbortSignal.timeout(10000)
     });
 
-    if (!isHttpResponse(response) || !response.success || !response.token) {
-        throw new Error("Failed to create admin session");
+    if (!response.ok) {
+        throw new Error(`Admin login failed with status ${response.status}`);
     }
 
-    return response.token;
+    const sessionCookie = response.headers.get("set-cookie")?.match(/session=([^;]+)/)?.[1];
+
+    if (!sessionCookie) {
+        throw new Error("Login succeeded but no session cookie was returned");
+    }
+
+    return sessionCookie;
 }
 
 // Helper: API call with auth (always returns HttpResponse)
@@ -112,7 +136,7 @@ async function apiCall(
     body?: Record<string, unknown>
 ): Promise<HttpResponse> {
     const headers: Record<string, string> = {
-        Authorization: `Bearer ${token}`
+        Cookie: `session=${token}`
     };
 
     if (body) {
@@ -131,32 +155,9 @@ async function apiCall(
     return { text: result };
 }
 
-// Helper: Generate traffic through proxy
-async function generateTrafficViaProxy(
-    url: string,
-    proxy: string,
-    bytesToSend: number = 1024 * 1024 // 1MB default
-): Promise<{ sent: number; received: number }> {
-    // Generate random data
-    const data = new Uint8Array(bytesToSend);
-    for (let i = 0; i < bytesToSend; i++) {
-        data[i] = Math.floor(Math.random() * 256);
-    }
-
-    // For simplicity in E2E tests, we'll skip actual proxy traffic generation
-    // and instead rely on manually writing to the log file as done in the test
-    // This avoids complex proxy configuration in the test environment
-
-    const sent = bytesToSend;
-    // Simulate receiving some data (echo server behavior)
-    const received = Math.floor(bytesToSend * 0.8); // 80% echo
-
-    return { sent, received };
-}
-
 // Helper: Wait for container command
 async function execInContainer(containerName: string, command: string): Promise<string> {
-    const fullCmd = `docker exec ${containerName} sh -c "${command}"`;
+    const fullCmd = `docker exec ${containerName} sh -c "${encodeCommand(command)}"`;
     try {
         const { stdout, stderr } = await execAsync(fullCmd);
         if (stderr) {
@@ -170,7 +171,21 @@ async function execInContainer(containerName: string, command: string): Promise<
     }
 }
 
-interface Fail2banStatus {
+// Команды содержат JSON лога 3proxy с двойными кавычками, поэтому их нельзя
+// вставлять в sh -c "..." напрямую — вложенное экранирование ломает парсинг.
+// Передаём команду в base64 и декодируем уже внутри контейнера.
+function encodeCommand(command: string): string {
+    const encoded = Buffer.from(command, "utf-8").toString("base64");
+
+    return `echo ${encoded} | base64 -d | sh`;
+}
+
+// Helper: Run a command in the background inside the container
+async function execInContainerDetached(containerName: string, command: string): Promise<void> {
+    await execAsync(`docker exec -d ${containerName} sh -c "${encodeCommand(command)}"`);
+}
+
+export interface Fail2banStatus {
     bannedIPs: string[];
     totalBanned: number;
     currentlyBanned: number;
@@ -208,39 +223,14 @@ async function getFail2banStatus(containerName: string, jailName: string = "3pro
     }
 }
 
-// Helper: Wait for maintenance to complete
-async function waitForMaintenance(
-    token: string,
-    timeout = 120000,
-    checkInterval = 5000
-): Promise<HttpResponse> {
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < timeout) {
-        try {
-            // Trigger maintenance manually
-            const result = await apiCall(token, "/api/users/maintenance", "POST", {});
-            if (isHttpResponse(result) && result.success) {
-                return result;
-            }
-        } catch (error) {
-            console.warn("Maintenance not ready yet:", error);
-        }
-        await new Promise((resolve) => setTimeout(resolve, checkInterval));
-    }
-
-    throw new Error(`Maintenance did not complete successfully within ${timeout}ms`);
-}
-
 export {
     TEST_CONFIG,
     isHttpResponse,
     waitForService,
     createAdminSession,
     apiCall,
-    generateTrafficViaProxy,
     execInContainer,
+    execInContainerDetached,
     getFail2banStatus,
-    waitForMaintenance,
     execAsync
 };

@@ -2,7 +2,7 @@
  * API client for admin operations
  */
 
-import { apiCall, createAdminSession, isHttpResponse } from "./helpers.js";
+import { apiCall, createAdminSession } from "./helpers.js";
 
 export interface UserData {
     username: string;
@@ -54,7 +54,7 @@ function asProxyUserList(obj: unknown): ProxyUser[] {
     throw new Error(`Invalid ProxyUser list data: ${JSON.stringify(obj)}`);
 }
 
-class UserApiClient {
+export class UserApiClient {
     private token: string | null = null;
 
     async ensureAuthenticated(): Promise<void> {
@@ -72,42 +72,47 @@ class UserApiClient {
             data as unknown as Record<string, unknown>
         );
 
-        if (!isHttpResponse(result) || !result.success) {
-            throw new Error(`Failed to create user: ${isHttpResponse(result) ? result.error : String(result)}`);
+        if (!result.success) {
+            throw new Error(`Failed to create user: ${result.error ?? JSON.stringify(result)}`);
         }
 
-        return asProxyUser(result);
+        return asProxyUser(result.user);
     }
 
     async getUser(id: number): Promise<ProxyUser> {
         await this.ensureAuthenticated();
         const result = await apiCall(this.token!, `/api/admin/users/${id}`);
 
-        return asProxyUser(result);
+        if (result.error) {
+            throw new Error(`Failed to get user ${id}: ${result.error}`);
+        }
+
+        return asProxyUser(result.user);
     }
 
     async updateUser(id: number, data: Partial<UserData>): Promise<ProxyUser> {
         await this.ensureAuthenticated();
+        // Роут обновления объявлен на PUT, PATCH вернёт 405.
         const result = await apiCall(
             this.token!,
             `/api/admin/users/${id}`,
-            "PATCH",
+            "PUT",
             data as unknown as Record<string, unknown>
         );
 
-        if (!isHttpResponse(result) || !result.success) {
-            throw new Error(`Failed to update user: ${isHttpResponse(result) ? result.error : String(result)}`);
+        if (!result.success) {
+            throw new Error(`Failed to update user: ${result.error ?? JSON.stringify(result)}`);
         }
 
-        return asProxyUser(result);
+        return asProxyUser(result.user);
     }
 
     async deleteUser(id: number): Promise<void> {
         await this.ensureAuthenticated();
         const result = await apiCall(this.token!, `/api/admin/users/${id}`, "DELETE");
 
-        if (!isHttpResponse(result) || !result.success) {
-            throw new Error(`Failed to delete user: ${isHttpResponse(result) ? result.error : String(result)}`);
+        if (!result.success) {
+            throw new Error(`Failed to delete user: ${result.error ?? JSON.stringify(result)}`);
         }
     }
 
@@ -115,24 +120,24 @@ class UserApiClient {
         await this.ensureAuthenticated();
         const result = await apiCall(this.token!, "/api/admin/users");
 
-        if (!Array.isArray(result)) {
-            throw new Error("Failed to fetch users list");
+        if (!Array.isArray(result.users)) {
+            throw new Error(`Failed to fetch users list: ${JSON.stringify(result)}`);
         }
 
-        return asProxyUserList(result);
+        return asProxyUserList(result.users);
     }
 
     async triggerMaintenance(): Promise<{ updatedCount: number; deactivatedCount: number }> {
         await this.ensureAuthenticated();
         const result = await apiCall(this.token!, "/api/users/maintenance", "POST", {});
 
-        if (!isHttpResponse(result) || !result.success) {
-            throw new Error(`Maintenance failed: ${isHttpResponse(result) ? result.error : String(result)}`);
+        if (!result.success) {
+            throw new Error(`Maintenance failed: ${result.error ?? JSON.stringify(result)}`);
         }
 
         return {
-            updatedCount: result.updatedCount as unknown as number,
-            deactivatedCount: result.deactivatedCount as unknown as number
+            updatedCount: Number(result.updatedCount ?? 0),
+            deactivatedCount: Number(result.deactivatedCount ?? 0)
         };
     }
 }

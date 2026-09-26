@@ -1,41 +1,26 @@
 /**
  * E2E Test: Legitimate Traffic Ignored
- * Verifies that successful responses (200/00000) do NOT trigger fail2ban banning
+ * Успешные запросы (код 00000) не должны приводить к бану IP.
  */
-
-import { getFail2banStatus } from "./shared-mocks.js";
+import { getFail2banStatus } from "../utils/helpers.js";
+import { appendSuccess, sleep } from "./log-helper.js";
 import { CONTAINER_NAME, LEGIT_IP } from "./shared-mocks.js";
-import { appendLog, sleep } from "./log-helper";
 
-async function testLegitimateTrafficIgnored() {
-    for (let i = 0; i < 5; i++) {
-        await appendLog("200", {
-            ip: LEGIT_IP,
-            username: "legituser",
-            bytesSent: 1024,
-            bytesReceived: 2048,
-            message: "OK"
-        });
-        await appendLog("00000", {
-            ip: LEGIT_IP,
-            username: "legituser",
-            bytesSent: 1024,
-            bytesReceived: 2048,
-            message: "OK"
-        });
-        await sleep(500);
+const REQUESTS = 5;
+
+export async function testLegitimateTrafficIgnored(): Promise<void> {
+    // Заметно больше запросов, чем maxretry, — иначе проверка ничего не значит.
+    for (let i = 0; i < REQUESTS; i++) {
+        await appendSuccess();
+        await sleep(300);
     }
 
-    await sleep(5000);
+    // Даём fail2ban время прочитать лог и обновить бан-лист.
+    await sleep(10000);
 
     const status = await getFail2banStatus(CONTAINER_NAME);
 
     if (status.bannedIPs?.includes(LEGIT_IP)) {
-        throw new Error(`Legitimate IP ${LEGIT_IP} should NOT be banned`);
+        throw new Error(`Legitimate IP ${LEGIT_IP} should NOT be banned. Status: ${JSON.stringify(status)}`);
     }
 }
-
-testLegitimateTrafficIgnored().catch((error) => {
-    console.error("Legitimate traffic ignored test failed:", error);
-    process.exit(1);
-});

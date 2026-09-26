@@ -1,81 +1,79 @@
 /**
  * E2E Test: Traffic Limit Enforcement
- * Tests user deactivation when traffic exceeds data limit
+ *
+ * Пользователь с лимитом 100 МБ получает запись лога сверх лимита,
+ * после чего maintenance деактивирует его и комментирует запись в .proxyauth.
  */
+import { PROXYAUTH_CONTAINER_PATH } from "../utils/environment.js";
+import { appendLogEntry, buildLogEntry } from "../utils/three-proxy-log.js";
+import { CONTAINER_NAME, execInContainer, removeUserIfExists, TEST_CONFIG, UserApiClient } from "./shared-setup.js";
 
-import {
-    CONTAINER_NAME,
-    createAdminSession,
-    apiCall,
-    execInContainer,
-    TEST_CONFIG,
-} from "./shared-setup.js";
+const MB = 1024 * 1024;
 
-async function testTrafficLimitEnforcement() {
-    const adminToken = await createAdminSession();
+export async function testTrafficLimitEnforcement(): Promise<void> {
+    const users = new UserApiClient();
+    const { username, password } = TEST_CONFIG.testUser;
 
-    const createUserData = {
-        username: TEST_CONFIG.testUser.username,
-        password: TEST_CONFIG.testUser.password,
+    await removeUserIfExists(users, username);
+
+    const created = await users.createUser({
+        username,
+        password,
         dataLimit: TEST_CONFIG.testUser.dataLimit,
-        ipLimit: 1,
-        telegramUserId: TEST_CONFIG.testUser.telegramUserId,
-        isActive: true,
-    };
+        ipLimit: 0,
+        isActive: true
+    });
 
-    const createResult = await apiCall(adminToken, "/api/admin/users", "POST", createUserData);
-    if (!createResult.success) {
-        throw new Error(`Failed to create test user: ${createResult.error || JSON.stringify(createResult)}`);
-    }
-
-    const userCheck = await apiCall(adminToken, `/api/admin/users/${createResult.id}`);
-    if (!userCheck.isActive) {
+    if (!created.isActive) {
         throw new Error("User should be active after creation");
     }
 
-    const totalTraffic = 110 * 1024 * 1024; // 110 MB
+    const limitBytes = TEST_CONFIG.testUser.dataLimit * MB;
+    // 110 МБ — с запасом над лимитом в 100 МБ
+    const trafficBytes = 110 * MB;
 
-    const timestamp = Math.floor(Date.now() / 1000);
-    const logEntry =
-        JSON.stringify({
-            time_unix: timestamp,
-            proxy: { "type:": "HTTP", port: 3128 },
-            auth: { user: TEST_CONFIG.testUser.username },
-            bytes: { sent: totalTraffic, received: 0 },
-        }) + "\n";
+    await appendLogEntry(
+        CONTAINER_NAME,
+        buildLogEntry({
+            user: username,
+            sent: trafficBytes,
+            received: 0,
+            clientIp: "192.168.1.100",
+            clientPort: 54321,
+            serverIp: "93.184.216.34",
+            serverPort: 443,
+            hostname: "secure.example.com",
+            message: "CONNECT secure.example.com:443"
+        })
+    );
 
-    await execInContainer(CONTAINER_NAME, `sh -c "echo '${logEntry}' >> /etc/3proxy/logs/3proxy.log"`);
-
-    const maintenanceResult = await apiCall(adminToken, "/api/users/maintenance", "POST", {});
-    if (!maintenanceResult.success) {
-        throw new Error(`Maintenance failed: ${maintenanceResult.error}`);
+    const result = await users.triggerMaintenance();
+    if (result.updatedCount < 1) {
+        throw new Error("Maintenance did not update any user");
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    const userAfter = await apiCall(adminToken, `/api/admin/users/${createResult.id}`);
-    if (userAfter.isActive) {
-        throw new Error(`User should be deactivated. Data used: ${userAfter.dataUsed}, limit: ${userAfter.dataLimit}`);
+    const after = await users.getUser(created.id);
+    if (after.isActive) {
+        throw new Error(`User should be deactivated. dataUsed: ${after.dataUsed}, limit: ${after.dataLimit} MB`);
+    }
+    if (after.dataUsed < limitBytes) {
+        throw new Error(`dataUsed ${after.dataUsed} is below the ${limitBytes} byte limit`);
+    }
+    if (!after.deactivatedAt) {
+        throw new Error("deactivatedAt should be set after limit-based deactivation");
     }
 
-    const proxyauthContent = await execInContainer(CONTAINER_NAME, "cat /app/3proxy/users/.proxyauth");
+    const proxyauth = await execInContainer(CONTAINER_NAME, `cat ${PROXYAUTH_CONTAINER_PATH}`);
+    const deactivatedLine = proxyauth
+        .split("\n")
+        .find((line: string) => line.startsWith("# DEACTIVATED") && line.includes(`${username}:`));
 
-    if (!proxyauthContent.includes(`# DEACTIVATED`)) {
-        if (proxyauthContent.match(new RegExp(`^${TEST_CONFIG.testUser.username}:`))) {
-            throw new Error("Deactivated user should be commented in .proxyauth");
-        }
+    if (!deactivatedLine) {
+        throw new Error(`Deactivated user should be commented in .proxyauth, got:\n${proxyauth}`);
     }
 
-    const activePattern = new RegExp(`^${TEST_CONFIG.testUser}:`, "m");
-    if (
-        !activePattern.test(proxyauthContent) &&
-        !proxyauthContent.includes(`# DEACTIVATED ${TEST_CONFIG.testUser.username}`)
-    ) {
-        throw new Error("User not found in .proxyauth (expected as commented deactivated entry)");
+    const activeLine = proxyauth.split("\n").find((line: string) => line.startsWith(`${username}:`));
+    if (activeLine) {
+        throw new Error(`Deactivated user must not have an active entry in .proxyauth: ${activeLine}`);
     }
 }
-
-testTrafficLimitEnforcement().catch((error) => {
-    console.error("Traffic limit enforcement test failed:", error);
-    process.exit(1);
-});

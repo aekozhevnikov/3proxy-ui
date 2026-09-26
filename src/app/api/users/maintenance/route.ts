@@ -8,8 +8,7 @@ import { findLogsDir, clearLogsDirCache } from "@/src/lib/logs-finder";
 import { parseTrafficLogs } from "@/src/lib/traffic-parser";
 import { updateProxyauthFile } from "@/src/lib/proxyauth-writer";
 import { processTrafficLimits, processExpiration } from "@/src/lib/maintenance";
-
-const SYNC_INFO_FILE = process.env.SYNC_INFO_FILE || path.join(process.cwd(), "data", "traffic-sync.json");
+import { identifyLogFile, readNewLogContent, readSyncState, seedOffsets, writeSyncState } from "@/src/lib/traffic-sync";
 
 export async function POST(request: Request): Promise<Response> {
     try {
@@ -17,6 +16,7 @@ export async function POST(request: Request): Promise<Response> {
         let updatedCount = 0;
         let totalTraffic = 0;
         let deactivatedCount = 0;
+        let sourceFile = "no logs";
 
         clearLogsDirCache();
 
@@ -40,31 +40,73 @@ export async function POST(request: Request): Promise<Response> {
             const logFiles = files.filter((file) => file.startsWith("3proxy.log") || file.endsWith(".log"));
 
             if (logFiles.length > 0) {
-                const fileStats = await Promise.all(
-                    logFiles.map(async (file) => {
-                        const stats = await fs.stat(path.join(logsDir, file));
+                const identities: { name: string; key: string; size: number }[] = [];
 
-                        return { name: file, mtime: stats.mtime };
-                    })
-                );
+                for (const name of logFiles) {
+                    try {
+                        const { key, size } = await identifyLogFile(path.join(logsDir, name));
 
-                fileStats.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
-                const latestLog = fileStats[0].name;
-                const latestLogPath = path.join(logsDir, latestLog);
-                const content = await fs.readFile(latestLogPath, "utf-8");
-                const lines = content.split("\n");
+                        identities.push({ name, key, size });
+                    } catch {
+                        // Файл мог исчезнуть между readdir и stat
+                    }
+                }
 
-                const { trafficMap } = parseTrafficLogs(lines);
+                if (identities.length > 0) {
+                    const state = await readSyncState();
 
-                const trafficResult = await processTrafficLimits({ trafficMap, now });
+                    // Обновление со старой версии: файл состояния есть, а смещений
+                    // в нём нет — накопленная история уже учтена прежним кодом,
+                    // её нужно пропустить. Чистый старт читает лог с нуля.
+                    const offsets = state.offsets ?? (state.existed ? seedOffsets(identities) : {});
+                    let contributor = "";
 
-                updatedCount += trafficResult.updatedCount;
-                deactivatedCount += trafficResult.deactivatedCount;
-                totalTraffic += trafficResult.totalTraffic;
+                    try {
+                        for (const file of identities) {
+                            const { lines, nextOffset } = await readNewLogContent(
+                                path.join(logsDir, file.name),
+                                offsets[file.key],
+                                file.size
+                            );
 
-                logger.debug(
-                    `[maintenance] Traffic sync: ${trafficResult.updatedCount} users updated from ${latestLog}, total traffic: ${trafficResult.totalTraffic} bytes`
-                );
+                            offsets[file.key] = nextOffset;
+
+                            if (lines.length === 0) continue;
+
+                            const { trafficMap } = parseTrafficLogs(lines);
+
+                            const trafficResult = await processTrafficLimits({ trafficMap, now });
+
+                            updatedCount += trafficResult.updatedCount;
+                            deactivatedCount += trafficResult.deactivatedCount;
+                            totalTraffic += trafficResult.totalTraffic;
+
+                            if (trafficResult.totalTraffic > 0) {
+                                contributor = file.name;
+                            }
+
+                            logger.debug(
+                                `[maintenance] Traffic sync: ${trafficResult.updatedCount} users updated from ${file.name}, total traffic: ${trafficResult.totalTraffic} bytes`
+                            );
+                        }
+                    } finally {
+                        // Состояние сохраняется даже при ошибке: смещения уже
+                        // обработанных файлов отражают реально учтённые байты, и
+                        // lastSync не должен замирать из-за одной ошибки —
+                        // иначе следующий прогон не сможет продолжить учёт.
+                        sourceFile = contributor || identities[0].name;
+
+                        await writeSyncState({
+                            ...state,
+                            offsets,
+                            lastSync: now.toISOString(),
+                            updatedCount,
+                            deactivatedCount,
+                            totalTraffic,
+                            sourceFile
+                        });
+                    }
+                }
             }
         }
 
@@ -74,30 +116,13 @@ export async function POST(request: Request): Promise<Response> {
 
         const proxyStats = await updateProxyauthFile();
 
-        try {
-            await fs.mkdir(path.dirname(SYNC_INFO_FILE), { recursive: true });
-            await fs.writeFile(
-                SYNC_INFO_FILE,
-                JSON.stringify({
-                    lastSync: now.toISOString(),
-                    updatedCount,
-                    deactivatedCount: proxyStats.deactivatedCount + deactivatedCount,
-                    sourceFile: logsDir
-                        ? (await fs.readdir(logsDir)).find((f) => f.startsWith("3proxy.log")) || "unknown"
-                        : "no logs"
-                })
-            );
-        } catch (err) {
-            logger.error("[maintenance] Failed to write sync info file:", err);
-        }
-
         return NextResponse.json({
             success: true,
             message: `Maintenance completed`,
             updatedCount,
             deactivatedCount: proxyStats.deactivatedCount + deactivatedCount,
             totalTraffic,
-            sourceFile: logsDir ? (await fs.readdir(logsDir)).find((f) => f.startsWith("3proxy.log")) : "none"
+            sourceFile
         });
     } catch (error) {
         logger.error("[maintenance] Failed:", error);

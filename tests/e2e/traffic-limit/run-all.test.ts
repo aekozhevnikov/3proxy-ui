@@ -1,57 +1,74 @@
 /**
  * E2E Test Runner: Traffic Limit
- * Orchestrates all traffic-limit E2E tests with proper setup and cleanup
+ *
+ * Поднимает окружение один раз, выполняет тесты последовательно и честно
+ * считает результат: упавший тест идёт в failed и не маскируется следующими.
+ * Возвращает код выхода процесса.
  */
+import { pathToFileURL } from "url";
 
-import { setupTestEnvironment, cleanupTestEnvironment } from "./shared-setup.js";
-import "./traffic-limit-enforcement.test.ts";
-import "./expiration-deactivation.test.ts";
-import "./manual-maintenance-test.ts";
-import "./scheduler-test.ts";
+import { cleanupTestEnvironment, setupTestEnvironment } from "./shared-setup.js";
+import { testRealProxyTraffic } from "./real-proxy-traffic-test.js";
+import { testTrafficLimitEnforcement } from "./traffic-limit-enforcement.test.js";
+import { testExpirationDeactivation } from "./expiration-deactivation.test.js";
+import { testManualMaintenanceTrigger } from "./manual-maintenance-test.js";
+import { testScheduler } from "./scheduler-test.js";
 
-async function runAllTests() {
+const TESTS: { name: string; run: () => Promise<void> }[] = [
+    { name: "Real Proxy Traffic", run: testRealProxyTraffic },
+    { name: "Traffic Limit Enforcement", run: testTrafficLimitEnforcement },
+    { name: "Expiration Deactivation", run: testExpirationDeactivation },
+    { name: "Manual Maintenance Trigger", run: testManualMaintenanceTrigger },
+    { name: "Scheduler Execution", run: testScheduler }
+];
+
+export async function runAll(): Promise<number> {
     let passed = 0;
-    let failed = 0;
-    const errors: Error[] = [];
-
-    const tests = [
-        { name: "Traffic Limit Enforcement", testFile: "./traffic-limit-enforcement.test.ts" },
-        { name: "Expiration Deactivation", testFile: "./expiration-deactivation.test.ts" },
-        { name: "Manual Maintenance Trigger", testFile: "./manual-maintenance-test.ts" },
-        { name: "Scheduler Execution", testFile: "./scheduler-test.ts" },
-    ];
+    const failures: { name: string; error: unknown }[] = [];
 
     try {
         await setupTestEnvironment();
+    } catch (error) {
+        console.error("\nTest setup failed:", error instanceof Error ? error.message : String(error));
+        await cleanupTestEnvironment();
 
-        for (const test of tests) {
+        return 1;
+    }
+
+    try {
+        for (const test of TESTS) {
+            const startedAt = Date.now();
+
             try {
-                // Each test runner executes on import
+                await test.run();
                 passed++;
-            } catch (error: unknown) {
-                const message = error instanceof Error ? error.message : "Unknown error";
-                console.error(`❌ ${test.name} FAILED:`, message);
-                failed++;
-                errors.push(error instanceof Error ? error : new Error(String(error)));
+                console.log(`PASS ${test.name} (${Date.now() - startedAt}ms)`);
+            } catch (error) {
+                failures.push({ name: test.name, error });
+                console.error(`FAIL ${test.name}:`, error instanceof Error ? error.message : String(error));
             }
         }
-    } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "Unknown error";
-        console.error("\n❌ Test setup failed:", message);
-        failed++;
-        errors.push(error instanceof Error ? error : new Error(String(error)));
     } finally {
         await cleanupTestEnvironment();
     }
 
-    if (failed > 0) {
-        process.exit(1);
-    } else {
-        process.exit(0);
+    console.log(`\n${passed}/${TESTS.length} passed`);
+
+    for (const failure of failures) {
+        console.error(`\n--- ${failure.name} ---`);
+        console.error(failure.error);
     }
+
+    return failures.length === 0 ? 0 : 1;
 }
 
-runAllTests().catch((error) => {
-    console.error("Test runner crashed:", error);
-    process.exit(1);
-});
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (invokedDirectly) {
+    runAll()
+        .then((code) => process.exit(code))
+        .catch((error) => {
+            console.error("Runner failed:", error);
+            process.exit(1);
+        });
+}

@@ -1,55 +1,110 @@
-version: '3.8'
+# E2E-окружение 3proxy-ui.
+# База — docker-compose.dev.yml: те же сервисы, те же env-переменные и тома.
+# Отличия только тестовые: контейнеры и тома переименованы, БД изолирована,
+# build context указан относительно этого файла (tests/e2e -> корень проекта).
+#
+# Сервисы 3proxy-ui-e2e и 3proxy-ui-e2e-fail2ban не поднимаются одновременно:
+# оба публикуют порт 3000. Запускаются выборочно:
+#   docker compose -f tests/e2e/docker-compose.e2e.yml up -d 3proxy-ui-e2e
+#   docker compose -f tests/e2e/docker-compose.e2e.yml up -d 3proxy-ui-e2e-fail2ban
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: test
+  3proxy:
+    image: 3proxy/3proxy:0.9.5
+    container_name: 3proxy-e2e-3proxy
+    restart: unless-stopped
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  3proxy-ui-e2e:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-      args:
-        PROXY_DOMAIN: test.local
-        HTTP_PORT: 3128
-        SOCKS_PORT: 1080
-        JWT_SECRET: test-secret-key-minimum-32-characters-long
-    environment:
-      - DATABASE_URL=file:/app/data/test.db
-      - NEXT_PUBLIC_API_URL=http://localhost:3000
-      - API_URL=http://localhost:3000
-      - JWT_SECRET=test-secret-key-minimum-32-characters-long
-      - ENABLE_FAIL2BAN=true
-      - FAIL2BAN_BANTIME=60
-      - FAIL2BAN_FINDTIME=10
-      - FAIL2BAN_MAXRETRY=2
-      - TRAFFIC_SYNC_INTERVAL=*/1 * * * *
-    ports:
-      - "3000:3000"
       - "3128:3128"
       - "1080:1080"
+      - "8088:8088"  # admin web panel
+    volumes:
+      - ./test-fixtures/3proxy:/etc/3proxy
+
+  # Трафик, лимиты, деактивация, scheduler
+  3proxy-ui-e2e:
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+    container_name: 3proxy-ui-e2e-test
+    ports:
+      - "3000:3000"   # Web UI
+    environment:
+      - JWT_SECRET=test-secret-key-minimum-32-characters-long
+      - PROXY_DOMAIN=test.local
+      - HTTP_PORT=3128
+      - SOCKS_PORT=1080
+      - DATABASE_URL=file:/app/data/e2e.db
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - API_URL=http://host.docker.internal:3000
+      - ENABLE_FAIL2BAN=false
+      - HOST=0.0.0.0
+      - LOGS_DIR=/etc/3proxy/logs
+      - PROXYAUTH_PATH=/etc/3proxy/users/.proxyauth
+      - PROXY_CONTAINER_NAME=3proxy-e2e-3proxy
+      - PROXY_HOST=3proxy-e2e-3proxy
+      - TRAFFIC_SYNC_INTERVAL=*/2 * * * *
     volumes:
       - e2e_data:/app/data
-      - e2e_logs:/etc/3proxy/logs
-      - e2e_fail2ban:/var/lib/fail2ban
+      - ./test-fixtures/3proxy:/etc/3proxy
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
-      - postgres
-    command: >
-      sh -c "
-        echo 'Waiting for services...' &&
-        sleep 5 &&
-        echo 'Starting E2E test instance...' &&
-        /entrypoint.sh
-      "
+      - 3proxy
+    # На GitHub Actions (Linux) host.docker.internal не резолвится сам,
+    # а через него планировщик ходит в собственный API.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    init: true
+
+  # Блокировка IP через fail2ban: нужны iptables и отдельный том jail
+  3proxy-ui-e2e-fail2ban:
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+    container_name: 3proxy-ui-e2e-fail2ban
+    ports:
+      - "3000:3000"   # Web UI
+    environment:
+      - JWT_SECRET=test-secret-key-minimum-32-characters-long
+      - PROXY_DOMAIN=test.local
+      - HTTP_PORT=3128
+      - SOCKS_PORT=1080
+      - DATABASE_URL=file:/app/data/fail2ban.db
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - API_URL=http://host.docker.internal:3000
+      - ENABLE_FAIL2BAN=true
+      - FAIL2BAN_MAXRETRY=2
+      - FAIL2BAN_BANTIME=30
+      - FAIL2BAN_FINDTIME=10
+      - HOST=0.0.0.0
+      - LOGS_DIR=/etc/3proxy/logs
+      - PROXYAUTH_PATH=/etc/3proxy/users/.proxyauth
+      - PROXY_CONTAINER_NAME=3proxy-e2e-3proxy
+      - PROXY_HOST=3proxy-e2e-3proxy
+      - TRAFFIC_SYNC_INTERVAL=*/2 * * * *
+    volumes:
+      - e2e_fail2ban_data:/app/data
+      - ./test-fixtures/3proxy:/etc/3proxy
+      - e2e_fail2ban_jail:/var/lib/fail2ban
+      # docker.sock намеренно не монтируется: тесты этого набора не создают
+      # пользователей и не перезагружают конфиг 3proxy, поэтому код, который
+      # ходит в Docker (src/core/docker.ts), здесь не вызывается. Сокет даёт
+      # контейнеру полный контроль над Docker-хостом — для проверки банов это
+      # не требуется.
+    depends_on:
+      - 3proxy
+    # fail2ban правит правила iptables, для чего достаточно NET_ADMIN.
+    # Полный privileged даёт все capabilities и доступ к устройствам, что
+    # здесь не нужно.
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    # На GitHub Actions (Linux) host.docker.internal не резолвится сам,
+    # а через него планировщик ходит в собственный API.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    init: true
 
 volumes:
-  postgres_data:
   e2e_data:
-  e2e_logs:
-  e2e_fail2ban:
+  e2e_fail2ban_data:
+  e2e_fail2ban_jail:

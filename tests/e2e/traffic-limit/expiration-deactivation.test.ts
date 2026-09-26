@@ -1,49 +1,52 @@
 /**
  * E2E Test: Expiration Deactivation
- * Tests user deactivation when subscription expires
+ *
+ * createProxyUser не даёт создать активного пользователя с уже прошедшим
+ * сроком, поэтому создаём с коротким будущим сроком и ждём его наступления.
  */
+import { PROXYAUTH_CONTAINER_PATH } from "../utils/environment.js";
+import { CONTAINER_NAME, execInContainer, removeUserIfExists, UserApiClient } from "./shared-setup.js";
 
-import {
-    createAdminSession,
-    apiCall,
-} from "./shared-setup.js";
+const USERNAME = "expireduser";
+const PASSWORD = "ExpiredPass123!";
 
-async function testExpirationDeactivation() {
-    const adminToken = await createAdminSession();
+export async function testExpirationDeactivation(): Promise<void> {
+    const users = new UserApiClient();
 
-    const pastDate = new Date();
-    pastDate.setDate(pastDate.getDate() - 1);
+    await removeUserIfExists(users, USERNAME);
 
-    const createUserData = {
-        username: "expireduser",
-        password: "ExpiredPass123!",
+    const expiresAt = new Date(Date.now() + 3000);
+
+    const created = await users.createUser({
+        username: USERNAME,
+        password: PASSWORD,
+        dataLimit: 50,
         isActive: true,
-        expiresAt: pastDate.toISOString(),
-        dataLimit: 50 * 1024 * 1024,
-    };
+        expiresAt: expiresAt.toISOString()
+    });
 
-    const createResult = await apiCall(adminToken, "/api/admin/users", "POST", createUserData);
-    if (!createResult.success) {
-        throw new Error(`Failed to create expired user: ${createResult.error || JSON.stringify(createResult)}`);
+    if (!created.isActive) {
+        throw new Error("User should be active before the expiration date");
     }
 
-    const maintenanceResult = await apiCall(adminToken, "/api/users/maintenance", "POST", {});
-    if (!maintenanceResult.success) {
-        throw new Error(`Maintenance failed: ${maintenanceResult.error}`);
-    }
+    await new Promise((resolve) => setTimeout(resolve, 4000));
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await users.triggerMaintenance();
 
-    const userAfter = await apiCall(adminToken, `/api/admin/users/${createResult.id}`);
-    if (userAfter.isActive) {
+    const after = await users.getUser(created.id);
+    if (after.isActive) {
         throw new Error("User with expired subscription should be deactivated");
     }
-    if (!userAfter.deactivatedAt) {
-        throw new Error("DeactivatedAt should be set");
+    if (!after.deactivatedAt) {
+        throw new Error("deactivatedAt should be set after expiration-based deactivation");
+    }
+
+    const proxyauth = await execInContainer(CONTAINER_NAME, `cat ${PROXYAUTH_CONTAINER_PATH}`);
+    const hasDeactivatedEntry = proxyauth
+        .split("\n")
+        .some((line: string) => line.startsWith("# DEACTIVATED") && line.includes(`${USERNAME}:`));
+
+    if (!hasDeactivatedEntry) {
+        throw new Error(`Expired user should be commented in .proxyauth, got:\n${proxyauth}`);
     }
 }
-
-testExpirationDeactivation().catch((error) => {
-    console.error("Expiration deactivation test failed:", error);
-    process.exit(1);
-});

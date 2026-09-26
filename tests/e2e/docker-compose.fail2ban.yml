@@ -1,0 +1,29 @@
+services:
+  3proxy-ui:
+    build:
+      context: ..
+      dockerfile: ./Dockerfile
+    container_name: 3proxy-ui-e2e-fail2ban
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:/app/data/test.db
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - API_URL=http://localhost:3000
+      - JWT_SECRET=test-secret-key-minimum-32-characters-long
+      - ENABLE_FAIL2BAN=true
+      - FAIL2BAN_BANTIME=30
+      - FAIL2BAN_FINDTIME=10
+      - FAIL2BAN_MAXRETRY=2
+      - HOST=0.0.0.0
+    volumes:
+      - e2e_f2b_data:/app/data
+      - e2e_f2b_logs:/etc/3proxy/logs
+      - e2e_f2b_jail:/var/lib/fail2ban
+    privileged: true
+    init: true
+
+volumes:
+  e2e_f2b_data:
+  e2e_f2b_logs:
+  e2e_f2b_jail:

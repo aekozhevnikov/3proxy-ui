@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.5.0] - 2026-09-26
+
+### Added
+- End-to-end test stack based on `docker-compose.dev.yml` (relative build context, shared
+  helpers, honest per-test runner with a real exit code)
+- E2E test that drives real traffic through 3proxy and asserts the resulting `dataUsed`,
+  plus realistic 3proxy log fixtures in the real `logformat` for unit and integration tests
+- Unit and integration coverage for traffic parsing, BigInt precision of `dataUsed`, and
+  byte-offset log reading (including partial lines, truncation and log rotation)
+- Pre-release workflow now runs the E2E suite on top of the jest projects
+
+### Changed
+- Maintenance reads log traffic from a stored byte offset per file (keyed by inode) instead of
+  re-reading the newest log from the start on every run, so entries are no longer counted
+  repeatedly; the log file is no longer picked by mtime, which raced with 3proxy writing to it
+- E2E fail2ban service requests only `NET_ADMIN`/`NET_RAW` instead of `privileged`, and no
+  longer mounts the Docker socket — neither was needed
+- `test:fail2ban` now runs the jest fail2ban project (it pointed at a non-existent compiled
+  file), and `test:all` no longer repeats suites that `test:unit` already runs
+
+### Fixed
+- Honour `PROXY_CONTAINER_NAME` when locating the 3proxy container — the name was hardcoded to
+  `3proxy`/`vpn-3proxy`, so any renamed deployment silently lost config reloads (`.proxyauth`
+  was never re-read and 3proxy answered 407 to every request)
+- `readTrafficLogs` now includes rotated `3proxy.log.YYYY.MM.DD` files, matching the predicate
+  already used by the log parser, log finder and maintenance route
+- Preserve BigInt precision of `dataUsed`: it was round-tripped through `Number()` before being
+  added to, losing exactness above 2^53
+- Sync state is persisted even when a maintenance run fails, so one bad log file no longer
+  freezes traffic accounting
+- Give `docker restart` enough time to finish instead of failing at the 5s default timeout
+- Fix fail2ban filter `3proxy-docker` not found — filter config now included in Docker image
+- Remove `[Definition]` section from jail.local (belongs in filter.d only)
+- Reduce Docker image size by ~50% via multi-stage build with production-only node_modules
+- Use standalone Next.js build instead of full node_modules in runtime image
+- Generate Prisma query engine in runtime stage for correct target platform
+- Separate database initialization (migrate + setup) from application startup
+
+## [0.4.0] - 2026-09-21
+### Added
+- Multi-platform Docker builds (amd64 + arm64)
+### Fixed
+- Release workflow uses `github.ref_name` for tag detection
+- Docker tags now include both platforms for Apple Silicon support
+
 ## [0.2.9] - 2026-09-21
 
 ### Fixed
@@ -169,7 +216,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - Initial version
 
-[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.9...HEAD
+[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.4.0...HEAD
 [0.2.9]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.6...v0.2.7

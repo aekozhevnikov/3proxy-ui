@@ -1,132 +1,138 @@
 /**
- * Utilities for generating traffic through proxy to simulate real user behavior
+ * Генерация трафика через реальный прокси 3proxy.
+ *
+ * Вместо записи синтетических строк в лог поднимается локальная цель и
+ * выполняются настоящие запросы через 3proxy изнутри контейнера. Так тест
+ * проверяет весь путь: запрос -> байты в логе 3proxy -> dataUsed в БД.
+ *
+ * Node.js fetch не умеет прокси, поэтому запросы делает curl, а целевой
+ * сервер — обычный http-модуль без зависимостей.
  */
-
-import { execAsync } from './helpers.js';
+import { execInContainer, execInContainerDetached } from "./helpers.js";
 
 export interface ProxyTrafficStats {
-  sent: number;
-  received: number;
-  requests: number;
-  duration: number;
+    sent: number;
+    received: number;
+    requests: number;
+    duration: number;
 }
 
-export async function generateHttpTraffic(
-  proxyUrl: string,
-  targetUrl: string,
-  requestCount: number = 10,
-  requestSize: number = 1024 * 1024 // 1MB
-): Promise<ProxyTrafficStats> {
+export interface ProxyCredentials {
+    username: string;
+    password: string;
+}
 
-  const startTime = Date.now();
-  let totalSent = 0;
-  let totalReceived = 0;
-  let successfulRequests = 0;
+// Скрипт передаётся в контейнер в base64: в нём есть кавычки и переводы строк,
+// которые нельзя безопасно вложить в sh -c "...".
+const TARGET_SERVER_SCRIPT = `
+const http = require("http");
+const PORT = process.env.TARGET_PORT;
+const RESPONSE_BYTES = parseInt(process.env.RESPONSE_BYTES || "65536", 10);
+const BODY = Buffer.alloc(RESPONSE_BYTES, 0x61);
 
-  for (let i = 0; i < requestCount; i++) {
-    try {
-      // Generate random data for this request
-      const data = new Uint8Array(requestSize);
-      for (let j = 0; j < requestSize; j++) {
-        data[j] = Math.floor(Math.random() * 256);
-      }
+http
+    .createServer((req, res) => {
+        let received = 0;
+        req.on("data", (chunk) => {
+            received += chunk.length;
+        });
+        req.on("end", () => {
+            res.writeHead(200, { "Content-Type": "application/octet-stream", "Content-Length": RESPONSE_BYTES });
+            res.end(BODY);
+        });
+    })
+    .listen(PORT, "0.0.0.0", () => {
+        console.log("target listening on " + PORT);
+    });
+`;
 
-      const response = await fetch(targetUrl, {
-        method: 'POST',
-        body: Buffer.from(data),
-        // Use proxy if provided (requires environment proxy support)
-        ...(proxyUrl && {
-          // Note: Node.js fetch doesn't directly support proxies
-          // In production, this would be handled by 3proxy itself
-          // Here we're simulating the effect
-        }),
-        headers: {
-          'Content-Type': 'application/octet-stream',
-          'X-Test-Request': `e2e-test-${i}`
-        },
-        signal: AbortSignal.timeout(10000)
-      });
+export interface LocalTargetOptions {
+    port: number;
+    responseBytes: number;
+}
 
-      totalSent += requestSize;
-      totalReceived += response.headers.get('content-length')
-        ? parseInt(response.headers.get('content-length')!, 10)
-        : 0;
-      successfulRequests++;
+/** Поднимает локальный HTTP-сервер-цель внутри контейнера. */
+export async function startLocalTarget(container: string, options: LocalTargetOptions): Promise<void> {
+    const encoded = Buffer.from(TARGET_SERVER_SCRIPT, "utf-8").toString("base64");
 
+    await execInContainer(container, `echo '${encoded}' | base64 -d > /tmp/e2e-target.js`);
 
-      // Small delay between requests
-      await new Promise(resolve => setTimeout(resolve, 100));
+    await execInContainerDetached(
+        container,
+        `TARGET_PORT=${options.port} RESPONSE_BYTES=${options.responseBytes} node /tmp/e2e-target.js > /tmp/e2e-target.log 2>&1`
+    );
 
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      console.warn(`  Request ${i + 1} failed:`, message);
+    // Сервер поднимается мгновенно, но даём ему секунду и проверяем пробой.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const probe = await execInContainer(
+        container,
+        `curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:${options.port}/ || echo 000`
+    );
+
+    if (probe.trim() !== "200") {
+        const targetLog = await execInContainer(container, "cat /tmp/e2e-target.log 2>/dev/null || true");
+
+        throw new Error(
+            `Local target did not start on port ${options.port} (probe: ${probe.trim()}). Log:\n${targetLog}`
+        );
     }
-  }
-
-  const duration = Date.now() - startTime;
-
-  return {
-    sent: totalSent,
-    received: totalReceived,
-    requests: successfulRequests,
-    duration
-  };
 }
 
-export async function writeLogEntry(
-  containerName: string,
-  username: string,
-  bytesSent: number,
-  bytesReceived: number,
-  errorCode?: string
-): Promise<void> {
-  const logEntry = JSON.stringify({
-    time_unix: Math.floor(Date.now() / 1000),
-    proxy: { "type:": "HTTP", port: 3128 },
-    auth: { user: username },
-    client: { ip: '192.168.99.100', port: 12345 },
-    server: { ip: '93.158.167.115', port: 443 },
-    bytes: {
-      sent: bytesSent,
-      received: bytesReceived
-    },
-    request: { hostname: 'example.com' },
-    ...(errorCode && { error: { code: errorCode } }),
-    message: errorCode ? `Error ${errorCode}` : 'OK'
-  }) + '\n';
-
-  await execAsync(`docker exec ${containerName} sh -c "echo '${logEntry}' >> /etc/3proxy/logs/3proxy.log"`);
+export interface HttpTrafficOptions {
+    container: string;
+    proxyHost: string;
+    proxyPort: number;
+    targetUrl: string;
+    credentials: ProxyCredentials;
+    requestCount?: number;
+    requestBytes?: number;
 }
 
-export async function writeMultipleLogEntries(
-  containerName: string,
-  username: string,
-  entries: Array<{ sent: number; received: number; errorCode?: string }>
-): Promise<void> {
-  for (const entry of entries) {
-    await writeLogEntry(containerName, username, entry.sent, entry.received, entry.errorCode);
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-}
+/**
+ * Отправляет requestCount POST-запросов через прокси и возвращает фактически
+ * переданные байты (по счётчикам curl).
+ */
+export async function generateHttpTraffic(options: HttpTrafficOptions): Promise<ProxyTrafficStats> {
+    const {
+        container,
+        proxyHost,
+        proxyPort,
+        targetUrl,
+        credentials,
+        requestCount = 5,
+        requestBytes = 32 * 1024
+    } = options;
 
-export async function generateExceedTraffic(
-  containerName: string,
-  username: string,
-  dataLimit: number,
-  exceedByPercent: number = 10
-): Promise<{ totalSent: number; totalReceived: number }> {
-  const toGenerate = Math.floor(dataLimit * (exceedByPercent / 100));
-  const chunkSize = 1024 * 1024; // 1MB chunks
-  const chunks = Math.ceil(toGenerate / chunkSize);
+    const proxyUrl = `http://${proxyHost}:${proxyPort}`;
+    const auth = `${credentials.username}:${credentials.password}`;
 
+    await execInContainer(container, `head -c ${requestBytes} /dev/zero > /tmp/e2e-payload.bin`);
 
-  for (let i = 0; i < chunks; i++) {
-    const sent = Math.min(chunkSize, toGenerate - (i * chunkSize));
-    await writeLogEntry(containerName, username, sent, sent / 2); // received = 50% of sent
-  }
+    const startTime = Date.now();
+    let sent = 0;
+    let received = 0;
+    let requests = 0;
 
-  return {
-    totalSent: toGenerate,
-    totalReceived: toGenerate / 2
-  };
+    for (let i = 0; i < requestCount; i++) {
+        const output = await execInContainer(
+            container,
+            `curl -s -o /dev/null -w '%{size_upload} %{size_download} %{http_code}' --max-time 10 ` +
+                `-x ${proxyUrl} --proxy-user '${auth}' ` +
+                `-H 'Content-Type: application/octet-stream' ` +
+                `--data-binary @/tmp/e2e-payload.bin ${targetUrl}`
+        );
+
+        const [upload = "0", download = "0", status = "000"] = output.trim().split(/\s+/);
+
+        if (status !== "200") {
+            throw new Error(`Request ${i + 1}/${requestCount} through proxy failed with status ${status}: ${output}`);
+        }
+
+        sent += Number(upload);
+        received += Number(download);
+        requests++;
+    }
+
+    return { sent, received, requests, duration: Date.now() - startTime };
 }

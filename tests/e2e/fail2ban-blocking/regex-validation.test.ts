@@ -1,36 +1,32 @@
 /**
  * E2E Test: Fail2ban Regex Pattern Validation
- * Verifies entrypoint.sh contains correct failregex and ignoreregex patterns
+ * Проверяет, что фильтр fail2ban в образе соответствует формату лога 3proxy.
  */
-
-import { execInContainer } from "./shared-mocks.js";
+import { execInContainer } from "../utils/helpers.js";
 import { CONTAINER_NAME } from "./shared-mocks.js";
 
-async function testFail2banRegex() {
-    const entrypointContent = await execInContainer(CONTAINER_NAME, "cat /entrypoint.sh");
+const FILTER_PATH = "/etc/fail2ban/filter.d/3proxy-docker.conf";
 
-    if (!entrypointContent.includes("[Definition]")) {
-        throw new Error("entrypoint.sh should contain [Definition] section");
+export async function testFail2banRegex(): Promise<void> {
+    const filterContent = await execInContainer(CONTAINER_NAME, `cat ${FILTER_PATH}`);
+
+    if (!filterContent.includes("[Definition]")) {
+        throw new Error(`${FILTER_PATH} should contain [Definition] section`);
     }
 
     if (
-        !entrypointContent.includes("failregex") ||
-        !entrypointContent.includes("(407|403)") ||
-        !entrypointContent.includes("<HOST>")
+        !filterContent.includes("failregex") ||
+        !filterContent.includes("(407|403)") ||
+        !filterContent.includes("<HOST>")
     ) {
-        throw new Error("entrypoint.sh should have correct failregex pattern");
+        throw new Error(`${FILTER_PATH} should have a failregex matching 407/403 with <HOST>`);
     }
 
     if (
-        !entrypointContent.includes("ignoreregex") ||
-        !entrypointContent.includes('"code":"00000"') ||
-        !entrypointContent.includes('"code":"200"')
+        !filterContent.includes("ignoreregex") ||
+        !filterContent.includes('"code":"00000"') ||
+        !filterContent.includes('"code":"200"')
     ) {
-        throw new Error("entrypoint.sh should have correct ignoreregex pattern");
+        throw new Error(`${FILTER_PATH} should ignore successful responses (00000/200)`);
     }
 }
-
-testFail2banRegex().catch((error) => {
-    console.error("Fail2ban regex test failed:", error);
-    process.exit(1);
-});

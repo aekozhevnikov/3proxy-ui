@@ -16,11 +16,11 @@ const __dirname = path.dirname(__filename);
 
 const tests: Record<string, { file: string; description: string }> = {
     traffic: {
-        file: "traffic-limit.test.ts",
-        description: "Test traffic limit enforcement and user deactivation"
+        file: "traffic-limit/run-all.test.ts",
+        description: "Real proxy traffic, limit enforcement, expiration, scheduler"
     },
     fail2ban: {
-        file: "fail2ban-blocking.test.ts",
+        file: "fail2ban-blocking/run-all.test.ts",
         description: "Test fail2ban IP blocking and iptables rules"
     },
     all: {
@@ -56,11 +56,11 @@ async function runTest(testName: string): Promise<number> {
     if (testName === "all") {
         console.debug("Running all E2E tests...\n");
 
-        // First run the centralized test file
+        // First run the traffic limit suite
         console.debug("┌──────────────────────────────────────┐");
         console.debug("│ 1/2 Traffic Limit Tests              │");
         console.debug("└──────────────────────────────────────┘");
-        const result1 = await runTsx("traffic-limit.test.ts");
+        const result1 = await runTsx("traffic-limit/run-all.test.ts");
 
         if (result1 !== 0) {
             console.debug("\n❌ Traffic limit tests failed, aborting");
@@ -70,7 +70,7 @@ async function runTest(testName: string): Promise<number> {
         console.debug("\n┌──────────────────────────────────────┐");
         console.debug("│ 2/2 Fail2ban Blocking Tests          │");
         console.debug("└──────────────────────────────────────┘");
-        const result2 = await runTsx("fail2ban-blocking.test.ts");
+        const result2 = await runTsx("fail2ban-blocking/run-all.test.ts");
 
         if (result2 !== 0) {
             console.debug("\n❌ Fail2ban tests failed");

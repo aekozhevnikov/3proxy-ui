@@ -2,6 +2,7 @@
 
 This directory contains end-to-end tests that verify the complete functionality of the 3proxy-ui system, including:
 
+- Real traffic through 3proxy and its recording in the database
 - Traffic limit enforcement
 - Fail2ban IP blocking
 - Expiration-based deactivation
@@ -25,84 +26,104 @@ npm run compile
 # Run all E2E tests
 npm run test:e2e
 
+# Run only the traffic suite
+npm run test:e2e -- traffic
+
 # Run only fail2ban tests
-npm run test:fail2ban
+npm run test:e2e:fail2ban
 ```
 
-### Using the test scripts directly
+### Using the runners directly
 
 ```bash
-cd tests/e2e
-npx tsx traffic-limit.test.ts
-npx tsx fail2ban-blocking.test.ts
+# Unified runner
+npx tsx tests/e2e/index.ts [traffic|fail2ban|all]
+
+# Individual suites
+npx tsx tests/e2e/traffic-limit/run-all.test.ts
+npx tsx tests/e2e/fail2ban-blocking/run-all.test.ts
 ```
+
+Each runner prints `PASS`/`FAIL` per test and exits non-zero if any test failed.
+`tests/e2e/traffic-limit.test.ts` and `tests/e2e/fail2ban-blocking.test.ts` are thin
+entry points kept for `npm run test:e2e` and `verify-setup.sh`; the tests themselves
+live in the subdirectories.
+
+## Environment
+
+The stack is defined in `docker-compose.e2e.yml`, which mirrors `docker-compose.dev.yml`
+(same services, environment variables and volumes) with test-specific values. The build
+context is relative to the compose file, so the tests do not depend on an absolute
+repository path.
+
+Both UI services publish port 3000 and are therefore never started at the same time:
+
+| Service | Compose service | Used by |
+| --- | --- | --- |
+| Traffic, limits, scheduler | `3proxy-ui-e2e` | `traffic-limit/` |
+| fail2ban banning | `3proxy-ui-e2e-fail2ban` | `fail2ban-blocking/` |
+
+Test-specific environment values:
+
+- `DATABASE_URL=file:/app/data/e2e.db` (and `fail2ban.db` for the fail2ban service)
+- `JWT_SECRET=test-secret-key-minimum-32-characters-long`
+- `TRAFFIC_SYNC_INTERVAL=*/2 * * * *` - scheduler fires every two seconds (production
+  default is every 30 minutes)
+- `FAIL2BAN_MAXRETRY=2`, `FAIL2BAN_BANTIME=30`, `FAIL2BAN_FINDTIME=10`
+
+`utils/environment.ts` owns the compose lifecycle: paths are derived from the module
+location, logs and `.proxyauth` are reset before each run, and `teardown()` removes the
+volumes.
 
 ## Test Structure
 
-### `traffic-limit.test.ts`
+### `traffic-limit/`
 
-Tests the traffic limit enforcement flow:
+1. `real-proxy-traffic-test.ts` - sends real requests through 3proxy to a local target and
+   verifies the log entry and `dataUsed` in the database
+2. `traffic-limit-enforcement.test.ts` - user with a 100 MB limit exceeds it, gets deactivated
+   and is commented out in `.proxyauth`
+3. `expiration-deactivation.test.ts` - user past `expiresAt` is deactivated
+4. `manual-maintenance-test.ts` - `POST /api/users/maintenance` response contract
+5. `scheduler-test.ts` - the scheduler syncs traffic without a manual trigger
 
-1. Creates a user with 100 MB data limit
-2. Simulates traffic by writing to 3proxy.log
-3. Triggers maintenance endpoint
-4. Verifies user is deactivated
-5. Verifies .proxyauth file is updated correctly
-6. Tests expiration-based deactivation
-7. Tests manual maintenance trigger
-8. Tests scheduler execution
+### `fail2ban-blocking/`
 
-### `fail2ban-blocking.test.ts`
+1. `regex-validation.test.ts` - filter matches 407/403 and ignores 00000/200
+2. `jail-configuration.test.ts` - generated jail matches the environment values
+3. `auth-failure-banning.test.ts` - repeated auth failures ban the IP and create an iptables rule
+4. `legitimate-traffic-ignored.test.ts` - successful requests never ban the IP
 
-Tests fail2ban integration:
+### Fixtures
 
-1. Starts container with fail2ban enabled
-2. Verifies fail2ban configuration
-3. Generates auth failure logs (407/403) for a test IP
-4. Verifies IP gets banned in fail2ban
-5. Checks iptables rules are created
-6. Tests that legitimate traffic (200/00000) is ignored
-7. Verifies auto-unban configuration
+- `test-fixtures/logs/` - static 3proxy logs in the real `logformat` (current file plus a
+  rotated `3proxy.log.YYYY.MM.DD`) used by the integration tests
+- `test-fixtures/3proxy/` - 3proxy config and runtime directories mounted by the E2E stack
 
 ## Test Isolation
 
-Each test:
-- Creates its own Docker container with unique name
-- Uses separate Docker volumes for data, logs, and fail2ban state
-- Cleans up all resources in `finally` block
-- Uses a dedicated test database
+- Each suite brings the stack down with its volumes before starting, so the database is empty
+- `resetRuntimeState()` truncates `test-fixtures/3proxy/logs/*.log` and `.proxyauth`, so traffic
+  from a previous run cannot leak into `dataUsed`
+- Suites run sequentially and never share a stack (both UI services need port 3000)
+- `cleanup()` runs in a `finally` block; `./cleanup-all.sh` removes anything left behind
 
-## Environment Variables
-
-Tests use these defaults (override with `tests/e2e/.env.test`):
-
-- `API_URL=http://localhost:3000` - API endpoint
-- `DATABASE_URL=file:/app/data/test.db` - Test database
-- `JWT_SECRET=test-secret-key-minimum-32-characters-long` - For JWT tokens
-- `ENABLE_FAIL2BAN=true` - Enable fail2ban
-- `FAIL2BAN_BANTIME=30` - Ban time in seconds (short for testing)
-- `FAIL2BAN_FINDTIME=10` - Time window in seconds
-- `FAIL2BAN_MAXRETRY=2` - Failure threshold
-- `TRAFFIC_SYNC_INTERVAL=*/1 * * * *` - Scheduler interval (every minute)
+Note that the maintenance route re-reads the newest log file on every run, so a log entry is
+added to `dataUsed` again on each maintenance cycle. Tests therefore assert monotonic
+properties (`dataUsed >= limit`, `dataUsed` increased) rather than exact byte totals.
 
 ## Architecture
 
-The tests follow this pattern:
+Test modules export a single `test*` function and do not run on import; the suite runner
+awaits them one by one, counts the failures and sets the process exit code:
 
 ```typescript
-async function testName() {
-  // 1. Setup (create containers, users, etc.)
-  await setupEnvironment();
-
-  // 2. Execute test actions
+export async function testName(): Promise<void> {
   const result = await action();
 
-  // 3. Assert expectations
   if (!expectedCondition) {
-    throw new Error('Test failed');
+    throw new Error("Test failed");
   }
-
-  // 4. Cleanup (handled in finally)
 }
 ```
 
