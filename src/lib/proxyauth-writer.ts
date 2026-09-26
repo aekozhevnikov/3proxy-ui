@@ -3,7 +3,7 @@ import path from "path";
 
 import { prisma } from "@/src/prisma/db";
 import { logger } from "@/src/core/logger";
-import { hashProxyPassword } from "@/src/core/password-hash";
+import { proxyauthEntry } from "@/src/core/password-hash";
 
 const PROXYAUTH_PATH = process.env.PROXYAUTH_PATH || path.join(process.cwd(), "3proxy", "users", ".proxyauth");
 
@@ -22,11 +22,11 @@ export async function updateProxyauthFile(): Promise<ProxyauthUpdateResult> {
 
     for (const user of allUsers) {
         if (user.isActive) {
-            newLines.push(`${user.username}:CR:${hashProxyPassword(user.password)}`);
+            newLines.push(proxyauthEntry(user.username, user.password));
         } else {
             const dateStr = user.deactivatedAt ? user.deactivatedAt.toISOString() : "";
 
-            newLines.push(`# DEACTIVATED ${dateStr}: ${user.username}:CR:${hashProxyPassword(user.password)}`);
+            newLines.push(`# DEACTIVATED ${dateStr}: ${proxyauthEntry(user.username, user.password)}`);
         }
         updatedCount++;
     }

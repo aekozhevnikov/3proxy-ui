@@ -11,9 +11,16 @@ jest.mock("@/src/prisma/db", () => ({
     }
 }));
 
-jest.mock("@/src/core/password-hash", () => ({
-    hashProxyPassword: jest.fn((password: string) => `hashed_${password}`)
-}));
+jest.mock("@/src/core/password-hash", () => {
+    const hashProxyPassword = jest.fn((password: string) => `hashed_${password}`);
+
+    return {
+        hashProxyPassword,
+        proxyauthEntry: jest.fn(
+            (username: string, password: string) => `${username}:CR:"${hashProxyPassword(password)}"`
+        )
+    };
+});
 
 jest.mock("fs", () => ({
     mkdirSync: jest.fn(),

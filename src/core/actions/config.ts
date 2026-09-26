@@ -6,7 +6,7 @@ import path from "path";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/src/prisma/db";
-import { hashProxyPassword } from "@/src/core/password-hash";
+import { proxyauthEntry } from "@/src/core/password-hash";
 import { find3proxyContainer, restart3proxyContainer } from "@/src/core/docker";
 
 export async function update3proxyConfig(): Promise<{ success: boolean; message: string; userCount: number }> {
@@ -25,12 +25,12 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
         // Build array of users for .proxyauth file
         const lines = users.map((user) => {
             if (user.isActive) {
-                return `${user.username}:CR:${hashProxyPassword(user.password)}`;
+                return proxyauthEntry(user.username, user.password);
             } else {
                 // For deactivated users, include a comment with deactivation timestamp
                 const dateStr = user.deactivatedAt ? user.deactivatedAt.toISOString() : "";
 
-                return `# DEACTIVATED ${dateStr}: ${user.username}:CR:${hashProxyPassword(user.password)}`;
+                return `# DEACTIVATED ${dateStr}: ${proxyauthEntry(user.username, user.password)}`;
             }
         });
 
