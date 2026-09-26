@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import { POST } from "@/src/app/api/auth/login/route";
+import { POST, resetLoginAttempts } from "@/src/app/api/auth/login/route";
 import { NextRequest } from "next/server";
 
 jest.mock("@/src/prisma/db", () => {
@@ -50,6 +50,9 @@ const createMockUser = () => ({
 
 describe("auth/login API", () => {
     beforeEach(() => {
+        // The throttling counter is module state and would otherwise leak
+        // between cases in this file.
+        resetLoginAttempts();
         jest.clearAllMocks();
     });
 
@@ -103,5 +106,39 @@ describe("auth/login API", () => {
             isAdmin: true
         });
         expect(result.headers.get("Set-Cookie")).toContain("session=");
+    });
+
+    it("throttles after repeated failures and clears on success", async () => {
+        const { prisma } = require("@/src/prisma/db");
+        const { compare } = require("bcrypt");
+        prisma.user.findFirst.mockResolvedValue(createMockUser());
+        compare.mockResolvedValue(false);
+
+        const first = await POST(createRequest({ username: "admin", password: "wrong" }));
+        expect(first.status).toBe(401);
+
+        // The second attempt inside the backoff window is refused before the
+        // password is even checked.
+        const second = await POST(createRequest({ username: "admin", password: "wrong" }));
+        expect(second.status).toBe(429);
+        expect(second.headers.get("Retry-After")).toBeTruthy();
+
+        resetLoginAttempts();
+        compare.mockResolvedValue(true);
+        const third = await POST(createRequest({ username: "admin", password: "admin" }));
+        expect(third.status).toBe(200);
+    });
+
+    it("does not leak whether the account exists", async () => {
+        const { prisma } = require("@/src/prisma/db");
+        const { compare } = require("bcrypt");
+        prisma.user.findFirst.mockResolvedValue(null);
+        compare.mockResolvedValue(false);
+
+        const missing = await POST(createRequest({ username: "ghost", password: "x" }));
+        const wrong = await POST(createRequest({ username: "admin", password: "x" }));
+
+        expect(missing.status).toBe(wrong.status);
+        expect((await missing.json()).error).toBe((await wrong.json()).error);
     });
 });

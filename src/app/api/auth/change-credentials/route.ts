@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 
 import { prisma } from "@/src/prisma/db";
 import { app } from "@/src/core/config";
+import { SESSION_COOKIE, SESSION_MAX_AGE, sessionCookieOptions } from "@/src/core/session-cookie";
 
 export async function POST(request: NextRequest) {
     try {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
 
         // Get current session to identify user
         const cookieStore = await cookies();
-        const sessionCookie = cookieStore.get("session")?.value;
+        const sessionCookie = cookieStore.get(SESSION_COOKIE)?.value;
 
         if (!sessionCookie) {
             return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -36,7 +37,9 @@ export async function POST(request: NextRequest) {
         ) {
             return NextResponse.json({ error: "Invalid session" }, { status: 401 });
         }
-        const payload: { userId: number } = { userId: decoded.userId };
+        const sessionVersion =
+            "sessionVersion" in decoded && typeof decoded.sessionVersion === "number" ? decoded.sessionVersion : 0;
+        const payload: { userId: number; sessionVersion: number } = { userId: decoded.userId, sessionVersion };
 
         // Get user from database
         const user = await prisma.user.findUnique({
@@ -66,13 +69,17 @@ export async function POST(request: NextRequest) {
         }
 
         // Update user
-        const updateData: { username: string; password?: string } = {
+        const updateData: { username: string; password?: string; sessionVersion?: number } = {
             username
         };
 
         // Update password if provided
         if (newPassword) {
             updateData.password = await bcrypt.hash(newPassword, 10);
+            // Every token issued before this stops verifying, so a lost device
+            // cannot keep its session for the rest of the hour. The token minted
+            // below carries the new value and stays valid.
+            updateData.sessionVersion = sessionVersion + 1;
         }
 
         const updatedUser = await prisma.user.update({
@@ -80,13 +87,13 @@ export async function POST(request: NextRequest) {
             data: updateData
         });
 
-        // Generate new JWT token with updated username if it changed
         const newPayload = {
             userId: updatedUser.id,
             username: updatedUser.username,
             isAdmin: updatedUser.isAdmin,
+            sessionVersion: updatedUser.sessionVersion,
             iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour
+            exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE,
             aud: "3proxy-ui",
             iss: "3proxy-ui"
         };
@@ -105,13 +112,7 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        response.cookies.set("session", newToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            maxAge: 60 * 60, // 1 hour
-            path: "/"
-        });
+        response.cookies.set(SESSION_COOKIE, newToken, sessionCookieOptions());
 
         return response;
     } catch (error) {

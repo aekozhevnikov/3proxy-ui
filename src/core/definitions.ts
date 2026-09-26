@@ -4,6 +4,8 @@ import { JWTPayload } from "jose";
 export interface SessionPayload extends JWTPayload {
     userId: number;
     username: string;
+    /** Absent on tokens minted before the column existed; treated as 0. */
+    sessionVersion?: number;
 }
 
 export interface UserSession {

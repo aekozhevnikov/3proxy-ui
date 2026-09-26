@@ -208,9 +208,11 @@ describe("auth/change-credentials API", () => {
         expect(result.status).toBe(200);
         expect(data.success).toBe(true);
         expect(hash).toHaveBeenCalledWith("newpass456", 10);
+        // sessionVersion is bumped alongside the password so every token issued
+        // before the change stops verifying.
         expect(prisma.user.update).toHaveBeenCalledWith({
             where: { id: 1 },
-            data: { username: "admin", password: "new-hashed-password" }
+            data: { username: "admin", password: "new-hashed-password", sessionVersion: 1 }
         });
     });
 

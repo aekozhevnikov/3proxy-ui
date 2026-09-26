@@ -22,6 +22,7 @@ const mockUserCreateResult = {
     password: "hashed_password",
     name: "Admin User",
     isAdmin: true,
+    sessionVersion: 0,
     createdAt: new Date(),
     updatedAt: new Date()
 };
@@ -65,6 +66,7 @@ describe("admin actions", () => {
                 password: string;
                 name: string;
                 isAdmin: boolean;
+                sessionVersion: number;
                 createdAt: Date;
                 updatedAt: Date;
             });
@@ -148,6 +150,7 @@ describe("admin actions", () => {
                 password: string;
                 name: string;
                 isAdmin: boolean;
+                sessionVersion: number;
                 createdAt: Date;
                 updatedAt: Date;
             });

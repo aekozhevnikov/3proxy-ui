@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
 import { app } from "@/src/core/config";
+import { prisma } from "@/src/prisma/db";
 import { SessionPayload } from "@/src/core/definitions";
 
 function isSessionPayload(payload: unknown): payload is SessionPayload {
@@ -44,6 +45,22 @@ export async function currentSession(): Promise<{ isAuthorized: boolean; userId?
 
         if (!isSessionPayload(payload)) {
             return { isAuthorized: false };
+        }
+
+        // A valid signature is not enough. The account may have been deleted or
+        // de-admined since the token was issued, and the password may have
+        // changed, which bumps sessionVersion. Checking here means a stolen or
+        // abandoned token stops working immediately rather than at the end of
+        // its hour. This runs on the server only: a browser has no database.
+        if (typeof window === "undefined") {
+            const user = await prisma.user.findUnique({
+                where: { id: payload.userId },
+                select: { sessionVersion: true }
+            });
+
+            if (!user || user.sessionVersion !== (payload.sessionVersion ?? 0)) {
+                return { isAuthorized: false };
+            }
         }
 
         return { isAuthorized: true, userId: payload.userId, username: payload.username };
