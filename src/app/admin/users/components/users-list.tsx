@@ -2,9 +2,10 @@
 
 import { useMemo } from "react";
 
+import ShareModal from "./share-modal";
+
 import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/src/core/definitions";
 import { useUsers } from "@/src/hooks/useUsers";
-import ShareModal from "./share-modal";
 import { useUserModals } from "@/src/hooks/useUserModals";
 import { useUsersActions } from "@/src/hooks/useUsersActions";
 import UserHeader from "@/src/components/users-list/UserHeader";
@@ -32,6 +33,7 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
         isCreateModalOpen,
         editingUser,
         shareUser,
+        sharePassword,
         deleteUserId,
         openCreateModal,
         closeCreateModal,
@@ -97,8 +99,8 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
                     <div className="hidden md:block">
                         <UserDesktopTable
                             expandedUserIds={expandedUserIds}
-                            testingUserId={testingUserId}
                             testProxyError={testProxyError}
+                            testingUserId={testingUserId}
                             toggleExpand={toggleExpand}
                             users={filteredUsers}
                             onDelete={openDeleteModal}
@@ -115,8 +117,8 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
                                 isExpanded={
                                     expandedUserIds.has(user.id) || expandedUserIds.size === currentUsers.length
                                 }
-                                testingUserId={testingUserId}
                                 testProxyError={testProxyError}
+                                testingUserId={testingUserId}
                                 user={user}
                                 onDelete={openDeleteModal}
                                 onEdit={(user) => handleOpenEditModalWithFetch(user, openEditModal)}
@@ -132,7 +134,7 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
             {shareUser && (
                 <ShareModal
                     isOpen={Boolean(shareUser)}
-                    password={shareUser.password}
+                    password={sharePassword ?? ""}
                     username={shareUser.username}
                     onClose={closeShareModal}
                 />

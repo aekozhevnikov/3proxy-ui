@@ -66,8 +66,22 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // Return all users (for /api/admin/users list)
+        // The list is rendered for every user of the panel, so it must not carry
+        // the credentials. The share modal fetches them per user on demand.
         const users = await prisma.proxyUser.findMany({
+            select: {
+                id: true,
+                username: true,
+                isActive: true,
+                dataLimit: true,
+                dataUsed: true,
+                ipLimit: true,
+                telegramUserId: true,
+                deactivatedAt: true,
+                expiresAt: true,
+                createdAt: true,
+                updatedAt: true
+            },
             orderBy: { username: "asc" }
         });
 

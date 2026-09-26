@@ -15,7 +15,7 @@ export interface UserSession {
 export interface ProxyUser {
     id: number;
     username: string;
-    password: string;
+    password?: string; // Not part of the list response; fetched on demand for sharing
     isActive: boolean;
     dataLimit: number | null; // in MB
     dataUsed: number; // in MB

@@ -1,7 +1,7 @@
 import { mocked } from '@/tests/unit/test-utils/mock-helpers';
 import { updateProxyUser } from "@/src/core/actions/proxy-user";
 import prisma from "@/prisma/db";
-import { EditProxyUserRequest, ProxyUser } from "@/src/core/definitions";
+import { EditProxyUserRequest } from "@/src/core/definitions";
 
 jest.mock("@/prisma/db", () => {
     const mockProxyUser = {
@@ -27,7 +27,7 @@ jest.mock("@/src/core/actions/config", () => ({
     update3proxyConfig: jest.fn(),
 }));
 
-const mockUser: ProxyUser = {
+const mockUser = {
     id: 1,
     username: "testuser",
     password: "hashedpass",

@@ -26,9 +26,8 @@ jest.mock("@/src/core/actions/config", () => ({
 }));
 
 import { getAllProxyUsers } from "@/src/core/actions/proxy-user";
-import { ProxyUser } from "@/src/core/definitions";
 
-const mockUser: ProxyUser = {
+const mockUser = {
     id: 1,
     username: "testuser",
     password: "hashedpass",
