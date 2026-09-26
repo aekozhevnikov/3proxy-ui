@@ -40,7 +40,10 @@ EOF
 
     # Start fail2ban in foreground
     echo "  Starting fail2ban..."
-    fail2ban-client -x start
+    # The jail reads /etc/3proxy/logs/3proxy.log, which is supplied by the 3proxy
+    # container's volume. Without it fail2ban cannot start, and under `set -e` that
+    # would abort the whole entrypoint before the application ever runs.
+    fail2ban-client -x start || echo "  Warning: fail2ban failed to start, continuing without it"
 
     # Wait for initialization
     sleep 2
