@@ -66,10 +66,12 @@ export async function runMaintenance(): Promise<SyncResult> {
             });
         });
 
-        req.on("error", (err) => {
+        req.on("error", (err: NodeJS.ErrnoException) => {
+            // Node 20 reports a refused connection as an AggregateError whose
+            // message is empty, which would leave the log blank.
             resolve({
                 success: false,
-                error: err.message
+                error: err.message || err.code || String(err)
             });
         });
 

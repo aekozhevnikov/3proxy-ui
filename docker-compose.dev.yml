@@ -28,8 +28,6 @@ services:
       - FAIL2BAN_MAXRETRY=3
       - FAIL2BAN_BANTIME=1800
       - FAIL2BAN_FINDTIME=600
-      - HOST=0.0.0.0
-      - API_URL=http://host.docker.internal:3000
       - LOGS_DIR=/etc/3proxy/logs
       - PROXYAUTH_PATH=/etc/3proxy/users/.proxyauth
       - PROXY_CONTAINER_NAME=3proxy

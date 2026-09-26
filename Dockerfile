@@ -113,4 +113,9 @@ VOLUME ["/app/data", "/etc/3proxy", "/var/lib/fail2ban"]
 
 ENV ENABLE_FAIL2BAN=true
 
+# Next.js standalone binds to $HOSTNAME, not $HOST, and Docker sets HOSTNAME to
+# the container id. Without this it listens only on the container's bridge IP, so
+# the maintenance scheduler cannot reach http://localhost:3000 from inside.
+ENV HOSTNAME=0.0.0.0
+
 ENTRYPOINT ["/entrypoint.sh"]
