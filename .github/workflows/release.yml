@@ -12,27 +12,6 @@ jobs:
   test:
     uses: ./.github/workflows/pre-release-tests.yml
 
-  release:
-    needs: test
-    runs-on: ubuntu-latest
-    concurrency:
-      group: release
-      cancel-in-progress: true
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Create release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
-        run: |
-          gh release create "$TAG" \
-              --repo="$GITHUB_REPOSITORY" \
-              --title="${TAG#v}" \
-              --generate-notes
-
   publish:
     needs: test
     runs-on: ubuntu-latest
@@ -64,6 +43,28 @@ jobs:
             --tag ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:latest \
             --push .
 
+      - name: Verify the image is on Docker Hub
+        run: |
+          VERSION=${{ github.ref_name }}
+          VERSION=${VERSION#v}
+
+          # The release below only runs once this succeeds, so a failed or skipped
+          # push can never leave a published release pointing at a missing image.
+          RETRIES=30
+          until [ "$RETRIES" -eq 0 ]; do
+            if docker buildx imagetools inspect \
+                 "${{ secrets.DOCKER_USERNAME }}/3proxy-ui:$VERSION" >/dev/null 2>&1; then
+              echo "Image ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:$VERSION is available"
+              exit 0
+            fi
+            RETRIES=$((RETRIES - 1))
+            echo "Image not visible yet, retrying (${RETRIES} left)..."
+            sleep 10
+          done
+
+          echo "::error::Image ${{ secrets.DOCKER_USERNAME }}/3proxy-ui:$VERSION is not on Docker Hub"
+          exit 1
+
       - name: Sync README to Docker Hub
         uses: peter-evans/dockerhub-description@v4
         with:
@@ -72,3 +73,26 @@ jobs:
           repository: ${{ secrets.DOCKER_USERNAME }}/3proxy-ui
           readme-filepath: ./DOCKER.md
           short-description: "3proxy Admin UI - Web-based administration interface for 3proxy servers"
+
+  release:
+    # Runs only after the image is actually on Docker Hub, so a published
+    # release always has a downloadable image behind it.
+    needs: [test, publish]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${TAG#v}" \
+              --generate-notes
