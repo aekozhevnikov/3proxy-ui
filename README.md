@@ -151,17 +151,30 @@ a migration.
 
 ### Docker Deployment
 
-For detailed Docker deployment instructions, environment variables reference, and Docker Compose configuration, see **[DOCKER.md](DOCKER.md)**.
+The image ships the panel, fail2ban and the Docker CLI — but **not** 3proxy itself. The panel is a
+control plane for a separate 3proxy instance, so a working deployment needs both containers sharing
+a config volume, plus the Docker socket for configuration reloads. The compose file in this
+repository wires that together:
 
-Quick start:
+```bash
+cp .env.example .env   # set JWT_SECRET, at least 32 characters
+docker compose up -d
+```
+
+The full reference, including every environment variable, is in **[DOCKER.md](DOCKER.md)**.
+
+Running the panel on its own works for a first look, but it needs the 3proxy log volume or fail2ban
+has nothing to watch:
 ```bash
 docker run -d \
   --name 3proxy-ui \
   -p 3000:3000 \
-  -p 3128:3128 \
-  -p 1080:1080 \
   -e JWT_SECRET="your-secret-at-least-32-characters-long" \
   -e PROXY_DOMAIN="proxy.example.com" \
+  -e LOGS_DIR=/etc/3proxy/logs \
+  -e PROXYAUTH_PATH=/etc/3proxy/users/.proxyauth \
+  -v 3proxy-data:/app/data \
+  -v ./3proxy:/etc/3proxy \
   aekozh/3proxy-ui:latest
 ```
 
@@ -179,7 +192,7 @@ Copy `.env.example` to `.env` and adjust the following key variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DATABASE_URL` | SQLite connection string | `file:./dev.db` in development, `file:/app/data/app.db` in the image |
+| `DATABASE_URL` | SQLite connection string | `file:/app/data/app.db` in the image, set by the entrypoint |
 | `JWT_SECRET` | HS256 signing key for session cookies, minimum 32 characters | (required) |
 | `APP_URL` | Public base URL of the panel | `http://localhost:3000` |
 | `APP_NAME` | Panel title | `3proxy UI` |
@@ -191,7 +204,7 @@ Copy `.env.example` to `.env` and adjust the following key variables:
 | `SYNC_INFO_FILE` | Where per-inode log offsets are stored | `./data/traffic-sync.json` |
 | `LOG_LEVEL` | Application log verbosity: `debug`, `info`, `warn`, `error` | `info` |
 | `ENABLE_FAIL2BAN` | Start fail2ban in the container | `true` |
-| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | Credentials seeded by `npm run setup` | `admin` / `admin` |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | Seeded on first start if no admin exists | `admin` / `admin` |
 
 The proxy ports are baked in at build time from `HTTP_PORT` (3128), `SOCKS_PORT` (1080) and
 `PROXY_DOMAIN`, and exposed to the browser through the matching `NEXT_PUBLIC_*` variables.
@@ -201,6 +214,12 @@ The UI expects a running 3proxy instance with:
 - JSON logging enabled, so traffic can be derived from the log
 - A `.proxyauth` file for user authentication
 - Access to log files for traffic analysis
+
+In a container, the 3proxy config directory has to be shared with the panel, and the paths have to
+be pointed at explicitly. The panel reads `LOGS_DIR` and `PROXYAUTH_PATH`, which default to
+`/app/3proxy/logs` and `/app/3proxy/users/.proxyauth` — a directory the image does not ship, so
+without those variables traffic accounting silently reads nothing. The Docker socket is needed as
+well, because reloading the configuration restarts the 3proxy container through the Docker API.
 
 Traffic is accounted by reading new log entries incrementally and persisting a byte offset per
 file, so repeated syncs do not double-count.
@@ -226,8 +245,9 @@ See the [3proxy documentation](https://3proxy.org/) for server setup instruction
 ### System & Monitoring
 - `GET /api/system/status` - Get system status (3proxy, users, logs)
 - `GET /api/config/status` - Get the current 3proxy configuration
-- `POST /api/config/generate` - Generate a 3proxy configuration
-- `POST /api/config/reload` - Reload 3proxy with the generated configuration
+- `GET /api/config/generate` - Render the generated user configuration as JSON
+- `POST /api/config/generate` - Write the generated user configuration to `PROXYAUTH_PATH`
+- `POST /api/config/reload` - Restart the 3proxy container through the Docker API
 - `GET /api/proxy-config` - Get proxy configuration
 - `GET /api/logs` - Get recent log entries
 - `GET /api/users/traffic` - Get user traffic statistics
@@ -290,34 +310,16 @@ The project includes:
 
 ## Deployment
 
-### Docker
+The deployment shapes are documented once, in **[DOCKER.md](DOCKER.md)**, and kept in sync with the
+two compose files in this repository:
+
+- `docker-compose.yml` — the reference stack: 3proxy plus the panel
+- `docker-compose.dev.yml` — the same stack on a different port, used by the E2E suite
+- `tests/e2e/docker-compose.e2e.yml` and `tests/e2e/docker-compose.fail2ban.yml` — E2E variants
+
+To build the image locally:
 ```bash
-# Build the image
 docker build -t 3proxy-ui .
-
-# Run the container
-docker run -d -p 3000:3000 \
-  -e JWT_SECRET="your-secret-at-least-32-characters-long" \
-  -v $(pwd)/data:/app/data \
-  -v $(pwd)/3proxy:/app/3proxy \
-  3proxy-ui
-```
-
-### Docker Compose (Recommended)
-```yaml
-services:
-  3proxy-ui:
-    image: aekozh/3proxy-ui:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=file:/app/data/app.db
-      - JWT_SECRET=${JWT_SECRET}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-    volumes:
-      - ./data:/app/data
-      - ./3proxy:/app/3proxy
-    restart: unless-stopped
 ```
 
 ## Observability
@@ -352,6 +354,10 @@ services:
   password change
 - **Environment Secrets**: Sensitive data stored in environment variables
 - **Brute-force Protection**: Optional fail2ban jails for the proxy ports
+
+Note that the Docker socket is mounted read-write so that configuration reloads can restart the
+3proxy container. That is equivalent to root on the host, so the panel should sit behind
+authentication and ideally a TLS-terminating reverse proxy.
 
 ## Contributing
 
