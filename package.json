@@ -17,7 +17,7 @@
         "format": "prettier --write \"./src/**/*.{ts,tsx,json}\" \"./scripts/**/*.{ts,tsx,json}\" --no-error-on-unmatched-pattern",
         "format:check": "prettier --check \"./src/**/*.{ts,tsx,json}\" \"./scripts/**/*.{ts,tsx,json}\" --no-error-on-unmatched-pattern",
         "setup": "node ./dist/scripts/setup.js",
-        "seed": "prisma db seed",
+        "seed": "npm run setup",
         "test:unit": "jest --passWithNoTests",
         "test:integration": "jest --selectProjects integration",
         "test:fail2ban": "jest --selectProjects fail2ban",
