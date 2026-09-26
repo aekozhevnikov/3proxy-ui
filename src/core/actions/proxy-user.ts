@@ -2,10 +2,27 @@
 
 import { revalidatePath } from "next/cache";
 
+import { assertAdmin } from "@/src/core/auth";
+import { ValidationError } from "@/src/core/errors";
+
 import { update3proxyConfig } from "./config";
 
 import prisma from "@/prisma/db";
 import { NewProxyUserRequest, EditProxyUserRequest, ProxyUser } from "@/src/core/definitions";
+
+// A username ends up as a token in the file 3proxy parses, where whitespace
+// and a colon are argument separators. An unvalidated value can therefore add
+// extra entries to 3proxy that do not exist in the database, so they cannot be
+// listed or revoked from the panel.
+const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
+
+function assertValidUsername(username: string): void {
+    if (typeof username !== "string" || !USERNAME_PATTERN.test(username)) {
+        throw new ValidationError(
+            "Username may only contain letters, digits, dot, underscore and hyphen, and must be 1-64 characters."
+        );
+    }
+}
 
 export async function getAllProxyUsers(): Promise<ProxyUser[]> {
     const users = await prisma.proxyUser.findMany({
@@ -22,20 +39,52 @@ export async function getAllProxyUsers(): Promise<ProxyUser[]> {
 }
 
 export async function getProxyUserById(id: number): Promise<ProxyUser | null> {
+    // The password is deliberately excluded. This result is returned by
+    // GET /api/admin/users/[id] and is passed as a prop to a client component,
+    // which serialises it into the RSC payload in the HTML response, so it ends
+    // up in browser state and any cache in front of the panel on every time the
+    // edit modal opens. The share endpoint serves the one case that genuinely
+    // needs a plaintext.
     const user = await prisma.proxyUser.findUnique({
-        where: { id }
+        where: { id },
+        select: {
+            id: true,
+            username: true,
+            isActive: true,
+            dataLimit: true,
+            dataUsed: true,
+            ipLimit: true,
+            telegramUserId: true,
+            deactivatedAt: true,
+            expiresAt: true,
+            createdAt: true,
+            updatedAt: true
+        }
     });
 
     if (!user) return null;
 
+    // Built field by field rather than spread, so a column added to the model
+    // later cannot quietly start travelling to the client.
     return {
-        ...user,
+        id: user.id,
+        username: user.username,
+        isActive: user.isActive,
         dataLimit: user.dataLimit ? Number(user.dataLimit) : null,
-        dataUsed: Number(user.dataUsed)
+        dataUsed: Number(user.dataUsed),
+        ipLimit: user.ipLimit,
+        telegramUserId: user.telegramUserId,
+        deactivatedAt: user.deactivatedAt,
+        expiresAt: user.expiresAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
     };
 }
 
 export async function createProxyUser(data: NewProxyUserRequest): Promise<ProxyUser> {
+    await assertAdmin();
+    assertValidUsername(data.username);
+
     const existing = await prisma.proxyUser.findFirst({
         where: { username: data.username }
     });
@@ -85,6 +134,9 @@ export async function createProxyUser(data: NewProxyUserRequest): Promise<ProxyU
 }
 
 export async function updateProxyUser(data: EditProxyUserRequest): Promise<ProxyUser> {
+    await assertAdmin();
+    assertValidUsername(data.username);
+
     const existing = await prisma.proxyUser.findUnique({
         where: { id: data.id }
     });
@@ -148,6 +200,8 @@ export async function updateProxyUser(data: EditProxyUserRequest): Promise<Proxy
 }
 
 export async function deleteProxyUser(id: number): Promise<void> {
+    await assertAdmin();
+
     const existing = await prisma.proxyUser.findUnique({
         where: { id }
     });

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentSession } from "@/src/core/session";
 import { createProxyUser } from "@/src/core/actions/proxy-user";
 import { prisma } from "@/src/prisma/db";
+import { isValidationError } from "@/src/core/errors";
 
 // Disable caching for all responses in this route
 export const dynamic = "force-dynamic";
@@ -30,6 +31,10 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true, user });
     } catch (error) {
+        if (isValidationError(error)) {
+            return NextResponse.json({ error: (error as Error).message }, { status: 400 });
+        }
+
         return NextResponse.json(
             { error: error instanceof Error ? error.message : "Failed to create user" },
             { status: 500 }

@@ -1,3 +1,9 @@
+jest.mock("@/src/core/auth", () => ({
+    resolveAdmin: jest.fn(async () => ({ id: 1, username: "admin" }))
+}));
+
+jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
+
 jest.mock("@/src/core/actions/proxy-user", () => ({
     getProxyUserById: jest.fn(),
     updateProxyUser: jest.fn()

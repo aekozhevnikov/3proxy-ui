@@ -1,7 +1,9 @@
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import UserForm from "@/src/app/admin/users/components/user-form";
 import { getProxyUserById, updateProxyUser } from "@/src/core/actions/proxy-user";
+import { resolveAdmin } from "@/src/core/auth";
 import { createPageTitle } from "@/src/core/utils";
 
 interface EditUserPageProps {
@@ -9,6 +11,13 @@ interface EditUserPageProps {
 }
 
 export async function generateMetadata({ params }: EditUserPageProps): Promise<Metadata> {
+    // The middleware is not the only gate. It is also subject to bypass
+    // advisories in the installed Next version, and this route's URL shape is a
+    // dynamic segment, which is exactly what one of them targets.
+    if (!(await resolveAdmin())) {
+        return { title: createPageTitle("Edit User") };
+    }
+
     const { id } = await params;
     const user = await getProxyUserById(Number(id));
 
@@ -18,6 +27,10 @@ export async function generateMetadata({ params }: EditUserPageProps): Promise<M
 }
 
 export default async function EditUserPage({ params }: EditUserPageProps) {
+    if (!(await resolveAdmin())) {
+        redirect("/login");
+    }
+
     const { id } = await params;
     const user = await getProxyUserById(Number(id));
 

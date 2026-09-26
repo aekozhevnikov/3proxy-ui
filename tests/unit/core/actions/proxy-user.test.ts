@@ -9,6 +9,12 @@ import {
 import prisma from "@/prisma/db";
 import { NewProxyUserRequest, EditProxyUserRequest } from "@/src/core/definitions";
 
+jest.mock("@/src/core/auth", () => ({
+    assertAdmin: jest.fn(async () => ({ id: 1, username: "admin" })),
+    resolveAdmin: jest.fn(async () => ({ id: 1, username: "admin" })),
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 jest.mock("@/prisma/db", () => {
     const mockProxyUser = {
         findMany: jest.fn(),
@@ -111,7 +117,7 @@ describe("proxy-user actions", () => {
                 id: 1,
                 username: "testuser",
             }));
-            expect(prisma.proxyUser.findUnique).toHaveBeenCalledWith({ where: { id: 1 } });
+            expect(prisma.proxyUser.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 1 } }));
         });
 
         it("returns null when user not found", async () => {

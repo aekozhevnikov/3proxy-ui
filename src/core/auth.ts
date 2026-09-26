@@ -34,26 +34,67 @@ const MISSING_USER = undefined as unknown as AdminSession;
  * literal does not work.
  */
 export async function requireAdmin(): Promise<AdminCheck> {
-    const session = await currentSession();
+    const { user, authenticated } = await checkAdmin();
 
-    if (!session.isAuthorized || session.userId === undefined) {
+    if (!authenticated) {
         return {
             user: MISSING_USER,
             denial: NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         };
     }
 
-    const user = await prisma.user.findUnique({
-        where: { id: session.userId },
-        select: { id: true, username: true, isAdmin: true }
-    });
-
-    if (!user || !user.isAdmin) {
+    if (!user) {
         return {
             user: MISSING_USER,
             denial: NextResponse.json({ error: "Forbidden" }, { status: 403 })
         };
     }
 
-    return { user: { id: user.id, username: user.username }, denial: null };
+    return { user, denial: null };
+}
+
+/**
+ * The same check for server actions and server components, where a
+ * NextResponse cannot be returned. Returns null when the caller is not an
+ * authenticated admin.
+ */
+export async function resolveAdmin(): Promise<AdminSession | null> {
+    return (await checkAdmin()).user;
+}
+
+/**
+ * For server actions, which cannot return a response. Throws instead, so a
+ * caller that forgets the check fails closed rather than proceeding.
+ */
+export async function assertAdmin(): Promise<AdminSession> {
+    const user = await resolveAdmin();
+
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
+    return user;
+}
+
+/**
+ * Distinguishes "no session" from "not an admin" so the route guard can answer
+ * 401 versus 403. The two collapse into one boolean elsewhere because the
+ * project compiles with strict: false.
+ */
+async function checkAdmin(): Promise<{ user: AdminSession | null; authenticated: boolean }> {
+    const session = await currentSession();
+
+    if (!session.isAuthorized || session.userId === undefined) {
+        return { user: null, authenticated: false };
+    }
+
+    const record = await prisma.user.findUnique({
+        where: { id: session.userId },
+        select: { id: true, username: true, isAdmin: true }
+    });
+
+    return {
+        user: record && record.isAdmin ? { id: record.id, username: record.username } : null,
+        authenticated: true
+    };
 }

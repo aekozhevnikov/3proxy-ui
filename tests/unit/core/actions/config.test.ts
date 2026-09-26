@@ -3,6 +3,12 @@ import { update3proxyConfig } from "@/src/core/actions/config";
 import { prisma } from "@/src/prisma/db";
 import { hashProxyPassword } from "@/src/core/password-hash";
 
+jest.mock("@/src/core/auth", () => ({
+    assertAdmin: jest.fn(async () => ({ id: 1, username: "admin" })),
+    resolveAdmin: jest.fn(async () => ({ id: 1, username: "admin" })),
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 jest.mock("@/src/prisma/db", () => ({
     prisma: {
         proxyUser: {

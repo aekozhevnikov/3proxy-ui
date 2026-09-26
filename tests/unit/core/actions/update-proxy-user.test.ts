@@ -3,6 +3,12 @@ import { updateProxyUser } from "@/src/core/actions/proxy-user";
 import prisma from "@/prisma/db";
 import { EditProxyUserRequest } from "@/src/core/definitions";
 
+jest.mock("@/src/core/auth", () => ({
+    assertAdmin: jest.fn(async () => ({ id: 1, username: "admin" })),
+    resolveAdmin: jest.fn(async () => ({ id: 1, username: "admin" })),
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 jest.mock("@/prisma/db", () => {
     const mockProxyUser = {
         findMany: jest.fn(),
