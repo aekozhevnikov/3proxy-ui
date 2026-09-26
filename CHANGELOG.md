@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   file), and `test:all` no longer repeats suites that `test:unit` already runs
 
 ### Fixed
+- `3proxy/3proxy.cfg` and `3proxy/fail2ban/3proxy-docker.conf` are tracked again: the blanket
+  `3proxy` ignore also dropped them from every fresh checkout, so the Docker build failed on CI
+  with `3proxy-docker.conf: not found` and the fail2ban filter never reached the image
 - E2E log reset no longer fails on CI with `EACCES`: the log files are created by 3proxy inside the
   container and belong to root there, while the checkout belongs to the runner user, so they are
   now truncated from inside the container with a host-side fallback

@@ -2,7 +2,15 @@
 .vscode/
 .idea/
 .env
-3proxy
+# The 3proxy directory holds runtime state (logs, .proxyauth) that must stay
+# untracked, but the image build copies two config files from it. Ignoring the
+# directory outright also dropped those files from every fresh checkout, so the
+# Docker build failed on CI with "3proxy-docker.conf: not found". Exclude the
+# contents instead of the directory so the two configs can be re-included.
+3proxy/*
+!3proxy/3proxy.cfg
+!3proxy/fail2ban/
+!3proxy/fail2ban/3proxy-docker.conf
 dist
 node_modules
 .next
