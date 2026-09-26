@@ -9,6 +9,10 @@ import * as path from "path";
 import { GET } from "@/src/app/api/system/status/route";
 import { type Stats } from "node:fs";
 
+jest.mock("@/src/core/auth", () => ({
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 jest.mock("fs", () => {
     const actualFs = jest.requireActual("fs");
     return {

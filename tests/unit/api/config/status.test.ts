@@ -5,6 +5,10 @@
 import { mocked } from '@/tests/unit/test-utils/mock-helpers';
 import { GET } from "@/src/app/api/config/status/route";
 
+jest.mock("@/src/core/auth", () => ({
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 jest.mock("@/src/prisma/db", () => {
     const mockProxyUser = {
         findMany: jest.fn(),
@@ -42,16 +46,15 @@ describe("config/status API", () => {
         ]);
 
         const result = await GET();
-        const data = await result.json() as { users: Array<{ username: string; password: string; flags?: string }> };
+        const data = (await result.json()) as { users: Array<{ username: string; dataLimit: number | null; ipLimit: number | null }> };
 
         expect(data.users.length).toBe(2);
         expect(data.users[0].username).toBe("user1");
-        expect(data.users[0].flags).toContain("d");
-        expect(data.users[0].flags).toContain("e");
-        expect(data.users[1].flags).toBeUndefined();
+        expect(data.users[0].dataLimit).toBe(1024);
+        expect(data.users[1].dataLimit).toBeNull();
     });
 
-    it("returns users with no flags when no dataLimit, expiresAt, or ipLimit", async () => {
+    it("never returns the password column", async () => {
         mocked(prisma.proxyUser.findMany).mockResolvedValue([
             {
                 username: "user1",
@@ -63,9 +66,27 @@ describe("config/status API", () => {
         ]);
 
         const result = await GET();
-        const data = await result.json() as { users: Array<{ flags?: string }> };
+        const body = await result.text();
 
-        expect(data.users[0].flags).toBeUndefined();
+        expect(body).not.toContain("hashedpass1");
+        expect(body).not.toContain("password");
+    });
+
+    it("returns null limits when the user is unlimited", async () => {
+        mocked(prisma.proxyUser.findMany).mockResolvedValue([
+            {
+                username: "user1",
+                password: "hashedpass1",
+                dataLimit: null,
+                expiresAt: null,
+                ipLimit: 1,
+            } as any,
+        ]);
+
+        const result = await GET();
+        const data = (await result.json()) as { users: Array<{ dataLimit: number | null }> };
+
+        expect(data.users[0].dataLimit).toBeNull();
     });
 
     it("returns empty users array when no active users", async () => {

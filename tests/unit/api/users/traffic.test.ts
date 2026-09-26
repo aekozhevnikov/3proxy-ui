@@ -6,6 +6,10 @@ import { mocked } from '@/tests/unit/test-utils/mock-helpers';
 import { GET } from "@/src/app/api/users/traffic/route";
 import { readTrafficLogs, UserTrafficStats } from "@/src/lib/traffic-parser";
 
+jest.mock("@/src/core/auth", () => ({
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 jest.mock("@/src/lib/traffic-parser", () => ({
     readTrafficLogs: jest.fn(),
 }));

@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 
 import { find3proxyContainer, restart3proxyContainer } from "@/src/core/docker";
+import { requireAdmin } from "@/src/core/auth";
 
 export async function POST(): Promise<Response> {
     try {
+        const auth = await requireAdmin();
+
+        if (auth.denial) {
+            return auth.denial;
+        }
+
         const containerInfo = await find3proxyContainer();
 
         if (containerInfo) {

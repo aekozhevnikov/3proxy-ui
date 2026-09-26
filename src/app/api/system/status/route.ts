@@ -12,9 +12,16 @@ import {
     get3proxyVersion
 } from "@/src/core/system-info";
 import { findLogsDir } from "@/src/lib/logs-finder";
+import { requireAdmin } from "@/src/core/auth";
 
 export async function GET() {
     try {
+        const auth = await requireAdmin();
+
+        if (auth.denial) {
+            return auth.denial;
+        }
+
         let is3proxyRunning: boolean;
         let pid: number | null;
         let containerInfo: { id: string; name: string } | null = null;

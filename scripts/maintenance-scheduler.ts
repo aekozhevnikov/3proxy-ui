@@ -22,10 +22,10 @@
 
 import cron from "node-cron";
 
-import { runMaintenance, log, formatMaintenanceSummary } from "@/src/lib/maintenance-runner";
+import { log, formatMaintenanceSummary } from "@/src/lib/maintenance-runner";
+import { runMaintenanceJob } from "@/src/lib/maintenance-job";
 
 const SYNC_INTERVAL = process.env.TRAFFIC_SYNC_INTERVAL || "*/30 * * * *"; // Every 30 minutes
-const API_URL = process.env.API_URL || "http://localhost:3000";
 
 // Guard against multiple instantiations (HMR in dev)
 let isRunning = false;
@@ -41,16 +41,15 @@ export function startMaintenanceScheduler() {
 
     log("Starting maintenance scheduler...");
     log(`Sync interval: ${SYNC_INTERVAL}`);
-    log(`API endpoint: ${API_URL}/api/users/maintenance`);
 
     // Run immediately on startup
     (async () => {
-        const result = await runMaintenance();
+        try {
+            const result = await runMaintenanceJob();
 
-        if (result.success) {
-            log(`Initial maintenance: ${formatMaintenanceSummary(result).replace("Maintenance: ", "")}`, "success");
-        } else {
-            log(`Initial maintenance failed: ${result.error}`, "error");
+            log(`Initial ${formatMaintenanceSummary(result)}`, "success");
+        } catch (error) {
+            log(`Initial maintenance failed: ${error instanceof Error ? error.message : String(error)}`, "error");
         }
     })();
 
@@ -60,15 +59,12 @@ export function startMaintenanceScheduler() {
         async () => {
             log("Running scheduled maintenance...");
 
-            const result = await runMaintenance();
+            try {
+                const result = await runMaintenanceJob();
 
-            if (result.success) {
-                log(
-                    `Maintenance successful: ${formatMaintenanceSummary(result).replace("Maintenance: ", "")}`,
-                    "success"
-                );
-            } else {
-                log(`Maintenance failed: ${result.error}`, "error");
+                log(formatMaintenanceSummary(result), "success");
+            } catch (error) {
+                log(`Maintenance failed: ${error instanceof Error ? error.message : String(error)}`, "error");
             }
         },
         {

@@ -14,6 +14,12 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, appendFileSy
 import os from "os";
 import path from "path";
 
+// This suite exercises traffic accounting against a real database, not
+// authorisation. The guard itself is covered by tests/unit/core/auth.test.ts.
+jest.mock("@/src/core/auth", () => ({
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 const TEST_DIR = mkdtempSync(path.join(os.tmpdir(), "maintenance-route-"));
 const TEST_DB = path.join(TEST_DIR, "route.db");
 const LOGS_DIR = path.join(TEST_DIR, "logs");
@@ -101,14 +107,14 @@ describe("maintenance route traffic accounting", () => {
     it("counts the traffic from a log exactly once across repeated calls", async () => {
         writeFileSync(path.join(LOGS_DIR, "3proxy.log"), logLine("routeuser", 5000));
 
-        const first = await POST(request());
+        const first = await POST();
         expect(first.status).toBe(200);
         expect((await first.json()).totalTraffic).toBe(5000);
         expect(await dataUsedFor("routeuser")).toBe(BigInt(5000));
 
         // The second and third runs must not add the same bytes again
         for (let i = 0; i < 2; i++) {
-            const response = await POST(request());
+            const response = await POST();
             expect(response.status).toBe(200);
             expect((await response.json()).totalTraffic).toBe(0);
         }
@@ -120,10 +126,10 @@ describe("maintenance route traffic accounting", () => {
         const logPath = path.join(LOGS_DIR, "3proxy.log");
 
         writeFileSync(logPath, logLine("routeuser", 1000));
-        await POST(request());
+        await POST();
 
         appendFileSync(logPath, logLine("routeuser", 2000));
-        const response = await POST(request());
+        const response = await POST();
 
         expect((await response.json()).totalTraffic).toBe(2000);
         expect(await dataUsedFor("routeuser")).toBe(BigInt(3000));
@@ -134,7 +140,7 @@ describe("maintenance route traffic accounting", () => {
         const rotatedPath = path.join(LOGS_DIR, "3proxy.log.2026.09.20");
 
         writeFileSync(logPath, logLine("routeuser", 4000));
-        await POST(request());
+        await POST();
 
         // 3proxy rotation: the file is renamed (inode preserved), writing
         // continues into the renamed file, and the new 3proxy.log is empty
@@ -142,7 +148,7 @@ describe("maintenance route traffic accounting", () => {
         appendFileSync(rotatedPath, logLine("routeuser", 7000));
         writeFileSync(logPath, "");
 
-        const response = await POST(request());
+        const response = await POST();
 
         expect((await response.json()).totalTraffic).toBe(7000);
         expect(await dataUsedFor("routeuser")).toBe(BigInt(11000));
@@ -158,7 +164,7 @@ describe("maintenance route traffic accounting", () => {
         // Log accumulated before offset tracking was introduced
         writeFileSync(path.join(LOGS_DIR, "3proxy.log"), logLine("routeuser", 900000));
 
-        const response = await POST(request());
+        const response = await POST();
 
         expect((await response.json()).totalTraffic).toBe(0);
         expect(await dataUsedFor("routeuser")).toBe(BigInt(0));
@@ -166,7 +172,7 @@ describe("maintenance route traffic accounting", () => {
         // After the switch, new lines are counted as usual
         appendFileSync(path.join(LOGS_DIR, "3proxy.log"), logLine("routeuser", 1000));
 
-        const next = await POST(request());
+        const next = await POST();
         expect((await next.json()).totalTraffic).toBe(1000);
         expect(await dataUsedFor("routeuser")).toBe(BigInt(1000));
     });
@@ -174,7 +180,7 @@ describe("maintenance route traffic accounting", () => {
     it("counts the log from the start when there is no state file yet", async () => {
         writeFileSync(path.join(LOGS_DIR, "3proxy.log"), logLine("routeuser", 900000));
 
-        const response = await POST(request());
+        const response = await POST();
 
         expect((await response.json()).totalTraffic).toBe(900000);
         expect(await dataUsedFor("routeuser")).toBe(BigInt(900000));

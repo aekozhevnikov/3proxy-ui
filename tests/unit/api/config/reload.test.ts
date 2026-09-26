@@ -5,6 +5,10 @@ import { mocked } from '@/tests/unit/test-utils/mock-helpers';
 
 import { POST } from "@/src/app/api/config/reload/route";
 
+jest.mock("@/src/core/auth", () => ({
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 jest.mock("child_process", () => ({
     exec: jest.fn(),
 }));

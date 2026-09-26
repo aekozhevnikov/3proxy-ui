@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/prisma/db";
 import { find3proxyContainer } from "@/src/core/docker";
 import { logger } from "@/src/core/logger";
+import { requireAdmin } from "@/src/core/auth";
 
 const execAsync = promisify(exec);
 
@@ -16,6 +17,12 @@ const execAsync = promisify(exec);
  */
 export async function POST(request: NextRequest) {
     try {
+        const auth = await requireAdmin();
+
+        if (auth.denial) {
+            return auth.denial;
+        }
+
         const body = await request.json();
         const { username } = body;
 

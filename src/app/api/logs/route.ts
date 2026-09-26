@@ -3,6 +3,7 @@ import type { LogType } from "@/src/core/definitions";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getLogs, getAvailableLogDates, getLogStats } from "@/src/core/log-parser";
+import { requireAdmin } from "@/src/core/auth";
 
 const VALID_LOG_TYPES: ReadonlySet<string> = new Set(["all", "PROXY", "SOCKS", "ADMIN"]);
 
@@ -22,6 +23,13 @@ function parseLogType(value: string | null): LogType {
 
 export async function GET(request: NextRequest) {
     try {
+
+        const auth = await requireAdmin();
+
+        if (auth.denial) {
+            return auth.denial;
+        }
+
         const searchParams = request.nextUrl.searchParams;
 
         const filter = {

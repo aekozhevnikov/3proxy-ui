@@ -4,6 +4,10 @@
 import { POST } from "@/src/app/api/users/maintenance/route";
 import { NextRequest } from "next/server";
 
+jest.mock("@/src/core/auth", () => ({
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 jest.mock("@/src/prisma/db", () => {
     const mockProxyUser = {
         findFirst: jest.fn(),
@@ -76,14 +80,6 @@ describe("maintenance API", () => {
         jest.clearAllMocks();
     });
 
-    const createRequest = (body?: Record<string, unknown>) => {
-        return new NextRequest("http://localhost/api/users/maintenance", <RequestInit>{
-            method: "POST",
-            body: body ? JSON.stringify(body) : undefined,
-            headers: { "Content-Type": "application/json" }
-        });
-    };
-
     afterEach(() => {
         delete process.env.LOGS_DIR;
     });
@@ -101,7 +97,7 @@ describe("maintenance API", () => {
         fs.writeFile.mockResolvedValue(undefined);
         prisma.proxyUser.findMany.mockResolvedValue([]);
 
-        const result = await POST(createRequest());
+        const result = await POST();
         const data = await result.json();
 
         expect(result.status).toBe(200);
@@ -134,7 +130,7 @@ describe("maintenance API", () => {
         prisma.proxyUser.findFirst.mockResolvedValue(mockUser);
         prisma.proxyUser.update.mockResolvedValue({});
 
-        const result = await POST(createRequest({ logsDir: "/test/logs" }));
+        const result = await POST();
         const data = await result.json();
 
         expect(result.status).toBe(200);
@@ -167,7 +163,7 @@ describe("maintenance API", () => {
         prisma.proxyUser.findFirst.mockResolvedValue(mockUser);
         prisma.proxyUser.update.mockResolvedValue({});
 
-        const result = await POST(createRequest({ logsDir: "/test/logs" }));
+        const result = await POST();
         const data = await result.json();
 
         expect(result.status).toBe(200);
@@ -205,11 +201,23 @@ describe("maintenance API", () => {
             }
         ]);
 
-        const result = await POST(createRequest({ logsDir: "/test/logs" }));
+        const result = await POST();
         const data = await result.json();
 
         expect(result.status).toBe(200);
         expect(data.success).toBe(true);
+    });
+
+    it("takes the logs directory from configuration, not from the caller", async () => {
+        // The route no longer accepts a request at all. It used to read logsDir
+        // from the body, which let a caller point the reader at any path the
+        // container can read and feed crafted lines into processTrafficLimits,
+        // which writes to the database and deactivates users.
+        expect(POST.length).toBe(0);
+
+        const { findLogsDir } = require("@/src/lib/logs-finder");
+
+        expect(typeof findLogsDir).toBe("function");
     });
 
     it("returns 500 on unexpected error", async () => {
@@ -218,7 +226,7 @@ describe("maintenance API", () => {
         fs.mkdir.mockRejectedValue(new Error("FS error"));
         fs.readdir.mockRejectedValue(new Error("FS error"));
 
-        const result = await POST(createRequest());
+        const result = await POST();
         const data = await result.json();
 
         expect(result.status).toBe(500);

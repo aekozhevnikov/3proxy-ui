@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { readTrafficLogs, UserTrafficStats } from "@/src/lib/traffic-parser";
+import { requireAdmin } from "@/src/core/auth";
 
 /**
  * GET /api/users/traffic
@@ -9,6 +10,12 @@ import { readTrafficLogs, UserTrafficStats } from "@/src/lib/traffic-parser";
  */
 export async function GET() {
     try {
+        const auth = await requireAdmin();
+
+        if (auth.denial) {
+            return auth.denial;
+        }
+
         const trafficData = await readTrafficLogs();
 
         // Convert Map to plain object for JSON response

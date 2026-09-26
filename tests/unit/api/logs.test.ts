@@ -7,6 +7,10 @@ import { GET } from "@/src/app/api/logs/route";
 import { NextRequest } from "next/server";
 import * as logParser from "@/src/core/log-parser";
 
+jest.mock("@/src/core/auth", () => ({
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 jest.mock("@/src/core/log-parser", () => ({
     getLogs: jest.fn(),
     getAvailableLogDates: jest.fn(),

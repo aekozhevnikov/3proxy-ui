@@ -5,6 +5,10 @@
 import { mocked } from '@/tests/unit/test-utils/mock-helpers';
 import { NextRequest } from "next/server";
 
+jest.mock("@/src/core/auth", () => ({
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
+}));
+
 jest.mock("@/src/core/logger", () => ({
     logger: {
         debug: jest.fn(),
