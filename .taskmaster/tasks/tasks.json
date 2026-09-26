@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Analyze Docker image size breakdown",
         "description": "Run docker history or dive to identify largest layers in the 3proxy-ui Docker image. Document which packages and files contribute most to the 1.3GB size.",
         "status": "done",
@@ -14,7 +14,7 @@
         "updatedAt": "2026-09-24T02:12:25.885Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Remove devDependencies from runtime stage",
         "description": "Modify Dockerfile to install only production dependencies in the runtime stage. Use npm ci --omit=dev to avoid installing devDependencies.",
         "status": "done",
@@ -28,7 +28,7 @@
         "updatedAt": "2026-09-24T02:34:57.659Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Remove unnecessary runtime packages",
         "description": "Evaluate docker-cli and other runtime packages. Remove docker-cli if not needed at runtime, keeping only essential packages for fail2ban and basic operation.",
         "status": "done",
@@ -42,7 +42,7 @@
         "updatedAt": "2026-09-24T02:35:04.942Z"
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Optimize node_modules in build stage",
         "description": "Ensure aggressive pruning of node_modules before copying to runtime. Remove all documentation, tests, types, and unnecessary files from packages.",
         "status": "done",
@@ -56,7 +56,7 @@
         "updatedAt": "2026-09-24T02:35:04.968Z"
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Build and verify optimized image size",
         "description": "Build the optimized Docker image and verify the size is at most 900MB. Test that the application starts and all core features work.",
         "status": "done",
@@ -70,7 +70,7 @@
         "updatedAt": "2026-09-24T03:41:52.286Z"
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Run tests and validate no regressions",
         "description": "Run the full test suite to ensure Docker optimization did not introduce any regressions.",
         "status": "done",
@@ -84,7 +84,7 @@
         "updatedAt": "2026-09-25T08:13:46.883Z"
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Update E2E tests with docker-compose.dev.yml base and create test logs",
         "description": "Update E2E test infrastructure to use docker-compose.dev.yml as base, create realistic 3proxy test logs for validation, and ensure traffic data is correctly recorded in DB with proper BigInt handling. Add unit/integration tests for traffic parsing with test logs.",
         "details": "",
@@ -96,7 +96,7 @@
         "updatedAt": "2026-09-25T23:26:59.094Z"
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Restore limit enforcement in proxyauth file generation",
         "description": "Ensure that the live user file (/etc/3proxy/users/.proxyauth) carries the d<bytes>, e<timestamp>, and i<count> flags alongside the CR hash. Decide the source of truth for each flag (dataLimit in MB -> bytes, expiresAt -> unix seconds, ipLimit) and emit them in proxyauthEntry(). Remove the dead write to /etc/3proxy-users.cfg and verify against the deployed 3proxy build whether shaper and ipcount support are present.",
         "status": "done",
@@ -141,7 +141,7 @@
         "updatedAt": "2026-09-26T19:18:07.756Z"
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Stop emitting deactivated users in proxyauth file",
         "description": "Deactivated users are currently written as comment lines in the proxyauth file, which 3proxy still parses and registers. Stop emitting them in the proxyauth file entirely. Keep deactivation history in a log file or the database instead.",
         "status": "done",
@@ -155,10 +155,10 @@
         "updatedAt": "2026-09-26T19:18:07.688Z"
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Add authentication and authorization to all unauthenticated API routes",
         "description": "Add session check plus admin check to GET /api/config/status, GET and POST /api/config/generate, POST /api/config/reload, POST /api/users/maintenance, and POST /api/admin/users/test-proxy. Remove plaintext password from /api/config/status response. Stop accepting logsDir from the request body in /api/users/maintenance.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "details": "Implement a shared guard function (currentSession + isAdmin) and apply it to all listed routes. Remove `password: true` from the /api/config/status response. In /api/users/maintenance, ignore logsDir from the body and use a server-side configured path. Ensure all routes fail closed when no valid admin session is present.",
@@ -194,10 +194,11 @@
             "parentTaskId": 10,
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-09-26T19:45:48.286Z"
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "Harden session and authentication mechanisms",
         "description": "Add rate limiting and logging to POST /api/auth/login. Fix the session cookie secure flag to use a single shared constant. Invalidate old JWTs on password change. Re-read the user from the database in currentSession to reflect deletions and role changes.",
         "status": "pending",
@@ -239,7 +240,7 @@
         ]
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "Add authorization guards to Server Actions and admin pages",
         "description": "Add currentSession plus admin check to Server Actions in src/core/actions/proxy-user.ts and config.ts. Add the same guard to /admin/users/[id]/edit/page.tsx and /admin/dashboard/page.tsx. Fix getProxyUserById to use an explicit select without the password field. Validate usernames on create and update.",
         "status": "pending",
@@ -273,7 +274,7 @@
         ]
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "Apply security headers, fix Docker context leaks, and clean up config traps",
         "description": "Add security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS) in next.config.js. Fix .dockerignore to exclude prisma/**/*.db. Move HOSTNAME=0.0.0.0 from image ENV to scripts/start.ts. Return neutral error messages to clients. Require ADMIN_PASSWORD in compose. Remove NODE_TLS_REJECT_UNAUTHORIZED=0 from .env.example. Upgrade next to a patched release.",
         "status": "pending",
@@ -315,7 +316,7 @@
         ]
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "Spike: verify 3proxy accepts quoted CR hashes in a $ included users file",
         "description": "BLOCKING SPIKE. Determine whether 3proxy 0.9.5 accepts a quoted value `user:CR:\"$1$salt$hash\"` in a users file pulled in by the `users $file` directive, or whether the quotes become part of the stored hash and break every password. Run a real 3proxy container, write such a file, restart, and attempt authentication with the plaintext.</description>\n<parameter name=\"details\">The 3proxy documentation requires quotes around CR values because a leading $ is a file-inclusion macro, but the documented example is an inline `users` command inside 3proxy.cfg, not an entry inside a separate file pulled in by `$`. src/conf.c strips quote characters in parsestr() before the token reaches h_users(), so the hypothesis is that quotes are handled identically in both cases, but this has never been tested. Everything in the enforcement task depends on the answer: if quotes break the hash, the fix is a different mechanism entirely. Method: start 3proxy with a users file containing a quoted $1$ MD5-crypt hash, authenticate over HTTP and SOCKS with the plaintext, and confirm 200 rather than 407. Compare against an unquoted entry. Record the exact file content that works.",
         "details": "",
@@ -327,7 +328,7 @@
         "updatedAt": "2026-09-26T18:30:21.599Z"
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "Remove wildcard CORS headers and bound the log endpoint limit",
         "description": "Remove Access-Control-Allow-Origin: * from /api/logs (line 54), /api/system/status (line 141) and /api/users/traffic (line 27), and bound the `limit` query parameter on /api/logs. The limit is read as a bare parseInt with no clamp and used as a ceiling while getLogs slurps whole files via readLogFile before slicing, so ?limit=999999999 is a memory and response size DoS.</description>\n<parameter name=\"details\">The wildcard CORS header made the log endpoint readable from any website the operator visited, before authentication was added. It is unnecessary even for a same-origin panel and only widens exposure. Bound the limit with a clamp such as Math.min(Math.max(limit ?? 1000, 1), 5000) and reject a non-numeric value instead of letting parseInt produce NaN. Also check readLogFile: it reads the entire file into memory before slicing, so a large log file costs memory regardless of the limit; consider reading only the tail that the limit needs.",
         "details": "",
@@ -338,7 +339,7 @@
         "subtasks": []
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "Upgrade Next.js to a release patched against the four middleware-bypass advisories",
         "description": "Upgrade next from the installed 16.2.3 to a release that closes four open High middleware/proxy-bypass advisories: GHSA-6gpp-xcg3-4w24 (&lt;16.2.11, CVSS 8.3), GHSA-492v-c6pp-mqqv (&lt;16.2.5, dynamic route parameter injection), GHSA-267c-6grr-h53f (&lt;16.2.5, segment prefetch) and GHSA-26hh-7cqf-hhc6 (&lt;16.2.6, incomplete fix). This is a High on its own and is not cosmetic like the headers work it was bundled with in task 13.</description>\n<parameter name=\"details\">GHSA-6gpp applies to this project: its condition is Turbopack plus a single locale, Turbopack became the default bundler for next build in 16.0.0, scripts/build.ts runs a bare next build, and there is no i18n config so the single-locale condition holds trivially. Run this as its own change with its own verification, not bundled with config edits, because a Next major or minor bump can move behaviour the build depends on. Check the upgrade guide for the middleware to proxy rename, verify next.config.js still applies, and confirm the Docker build stage still produces a working standalone bundle. Note that the two CRITICAL advisories against next (GHSA-p293-qw3h-jr36 Windows path traversal, GHSA-2xp9-vwfh-vxw4 AVIF RCE) do not apply to a Linux Alpine build, but check that the upgrade does not introduce a new i18n or image-optimizer path that would make the AVIF one reachable.",
         "details": "",
@@ -349,7 +350,7 @@
         "subtasks": []
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Verify the fix set end to end and ship a release",
         "description": "End-to-end verification of the whole fix set, then ship it. Covers: a new E2E test proving a deactivated user is rejected by 3proxy and a user over their data limit is cut off; a container run proving the scheduler reaches its endpoint and .proxyauth carries the flags; an independent security pass re-checking the Critical and High findings are closed and introducing nothing new; and a release. v0.5.1 is already published, so this needs 0.5.2 or later plus a release tag.</description>\n<parameter name=\"details\">The enforcement fix is the one that needs proving rather than asserting, because a wrong flag value miscounts a paying customer's traffic. Bring up the real two-container stack, create a user with a small data limit, drive traffic through 3proxy until the limit is exceeded, restart 3proxy and confirm the user is refused. Then deactivate a user outright and confirm authentication fails after a restart. Only after both pass, run the independent security pass. This is also the point to settle whether docker-compose.yml stays gitignored now that it no longer contains a hardcoded secret, which is a decision the owner should make explicitly rather than by omission.",
         "details": "",
@@ -368,7 +369,7 @@
         "subtasks": []
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "Decide whether to pursue native 3proxy traffic limiting via ACL counters",
         "description": "OPTIONAL / DECISION REQUIRED. Native per-user traffic limiting is now the only remaining enforcement gap, and it is not reachable from the users file. 3proxy defines a user entry as exactly login:type:password with CL, CR and NT as the only types, and directs limits to ACLs; its auth.c enforces limits from conf.trafcounter, which is populated from 3proxy.cfg rather than from the users list. Work out what that requires in this deployment and decide whether it is worth doing, because panel-side enforcement now actually works: a user who exceeds their quota is set inactive and leaves the file, so 3proxy refuses them on the next reload.</description>\n<parameter name=\"details\">Tradeoff to weigh. Panel-side enforcement depends on the panel being up and on a maintenance run happening, so a user can overshoot by whatever they transfer between runs, and enforcement stops entirely if the panel is down. Native enforcement would cut off inside 3proxy and keep working when the panel is not, but it means generating and managing per-user ACL rules in 3proxy.cfg, which the panel does not currently write at all, and it may need compile-time support in the 3proxy build that silently does nothing when absent. First step is to establish whether the shipped 3proxy/3proxy:0.9.5 image supports per-user traffic counters at all, and what the config syntax is; the howtoe ACL section covers allow, deny and flush but the counter directive was not located in the documentation read so far. Not blocking: the deactivated-user fix in task 9 removed the silent failure, so limits are enforced as of that commit, just not natively.",
         "details": "",
@@ -377,19 +378,27 @@
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
+      },
+      {
+        "id": "19",
+        "title": "Keep the traffic sync offsets on the data volume, not in the image layer",
+        "description": "SYNC_INFO_FILE defaults to path.join(process.cwd(), \"data\", \"traffic-sync.json\"), and in the container cwd is /app/.next/standalone, so the per-inode log offsets land at /app/.next/standalone/data/traffic-sync.json, inside the image layer rather than on the /app/data volume. The file is lost whenever the container is recreated from the image, the offsets reset to zero, and every logged byte is accounted again. Point SYNC_INFO_FILE at /app/data in the compose stacks, or derive it from the database location so it follows the volume automatically. Found while verifying the maintenance scheduler: the job reported success and regenerated the user file, but no traffic-sync.json existed under /app/data. The impact is double counting rather than an outage, which for a metered service means billing twice for the same traffic. The integration test sets SYNC_INFO_FILE explicitly, which is why the suite never caught it. The same class of problem applies to any other default path that resolves against cwd rather than the volume.</description>\n<parameter name=\"file\">.taskmaster/tasks/tasks.json",
+        "details": "",
+        "testStrategy": "Container run: after a maintenance pass the offsets file exists under /app/data, and after recreating the container a second pass reports zero newly accounted bytes instead of re-reading the whole log.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-26T19:18:07.756Z",
-      "taskCount": 17,
-      "completedCount": 10,
+      "lastModified": "2026-09-26T19:45:48.286Z",
+      "taskCount": 19,
+      "completedCount": 11,
       "tags": [
         "master"
-      ],
-      "created": "2026-09-26T19:18:16.106Z",
-      "description": "Tasks for master context",
-      "updated": "2026-09-26T19:18:16.107Z"
+      ]
     }
   }
 }
