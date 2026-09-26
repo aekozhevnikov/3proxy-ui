@@ -1,0 +1,250 @@
+PRD: Fix security findings and restore limit enforcement in 3proxy-ui
+
+STATUS: draft for task generation
+SCOPE: main branch, 3proxy-ui web admin panel for a 3proxy proxy server
+
+================================================================
+1. BACKGROUND
+================================================================
+
+A security audit of the codebase produced one Critical, five High and a
+set of Medium/Low findings. A verification pass confirmed them and added
+new ones. While reproducing one of them, the maintenance scheduler turned
+out never to have run inside a container at all, which made the whole
+limit-enforcement story observably broken.
+
+Two facts frame everything below:
+
+- The published Docker image does NOT contain 3proxy. It contains the
+  panel, fail2ban and the Docker CLI. 3proxy runs as a separate container
+  and the two share a config volume mounted at /etc/3proxy.
+- 3proxy reads its user list from exactly one place: the `users $file`
+  directive in 3proxy.cfg, pointing at /etc/3proxy/users/.proxyauth.
+
+================================================================
+2. PHASE 1 - LIMIT ENFORCEMENT (product critical, do first)
+================================================================
+
+Currently a user who exceeds their data limit, or whose subscription has
+expired, keeps proxying. Neither enforcement mechanism works.
+
+2.1 Native limit flags are never written to the file 3proxy reads.
+    - proxyauthEntry() emits only `username:CR:"hash"`.
+    - The d<bytes>, e<timestamp> and i<count> flags ARE computed, but only
+      in api/config/status and api/config/generate.
+    - api/config/generate POST writes them to /etc/3proxy-users.cfg, a
+      path no 3proxy config ever includes. Confirmed by grep: nothing
+      reads that file.
+    - 3proxy.cfg line 27 loads only .proxyauth.
+    REQUIRED: the live user file must carry the limits. Decide the source
+    of truth for each flag (dataLimit in MB -> bytes, expiresAt ->
+    unix seconds, ipLimit) and emit them alongside the CR hash.
+    NOTE: `i<n>` requires 3proxy built with --enable-ipcount, and `d<n>`
+    requires shaper support. Verify against the deployed 3proxy build and
+    document what silently does not work if those are missing.
+
+2.2 Deactivated users are still registered by 3proxy.
+    - Deactivation writes a line `# DEACTIVATED <iso>: user:CR:"hash"`.
+    - 3proxy skips `#` lines only in readconfig() (src/conf.c:2269), for
+    top-level config lines read via fgets.
+    - A file pulled in by the `users $file` directive is parsed by a
+    recursive parsestr() (src/conf.c:2143) that has no `#` case at all, and
+    treats newline as an argument separator (conf.c:2196-2199).
+    - h_users() (conf.c:547) then registers every token containing a colon,
+    so `user:CR:"hash"` is added and the user authenticates normally.
+    REQUIRED: stop emitting deactivated users in the proxyauth file at
+    all. Keep the deactivation history somewhere that is not a file
+    included by `$` (log file or the database, not a comment in proxyauth).
+
+2.3 Remove the dead write to /etc/3proxy-users.cfg, or make the endpoint
+    that writes it actually feed 3proxy. Unauthenticated at the moment,
+    writes plaintext credentials to a fixed path in a root container.
+
+2.4 UNVERIFIED, must be checked: does 3proxy 0.9.5 accept a quoted
+    `user:CR:"$1$..."` value inside a $ included users file? The 3proxy
+    docs require quotes because a leading $ is a file-inclusion macro, but
+    the docs only show quotes for inline entries in 3proxy.cfg, not for
+    entries inside a users file. Everything built on MD5-crypt depends on
+    this. Verify against a running 3proxy before shipping.
+
+================================================================
+3. PHASE 2 - CRITICAL AND HIGH AUTHENTICATION GAPS
+================================================================
+
+3.1 CRITICAL: GET /api/config/status is unauthenticated and returns the
+    password column in plaintext (route.ts:5 no currentSession, :12
+    `password: true`, :46 returned). A single unauthenticated GET dumps
+    every proxy credential.
+    REQUIRED: session check plus admin check, and remove password from
+    the response entirely.
+
+3.2 CRITICAL: GET and POST /api/config/generate, same defect. The GET
+    returns the config text with `users <name>:CL:<plaintext>`, the POST
+    writes it to disk.
+    REQUIRED: session check plus admin check, remove plaintext from output,
+    and resolve 2.3.
+
+3.3 HIGH: POST /api/config/reload is unauthenticated and calls
+    restart3proxyContainer -> `docker restart` over the mounted socket.
+    A one-line curl loop drops every proxy connection once a second.
+    REQUIRED: session check plus admin check.
+
+3.4 HIGH: POST /api/users/maintenance is unauthenticated and takes
+    `logsDir` from the request body (route.ts:28). It readdirs that path,
+    parses the logs, and processTrafficLimits writes to the database and
+    deactivates users. An anonymous POST can deactivate paying customers.
+    Also reachable cross-site: sendBeacon with text/plain is a simple
+    request, no preflight, and Request.json() parses regardless of
+    content-type.
+    REQUIRED: session check plus admin check, and stop accepting logsDir
+    from the body.
+
+3.5 HIGH: POST /api/admin/users/test-proxy has no session check. It lives
+    under /api/admin, which the /admin/:path* matcher does not cover, and
+    it shells out with credentials from the database.
+    REQUIRED: session check plus admin check.
+
+3.6 HIGH: four open middleware/proxy-bypass advisories in the installed
+    next@16.2.3. GHSA-6gpp applies here: Turbopack has been the default
+    bundler since Next 16 and scripts/build.ts runs a bare `next build`,
+    and the project has no i18n config so the single-locale condition
+    holds.
+    REQUIRED: upgrade next to a patched release, and add defense in depth
+    so authorisation does not rest on middleware alone (see 4.1, 4.2).
+
+================================================================
+4. PHASE 3 - AUTHORISATION DEPTH
+================================================================
+
+4.1 Server Actions in src/core/actions/proxy-user.ts and config.ts perform
+    no session check. createProxyUser is the live create path
+    (useUsers.ts:65) and updateProxyUser is passed to a client form.
+    REQUIRED: currentSession plus admin check at the top of every action.
+
+4.2 /admin/users/[id]/edit/page.tsx and /admin/dashboard/page.tsx call no
+    currentSession, unlike /admin/users/page.tsx and
+    /admin/profile/page.tsx which redirect.
+    REQUIRED: add the same guard.
+
+4.3 HIGH: getProxyUserById (proxy-user.ts:24) does findUnique with no
+    select and spreads the whole row including password. It is returned
+    by GET /api/admin/users/[id] and serialised into the RSC payload of
+    the edit page, so the plaintext lands in browser state every time the
+    edit modal opens (useUsersActions.ts:121).
+    REQUIRED: explicit select without password. The share modal already
+    has a dedicated endpoint for the one case that genuinely needs it.
+
+4.4 username is validated nowhere. A username containing whitespace and
+    a colon produces extra h_users tokens, creating proxy accounts that
+    exist in 3proxy but not in the database, so they cannot be listed or
+    revoked from the panel.
+    REQUIRED: validate on create and update - no whitespace, no colon, no
+    control characters, sane length. Reject at the boundary.
+
+4.5 Add a single shared guard (currentSession + isAdmin) and use it in
+    every route and action, so the next route added by mistake fails
+    closed rather than open.
+
+================================================================
+5. PHASE 4 - SESSION AND AUTHENTICATION HARDENING
+================================================================
+
+5.1 HIGH: POST /api/auth/login has no rate limit, no lockout and no
+    logging at all (58 lines, no logger import). Default credentials
+    admin/admin are documented in DOCKER.md.
+    REQUIRED: failed-attempt counter per username and IP with a backoff,
+    and log every login attempt and its outcome.
+
+5.2 The session cookie is set with a hardcoded `secure: false` at
+    login/route.ts:49, while logout and change-credentials use
+    NODE_ENV === "production". So the flag depends on which endpoint ran
+    last. The compose stack publishes 3000 directly, without TLS.
+    REQUIRED: one shared constant, correct in all three places.
+
+5.3 Changing the password does not invalidate issued tokens: a new JWT is
+    minted but old ones live out their 1 hour.
+    REQUIRED: add a session version or passwordChangedAt to User and check
+    it in currentSession.
+
+5.4 currentSession verifies the JWT and returns, never consulting the
+    database. A deleted or de-admined account keeps full access until the
+    token expires.
+    REQUIRED: re-read the user after verify.
+
+================================================================
+6. PHASE 5 - REMAINING MEDIUM AND LOW
+================================================================
+
+6.1 No security headers anywhere in next.config.js. The panel displays
+    proxy passwords, so frame-ancestors / X-Frame-Options matters for
+    clickjacking on the copy button.
+    REQUIRED: CSP with frame-ancestors none, X-Frame-Options DENY,
+    X-Content-Type-Options nosniff, Referrer-Policy, HSTS.
+
+6.2 .dockerignore line 34 is `prisma/*.db`, which does not match
+    prisma/sqlite/app.db. A local database with plaintext proxy passwords
+    and the admin bcrypt hash enters the build context and the build-stage
+    layers. It does not reach the runtime image, but it lands in the local
+    BuildKit cache.
+    REQUIRED: `prisma/**/*.db`.
+
+6.3 HOSTNAME=0.0.0.0 is currently set in the image via commit b25982d.
+    scripts/start.ts:11 already had `HOSTNAME: process.env.HOSTNAME ||
+    "0.0.0.0"`, a fallback that never fired because Docker injects
+    HOSTNAME as the container id. The image ENV works for the shipped
+    compose stack but is not portable (ECS/Fargate re-inject the id).
+    REQUIRED: move it to scripts/start.ts, where the platform cannot
+    override it, and drop the image ENV.
+
+6.4 Raw error.message is returned to clients in several routes, so Prisma
+    text reaches the browser.
+    REQUIRED: log the full error server-side, return a neutral message.
+
+6.5 scripts/setup.ts hardcodes admin/admin and runs from entrypoint.sh on
+    every boot; nothing forces a change.
+    REQUIRED: require ADMIN_PASSWORD in the compose stack, and log the
+    generated proxy password once when it is first created.
+
+6.6 NODE_TLS_REJECT_UNAUTHORIZED=0 is present in .env.example. It is
+    currently inert because compose passes an explicit environment list
+    with no env_file, but the line is a trap.
+    REQUIRED: remove it from the template.
+
+6.7 docker-compose.yml is listed in .gitignore, so the production stack
+    is untracked and a fresh clone only gets docker-compose.dev.yml,
+    which contains a hardcoded JWT_SECRET. This is a decision, not a
+    bug - the user must choose: track the production compose now that it
+    no longer contains a secret, or document the dev stack as the
+    reference.
+
+6.8 The 3proxy admin interface is bound by `allow admin 127.0.0.1`, so
+    the panel container cannot use it. Do not widen this; it is not
+    needed once test-proxy is replaced by a check that does not require
+    the plaintext.
+
+================================================================
+7. VERIFICATION
+================================================================
+
+- Unit, integration and fail2ban jest projects pass.
+- E2E passes; add a test that a deactivated user is rejected by 3proxy
+  and that a user past their data limit is cut off.
+- A container run proves the scheduler reaches its endpoint, .proxyauth
+  carries the flags, and a 3proxy restart honours the limits.
+- 2.4 verified explicitly against a running 3proxy.
+- An independent security pass re-checks the Critical and High findings
+  are closed and introduces nothing new.
+- Ship as a new version: 0.5.1 is already published, so this needs 0.5.2
+  or later, and a release tag.
+
+================================================================
+8. OUT OF SCOPE
+================================================================
+
+- Removing the plaintext password column. It is a design decision with a
+  real product cost: the share modal must hand a working password to an
+  end user, and that needs the plaintext. Options were weighed (encrypt
+  at rest, or show once and never again) and deferred; the audit accepts
+  the current model as long as it is not exposed unauthenticated.
+- Rate limiting at the proxy layer, TLS termination, reverse proxy setup.
+- Replacing the B+ tree agent that produced the audit.

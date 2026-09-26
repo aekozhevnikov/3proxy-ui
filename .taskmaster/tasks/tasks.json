@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Analyze Docker image size breakdown",
         "description": "Run docker history or dive to identify largest layers in the 3proxy-ui Docker image. Document which packages and files contribute most to the 1.3GB size.",
         "status": "done",
@@ -14,7 +14,7 @@
         "updatedAt": "2026-09-24T02:12:25.885Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Remove devDependencies from runtime stage",
         "description": "Modify Dockerfile to install only production dependencies in the runtime stage. Use npm ci --omit=dev to avoid installing devDependencies.",
         "status": "done",
@@ -28,7 +28,7 @@
         "updatedAt": "2026-09-24T02:34:57.659Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "Remove unnecessary runtime packages",
         "description": "Evaluate docker-cli and other runtime packages. Remove docker-cli if not needed at runtime, keeping only essential packages for fail2ban and basic operation.",
         "status": "done",
@@ -42,7 +42,7 @@
         "updatedAt": "2026-09-24T02:35:04.942Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "Optimize node_modules in build stage",
         "description": "Ensure aggressive pruning of node_modules before copying to runtime. Remove all documentation, tests, types, and unnecessary files from packages.",
         "status": "done",
@@ -56,7 +56,7 @@
         "updatedAt": "2026-09-24T02:35:04.968Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Build and verify optimized image size",
         "description": "Build the optimized Docker image and verify the size is at most 900MB. Test that the application starts and all core features work.",
         "status": "done",
@@ -70,7 +70,7 @@
         "updatedAt": "2026-09-24T03:41:52.286Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "Run tests and validate no regressions",
         "description": "Run the full test suite to ensure Docker optimization did not introduce any regressions.",
         "status": "done",
@@ -84,7 +84,7 @@
         "updatedAt": "2026-09-25T08:13:46.883Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "Update E2E tests with docker-compose.dev.yml base and create test logs",
         "description": "Update E2E test infrastructure to use docker-compose.dev.yml as base, create realistic 3proxy test logs for validation, and ensure traffic data is correctly recorded in DB with proper BigInt handling. Add unit/integration tests for traffic parsing with test logs.",
         "details": "",
@@ -94,16 +94,302 @@
         "priority": "medium",
         "subtasks": [],
         "updatedAt": "2026-09-25T23:26:59.094Z"
+      },
+      {
+        "id": 8,
+        "title": "Restore limit enforcement in proxyauth file generation",
+        "description": "Ensure that the live user file (/etc/3proxy/users/.proxyauth) carries the d<bytes>, e<timestamp>, and i<count> flags alongside the CR hash. Decide the source of truth for each flag (dataLimit in MB -> bytes, expiresAt -> unix seconds, ipLimit) and emit them in proxyauthEntry(). Remove the dead write to /etc/3proxy-users.cfg and verify against the deployed 3proxy build whether shaper and ipcount support are present.",
+        "status": "done",
+        "dependencies": [
+          "14"
+        ],
+        "priority": "high",
+        "details": "Modify proxyauthEntry() in the config generation logic to include limit flags. Map dataLimit (MB) to bytes for d<bytes>, expiresAt (ISO) to unix seconds for e<timestamp>, and ipLimit to i<count>. Remove the write to /etc/3proxy-users.cfg in api/config/generate POST. Verify 3proxy build flags (--enable-ipcount, shaper support) and document silently non-functional flags. Confirm 3proxy 0.9.5 accepts quoted user:CR:\"$1$...\" values inside a $ included users file.",
+        "testStrategy": "Run a container and verify .proxyauth contains the flags. Restart 3proxy and confirm a user over their data limit is cut off. Confirm a deactivated user is rejected. Verify 3proxy accepts quoted CR hashes in included files.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Map ProxyUser fields to 3proxy flag syntax",
+            "description": "Decide the exact flag values written for each user: dataLimit is stored in MB and 3proxy's d flag takes bytes, expiresAt is a Date and e takes a unix timestamp, ipLimit is already a count. Handle the null cases: an absent dataLimit means unlimited, so no d flag, and the same for expiry. Confirm whether an already-expired user should get e in the past (3proxy refuses them immediately) or be omitted entirely.</description>\n<parameter name=\"details\">Read src/lib/proxyauth-writer.ts and src/core/actions/config.ts side by side; both build the same line and must agree. The conversion helpers for MB to bytes and Date to unix seconds already exist in src/app/api/config/generate/route.ts and can be moved rather than rewritten. Careful: dataUsed and dataLimit are BigInt in Prisma, so the conversion goes through Number() first.",
+            "details": "<info added on 2026-09-26T18:30:33.332Z>\nBLOCKING QUESTION ANSWERED by task 14: 3proxy 0.9.5 DOES accept a quoted CR hash inside a users file pulled in by the $ directive. Verified end to end on the real stack, not on a synthetic file. The panel wrote `admin:CR:\"$1$...\"` through its own updateProxyauthFile, 3proxy was restarted to re-read the file, and then the correct plaintext returned HTTP 200 through the proxy while a wrong password returned 407. So the quoting in proxyauthEntry is correct and the $1$ prefix is understood. Task 8 can proceed on that assumption. Two things still to establish while implementing the flags: whether 3proxy enforces the e expiry flag and the d byte limit in this build, since both can require compile-time support that silently does nothing when absent. Repeat-method note: the sandbox blocks reading or hand-writing the users file, and 3proxy 0.9.5 takes no CLI flags, so the only viable route is to let the application generate the file, restart the 3proxy container, and probe with curl.\n</info added on 2026-09-26T18:30:33.332Z>\n<info added on 2026-09-26T19:18:02.751Z>\nPREMISE INVALIDATED: The d/e/i per-user flags do not exist in 3proxy's user list. Per howtoe.html, USERDESC is exactly three parts (login, password type, password) with only CL, CR, and NT as valid types; access limits are enforced via ACLs, not inline flags. src/conf.c h_users() confirms this mechanically: on a CR entry it takes everything after \"CR:\" as the password and never parses a fourth field. Measured on the real stack: appending :d1048576 causes 3proxy to treat it as part of the password, resulting in 407 for every user. The repo's code comment claiming \"users username:CL:password[:flags]\" was incorrect. Limit enforcement must instead come from 3proxy ACL traffic counters (a larger 3proxy.cfg change) or from the panel side, where the fix is that a deactivated user must leave the file entirely, which is now done and verified. This subtask is therefore obsolete and should not be implemented as written.\n</info added on 2026-09-26T19:18:02.751Z>",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 8,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Emit the flags from proxyauthEntry in both writers",
+            "description": "Extend proxyauthEntry() in src/core/password-hash.ts to take the flag string and append it, so both src/lib/proxyauth-writer.ts and src/core/actions/config.ts pick it up without each building the line themselves. Keep the quoting of the CR hash exactly as it is now; only add the flag suffix after the closing quote.</description>\n<parameter name=\"details\">3proxy's entry syntax is user:TYPE:password[:flags], so the flags go after the quoted hash, not inside it. Both writers currently call proxyauthEntry(username, password) and are the only two callers, so changing the signature is contained. Verify the emitted line shape against a real 3proxy, not against the doc example alone. Update tests/unit/core/password-hash.test.ts and tests/unit/core/actions/config.test.ts, which assert on the entry format, and tests/unit/core/actions/config.test.ts currently asserts toContain(\"activeuser:CR:\") which must keep passing.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 8,
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Remove the dead /etc/3proxy-users.cfg write path",
+            "description": "Remove the dead write to /etc/3proxy-users.cfg. The POST handler in src/app/api/config/generate writes the generated config to that path; no 3proxy config includes it, confirmed by grep across 3proxy.cfg, the compose files, entrypoint.sh and the Dockerfile. Either delete the write or make the endpoint feed the file 3proxy actually reads.</description>\n",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 8,
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-09-26T19:18:07.756Z"
+      },
+      {
+        "id": 9,
+        "title": "Stop emitting deactivated users in proxyauth file",
+        "description": "Deactivated users are currently written as comment lines in the proxyauth file, which 3proxy still parses and registers. Stop emitting them in the proxyauth file entirely. Keep deactivation history in a log file or the database instead.",
+        "status": "done",
+        "dependencies": [
+          "8"
+        ],
+        "priority": "high",
+        "details": "Modify the deactivation logic to no longer write `# DEACTIVATED <iso>: user:CR:\"hash\"` lines into /etc/3proxy/users/.proxyauth. Instead, record deactivation events in the database or a dedicated log file. Ensure the proxyauth file only contains active users with their limit flags.",
+        "testStrategy": "Deactivate a user and confirm the proxyauth file no longer contains their entry. Confirm 3proxy rejects authentication for the deactivated user. Verify deactivation history is recorded in the database or log.",
+        "subtasks": [],
+        "updatedAt": "2026-09-26T19:18:07.688Z"
+      },
+      {
+        "id": 10,
+        "title": "Add authentication and authorization to all unauthenticated API routes",
+        "description": "Add session check plus admin check to GET /api/config/status, GET and POST /api/config/generate, POST /api/config/reload, POST /api/users/maintenance, and POST /api/admin/users/test-proxy. Remove plaintext password from /api/config/status response. Stop accepting logsDir from the request body in /api/users/maintenance.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Implement a shared guard function (currentSession + isAdmin) and apply it to all listed routes. Remove `password: true` from the /api/config/status response. In /api/users/maintenance, ignore logsDir from the body and use a server-side configured path. Ensure all routes fail closed when no valid admin session is present.",
+        "testStrategy": "Send unauthenticated requests to each route and confirm 401/403. Send authenticated non-admin requests and confirm 403. Confirm /api/config/status no longer returns the password column. Confirm /api/users/maintenance ignores body logsDir.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add a single shared requireAdmin guard",
+            "description": "Add one shared guard combining currentSession() with an isAdmin check, and call it as the first statement of every route and action that changes state or returns data. It must fail closed: no valid session, or a session without isAdmin, returns 401 or 403.</description>\n<parameter name=\"details\">src/core/session.ts exposes currentSession() returning { isAuthorized, userId, username } but carries no role, so the guard needs a way to know the role. Either widen currentSession to return isAdmin from a database read, which also closes the separate finding that currentSession never re-checks the database, or add a separate helper. Decide once here rather than re-deriving the check in eight routes. Place it next to session.ts. This guard is the fix for the class of bug, not just the eight instances: a route added later should get the check by default.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 10,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Close the two config routes and strip passwords from their output",
+            "description": "CRITICAL. Close GET /api/config/status and both handlers of /api/config/generate. status/route.ts:12 selects password:true and returns it at :46 with no session check, so one unauthenticated GET dumps every proxy credential. generate/route.ts interpolates the plaintext into the emitted config at :45 and :93. Apply the shared guard, and drop the password column from the status response entirely rather than merely hiding it behind auth, since the share modal already has a dedicated endpoint for the one case that legitimately needs a plaintext. Note for the enforcement work: the MB-to-bytes and Date-to-unix conversion helpers currently live in generate and should move to a shared place. Test: unauthenticated GET returns 401, non-admin returns 403, admin gets a response with no password field. Grep the body for a seeded test plaintext to prove the column is gone, not just hidden.</description>\n<parameter name=\"file\">.taskmaster/tasks/tasks.json",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 10,
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Guard remaining routes",
+            "description": "Apply the shared guard to config/reload, users/maintenance, logs, system/status and admin/users/test-proxy. maintenance must also stop taking logsDir from the request body at route.ts:28.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 10,
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Harden session and authentication mechanisms",
+        "description": "Add rate limiting and logging to POST /api/auth/login. Fix the session cookie secure flag to use a single shared constant. Invalidate old JWTs on password change. Re-read the user from the database in currentSession to reflect deletions and role changes.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Implement a failed-attempt counter per username and IP with exponential backoff in /api/auth/login. Log every login attempt and outcome. Create a shared constant for the cookie secure flag and use it in login, logout, and change-credentials. Add a session version or passwordChangedAt field to User and check it in currentSession. Modify currentSession to re-read the user after JWT verification.",
+        "testStrategy": "Attempt repeated failed logins and confirm lockout/backoff. Confirm cookie secure flag is consistent across all auth endpoints. Change a password and confirm old JWTs are rejected. Delete or de-admin a user and confirm their token is immediately invalid.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Rate limit and log the login endpoint",
+            "description": "POST /api/auth/login is 58 lines with no counter, no backoff and no logger import, while change-credentials does log. Add a failed-attempt counter keyed by username and IP with exponential backoff, and log every attempt and outcome. Default credentials admin/admin are documented in DOCKER.md, so this is the brute-force path.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 11,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Share one cookie-secure constant across all three auth routes",
+            "description": "login/route.ts:49 hardcodes secure:false while logout and change-credentials use NODE_ENV === production, so the flag depends on which endpoint ran last. The compose stack publishes 3000 without TLS. Extract one shared constant and use it in all three.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 11,
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Invalidate old sessions and re-check the database in currentSession",
+            "description": "Changing the password mints a new JWT but old ones live out their hour. currentSession verifies the token and returns without touching the database, so a deleted or de-admined account keeps full access. Add a session version or passwordChangedAt to User, check it in currentSession, and re-read the user after verify.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 11,
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Add authorization guards to Server Actions and admin pages",
+        "description": "Add currentSession plus admin check to Server Actions in src/core/actions/proxy-user.ts and config.ts. Add the same guard to /admin/users/[id]/edit/page.tsx and /admin/dashboard/page.tsx. Fix getProxyUserById to use an explicit select without the password field. Validate usernames on create and update.",
+        "status": "pending",
+        "dependencies": [
+          "10"
+        ],
+        "priority": "high",
+        "details": "Add currentSession + isAdmin checks at the top of createProxyUser and updateProxyUser actions. Apply the same guard to the edit and dashboard pages. Modify getProxyUserById to use Prisma select excluding the password column. Add username validation rejecting whitespace, colons, control characters, and enforcing a sane length.",
+        "testStrategy": "Call Server Actions without a session and confirm rejection. Access admin pages without auth and confirm redirect. Open the edit modal and confirm no plaintext password in RSC payload. Attempt to create/update a user with an invalid username and confirm rejection.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Guard the server actions and the two unprotected admin pages",
+            "description": "Server Actions in core/actions/proxy-user.ts and config.ts run no session check; createProxyUser is the live create path via useUsers.ts:65. Separately, /admin/users/[id]/edit/page.tsx and /admin/dashboard/page.tsx call no currentSession, unlike users/page.tsx and profile/page.tsx which redirect. Add the guard to all four.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 12,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Strip the password from getProxyUserById and validate usernames",
+            "description": "getProxyUserById does findUnique with no select and spreads the row, so the password is returned by GET /api/admin/users/[id] and serialised into the RSC payload of the edit page, landing in browser state each time the edit modal opens. Use an explicit select. Separately, username is validated nowhere, and whitespace plus a colon produces extra h_users tokens, creating proxy accounts the panel cannot list or revoke. Reject whitespace, colon and control characters on create and update.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 12,
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Apply security headers, fix Docker context leaks, and clean up config traps",
+        "description": "Add security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS) in next.config.js. Fix .dockerignore to exclude prisma/**/*.db. Move HOSTNAME=0.0.0.0 from image ENV to scripts/start.ts. Return neutral error messages to clients. Require ADMIN_PASSWORD in compose. Remove NODE_TLS_REJECT_UNAUTHORIZED=0 from .env.example. Upgrade next to a patched release.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Configure next.config.js with appropriate security headers. Update .dockerignore to `prisma/**/*.db`. Move HOSTNAME handling to scripts/start.ts and remove the image ENV. Wrap route error handlers to log full errors server-side and return neutral messages. Update compose to require ADMIN_PASSWORD. Remove the insecure TLS env var from .env.example. Upgrade next to a version patched against the four advisories.",
+        "testStrategy": "Inspect response headers for all security headers. Build the Docker image and confirm no .db files are in the build context. Confirm HOSTNAME is set correctly in scripts/start.ts. Trigger an error and confirm a neutral message is returned. Confirm ADMIN_PASSWORD is required. Confirm next is upgraded and no advisories remain.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add security headers to next.config.js",
+            "description": "next.config.js has no headers section at all: no CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy or HSTS. The panel displays proxy passwords, so frame-ancestors matters for clickjacking on the copy button. Add CSP with frame-ancestors none, X-Frame-Options DENY, nosniff, and Referrer-Policy no-referrer.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 13,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Close the dockerignore leak and relocate the HOSTNAME fix",
+            "description": "Two infrastructure fixes. First, .dockerignore:34 is prisma/*.db, which does not match prisma/sqlite/app.db, so a local database holding plaintext proxy passwords and the admin bcrypt hash enters the build context and the build-stage layers. Use prisma/**/*.db. Second, move HOSTNAME=0.0.0.0 out of the image ENV added in b25982d and into scripts/start.ts:11, where the existing but dead fallback process.env.HOSTNAME || 0.0.0.0 already lives, because a platform like ECS can re-inject the container id over the image value.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 13,
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Neutral error messages, require ADMIN_PASSWORD, drop the TLS trap",
+            "description": "Three smaller items. Neutral errors: users/route.ts:34,99, admin/users/[id]/route.ts:60, share/route.ts:49 and core/actions/config.ts:85 return raw error.message, so Prisma text reaches the browser. Log server-side, return neutral. Default credentials: scripts/setup.ts:7-8 hardcodes admin/admin and runs from entrypoint.sh on every boot; require ADMIN_PASSWORD in compose and log the generated proxy password once at first creation. Remove NODE_TLS_REJECT_UNAUTHORIZED=0 from .env.example, currently inert because compose passes an explicit environment list with no env_file, but a trap for anyone who wires one up.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 13,
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Spike: verify 3proxy accepts quoted CR hashes in a $ included users file",
+        "description": "BLOCKING SPIKE. Determine whether 3proxy 0.9.5 accepts a quoted value `user:CR:\"$1$salt$hash\"` in a users file pulled in by the `users $file` directive, or whether the quotes become part of the stored hash and break every password. Run a real 3proxy container, write such a file, restart, and attempt authentication with the plaintext.</description>\n<parameter name=\"details\">The 3proxy documentation requires quotes around CR values because a leading $ is a file-inclusion macro, but the documented example is an inline `users` command inside 3proxy.cfg, not an entry inside a separate file pulled in by `$`. src/conf.c strips quote characters in parsestr() before the token reaches h_users(), so the hypothesis is that quotes are handled identically in both cases, but this has never been tested. Everything in the enforcement task depends on the answer: if quotes break the hash, the fix is a different mechanism entirely. Method: start 3proxy with a users file containing a quoted $1$ MD5-crypt hash, authenticate over HTTP and SOCKS with the plaintext, and confirm 200 rather than 407. Compare against an unquoted entry. Record the exact file content that works.",
+        "details": "",
+        "testStrategy": "Container run: a quoted $1$ entry authenticates with the plaintext, an unquoted $1$ entry does not, and a wrong plaintext is rejected in both cases. Write down the working file format verbatim so the writer task can copy it.",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-09-26T18:30:21.599Z"
+      },
+      {
+        "id": 15,
+        "title": "Remove wildcard CORS headers and bound the log endpoint limit",
+        "description": "Remove Access-Control-Allow-Origin: * from /api/logs (line 54), /api/system/status (line 141) and /api/users/traffic (line 27), and bound the `limit` query parameter on /api/logs. The limit is read as a bare parseInt with no clamp and used as a ceiling while getLogs slurps whole files via readLogFile before slicing, so ?limit=999999999 is a memory and response size DoS.</description>\n<parameter name=\"details\">The wildcard CORS header made the log endpoint readable from any website the operator visited, before authentication was added. It is unnecessary even for a same-origin panel and only widens exposure. Bound the limit with a clamp such as Math.min(Math.max(limit ?? 1000, 1), 5000) and reject a non-numeric value instead of letting parseInt produce NaN. Also check readLogFile: it reads the entire file into memory before slicing, so a large log file costs memory regardless of the limit; consider reading only the tail that the limit needs.",
+        "details": "",
+        "testStrategy": "Response headers carry no Access-Control-Allow-Origin. A request with limit=999999999 returns at most the cap. A request with limit=abc does not produce NaN behaviour. Confirm the response size stays bounded for a large log file.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Upgrade Next.js to a release patched against the four middleware-bypass advisories",
+        "description": "Upgrade next from the installed 16.2.3 to a release that closes four open High middleware/proxy-bypass advisories: GHSA-6gpp-xcg3-4w24 (&lt;16.2.11, CVSS 8.3), GHSA-492v-c6pp-mqqv (&lt;16.2.5, dynamic route parameter injection), GHSA-267c-6grr-h53f (&lt;16.2.5, segment prefetch) and GHSA-26hh-7cqf-hhc6 (&lt;16.2.6, incomplete fix). This is a High on its own and is not cosmetic like the headers work it was bundled with in task 13.</description>\n<parameter name=\"details\">GHSA-6gpp applies to this project: its condition is Turbopack plus a single locale, Turbopack became the default bundler for next build in 16.0.0, scripts/build.ts runs a bare next build, and there is no i18n config so the single-locale condition holds trivially. Run this as its own change with its own verification, not bundled with config edits, because a Next major or minor bump can move behaviour the build depends on. Check the upgrade guide for the middleware to proxy rename, verify next.config.js still applies, and confirm the Docker build stage still produces a working standalone bundle. Note that the two CRITICAL advisories against next (GHSA-p293-qw3h-jr36 Windows path traversal, GHSA-2xp9-vwfh-vxw4 AVIF RCE) do not apply to a Linux Alpine build, but check that the upgrade does not introduce a new i18n or image-optimizer path that would make the AVIF one reachable.",
+        "details": "",
+        "testStrategy": "npm audit --omit=dev reports no open High or Critical advisory against next. tsc, unit, integration and fail2ban suites pass. The Docker image builds and the standalone bundle serves /api/health. Proxy behaviour (src/proxy.ts) still guards /admin paths.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Verify the fix set end to end and ship a release",
+        "description": "End-to-end verification of the whole fix set, then ship it. Covers: a new E2E test proving a deactivated user is rejected by 3proxy and a user over their data limit is cut off; a container run proving the scheduler reaches its endpoint and .proxyauth carries the flags; an independent security pass re-checking the Critical and High findings are closed and introducing nothing new; and a release. v0.5.1 is already published, so this needs 0.5.2 or later plus a release tag.</description>\n<parameter name=\"details\">The enforcement fix is the one that needs proving rather than asserting, because a wrong flag value miscounts a paying customer's traffic. Bring up the real two-container stack, create a user with a small data limit, drive traffic through 3proxy until the limit is exceeded, restart 3proxy and confirm the user is refused. Then deactivate a user outright and confirm authentication fails after a restart. Only after both pass, run the independent security pass. This is also the point to settle whether docker-compose.yml stays gitignored now that it no longer contains a hardcoded secret, which is a decision the owner should make explicitly rather than by omission.",
+        "details": "",
+        "testStrategy": "Two new E2E assertions: a deactivated user receives an auth failure from 3proxy, and a user past their data limit is cut off. Container run shows .proxyauth with flags and the scheduler succeeding. Independent audit reports no open Critical or High. Release tag published and the multi-arch image carries both platforms.",
+        "status": "pending",
+        "dependencies": [
+          "8",
+          "9",
+          "10",
+          "12",
+          "13",
+          "15",
+          "16"
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Decide whether to pursue native 3proxy traffic limiting via ACL counters",
+        "description": "OPTIONAL / DECISION REQUIRED. Native per-user traffic limiting is now the only remaining enforcement gap, and it is not reachable from the users file. 3proxy defines a user entry as exactly login:type:password with CL, CR and NT as the only types, and directs limits to ACLs; its auth.c enforces limits from conf.trafcounter, which is populated from 3proxy.cfg rather than from the users list. Work out what that requires in this deployment and decide whether it is worth doing, because panel-side enforcement now actually works: a user who exceeds their quota is set inactive and leaves the file, so 3proxy refuses them on the next reload.</description>\n<parameter name=\"details\">Tradeoff to weigh. Panel-side enforcement depends on the panel being up and on a maintenance run happening, so a user can overshoot by whatever they transfer between runs, and enforcement stops entirely if the panel is down. Native enforcement would cut off inside 3proxy and keep working when the panel is not, but it means generating and managing per-user ACL rules in 3proxy.cfg, which the panel does not currently write at all, and it may need compile-time support in the 3proxy build that silently does nothing when absent. First step is to establish whether the shipped 3proxy/3proxy:0.9.5 image supports per-user traffic counters at all, and what the config syntax is; the howtoe ACL section covers allow, deny and flush but the counter directive was not located in the documentation read so far. Not blocking: the deactivated-user fix in task 9 removed the silent failure, so limits are enforced as of that commit, just not natively.",
+        "details": "",
+        "testStrategy": "Spike: determine the counter directive and whether the shipped build honours it, by configuring a limit for one user in 3proxy.cfg and pushing traffic past it. If the build lacks support, record that and close the task as not applicable.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-25T23:26:59.094Z",
-      "taskCount": 7,
-      "completedCount": 7,
+      "lastModified": "2026-09-26T19:18:07.756Z",
+      "taskCount": 17,
+      "completedCount": 10,
       "tags": [
         "master"
-      ]
+      ],
+      "created": "2026-09-26T19:18:16.106Z",
+      "description": "Tasks for master context",
+      "updated": "2026-09-26T19:18:16.107Z"
     }
   }
 }
