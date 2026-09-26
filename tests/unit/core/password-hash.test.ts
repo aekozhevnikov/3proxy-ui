@@ -62,4 +62,7 @@ describe("proxyauthEntry", () => {
         expect(quoted.endsWith('"')).toBe(true);
         expect(quoted).toContain("$1$");
     });
+
+
 });
+

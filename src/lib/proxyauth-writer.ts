@@ -23,10 +23,6 @@ export async function updateProxyauthFile(): Promise<ProxyauthUpdateResult> {
     for (const user of allUsers) {
         if (user.isActive) {
             newLines.push(proxyauthEntry(user.username, user.password));
-        } else {
-            const dateStr = user.deactivatedAt ? user.deactivatedAt.toISOString() : "";
-
-            newLines.push(`# DEACTIVATED ${dateStr}: ${proxyauthEntry(user.username, user.password)}`);
         }
         updatedCount++;
     }

@@ -27,6 +27,11 @@ export function hashProxyPassword(password: string): string {
 
 // 3proxy treats a leading '$' in a config value as a file-inclusion macro, so
 // the hash has to be quoted or 3proxy tries to include a file named "1$...".
+//
+// An entry is exactly login:type:password. The 3proxy documentation defines no
+// per-user flags, and adding a fourth field does not degrade gracefully: 3proxy
+// takes everything after "CR:" as the password, so appending ":d..." makes every
+// user fail to authenticate. Limits are an ACL concern, not a users-file one.
 export function proxyauthEntry(username: string, password: string): string {
     return `${username}:CR:"${hashProxyPassword(password)}"`;
 }

@@ -1,5 +1,3 @@
-import fs from "fs";
-
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/src/prisma/db";
@@ -57,64 +55,5 @@ export async function GET() {
         console.error("Config generation error:", error);
 
         return NextResponse.json({ error: "Failed to generate config" }, { status: 500 });
-    }
-}
-
-// POST to save config to disk (optional)
-export async function POST() {
-    try {
-        const users = await prisma.proxyUser.findMany({
-            where: { isActive: true }
-        });
-
-        let config = "# 3proxy user configuration (auto-generated)\n\n";
-
-        for (const user of users) {
-            const flags: string[] = [];
-
-            if (user.dataLimit) {
-                const bytes = Number(user.dataLimit) * 1024 * 1024;
-
-                flags.push(`d${bytes}`);
-            }
-
-            if (user.expiresAt) {
-                const expireTime = Math.floor(new Date(user.expiresAt).getTime() / 1000);
-
-                flags.push(`e${expireTime}`);
-            }
-
-            if (user.ipLimit && user.ipLimit > 1) {
-                flags.push(`i${user.ipLimit}`);
-            }
-
-            const flagsStr = flags.length > 0 ? ":" + flags.join("") : "";
-
-            config += `users ${user.username}:CL:${user.password}${flagsStr}\n`;
-        }
-
-        config += "\nallow *\n";
-
-        // Save to file (write permissions required)
-        const path = "/etc/3proxy-users.cfg";
-
-        try {
-            fs.writeFileSync(path, config, "utf8");
-        } catch (writeError) {
-            console.error("Failed to write config file:", writeError);
-
-            return NextResponse.json({ error: "Generated config but couldn't save to disk" }, { status: 500 });
-        }
-
-        return NextResponse.json({
-            success: true,
-            message: "Configuration saved and 3proxy reloaded",
-            path,
-            userCount: users.length
-        });
-    } catch (error) {
-        console.error("Config save error:", error);
-
-        return NextResponse.json({ error: "Failed to save configuration" }, { status: 500 });
     }
 }

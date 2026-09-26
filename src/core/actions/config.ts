@@ -22,17 +22,10 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
             `[config] Users summary: active=${users.filter((u) => u.isActive).length}, deactivated=${users.filter((u) => !u.isActive).length}`
         );
 
-        // Build array of users for .proxyauth file
-        const lines = users.map((user) => {
-            if (user.isActive) {
-                return proxyauthEntry(user.username, user.password);
-            } else {
-                // For deactivated users, include a comment with deactivation timestamp
-                const dateStr = user.deactivatedAt ? user.deactivatedAt.toISOString() : "";
-
-                return `# DEACTIVATED ${dateStr}: ${proxyauthEntry(user.username, user.password)}`;
-            }
-        });
+        // Build array of users for .proxyauth file. Deactivated users are left
+        // out entirely: a line starting with # is not a comment in a file pulled
+        // in by the $ directive, so 3proxy would still register them.
+        const lines = users.filter((user) => user.isActive).map((user) => proxyauthEntry(user.username, user.password));
 
         // Write .proxyauth file (complete regeneration)
         const proxyauthPath = process.env.PROXYAUTH_PATH || path.join(process.cwd(), "3proxy", "users", ".proxyauth");

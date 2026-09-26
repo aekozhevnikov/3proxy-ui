@@ -22,9 +22,11 @@ jest.mock("@/src/core/password-hash", () => {
 
     return {
         hashProxyPassword,
-        proxyauthEntry: jest.fn(
-            (username: string, password: string) => `${username}:CR:"${hashProxyPassword(password)}"`
-        )
+        proxyauthEntry: jest.fn((username: string, password: string, flags = "") => {
+            const entry = `${username}:CR:"${hashProxyPassword(password)}"`;
+
+            return flags ? `${entry}:${flags}` : entry;
+        })
     };
 });
 

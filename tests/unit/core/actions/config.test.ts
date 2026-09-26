@@ -94,14 +94,17 @@ describe("update3proxyConfig", () => {
         expect(result.success).toBe(true);
     });
 
-    it("writes proxyauth file with deactivitated users as comments", async () => {
+    it("omits deactivated users entirely", async () => {
+        // A "#" line is not a comment in a file pulled in by 3proxy's $ directive:
+        // the included file is parsed recursively with no comment handling, so a
+        // "commented out" user is still registered and can authenticate.
         mocked(prisma.proxyUser.findMany).mockResolvedValue([mockInactiveUser]);
 
         await update3proxyConfig();
         const fs = require("fs");
         const writtenContent: string = fs.writeFileSync.mock.calls[0][1] ?? "";
-        expect(writtenContent).toContain("# DEACTIVATED");
-        expect(writtenContent).toContain("inactiveuser:CR:");
+        expect(writtenContent).not.toContain("inactiveuser");
+        expect(writtenContent).not.toContain("# DEACTIVATED");
     });
 
     it("returns user count in result", async () => {
