@@ -66,14 +66,14 @@ export default function UserLimitsSection({
                     className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 bg-white text-gray-900 dark:text-white text-base sm:text-sm min-h-[44px]"
                     id="ipLimit"
                     max="10"
-                    min="1"
+                    min="0"
                     type="number"
                     value={ipLimit}
-                    onChange={(e) => onIpLimitChange(parseInt(e.target.value) || 1)}
+                    onChange={(e) => onIpLimitChange(parseInt(e.target.value) || 0)}
                 />
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Maximum simultaneous connections from different IP addresses per user (requires 3proxy with IPCOUNT
-                    support)
+                    Maximum simultaneous connections from different IP addresses per user. Enter 0 for unlimited
+                    (requires 3proxy with IPCOUNT support)
                 </p>
             </div>
         </>

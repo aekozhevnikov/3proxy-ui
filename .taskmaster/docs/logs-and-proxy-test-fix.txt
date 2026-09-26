@@ -1,0 +1,38 @@
+# PRD: Fix Log File Discovery and Proxy Test Error Logging
+
+## Overview
+The 3proxy-ui dashboard shows "Log Files: 0 files (0 B)" even though .log files exist locally in 3proxy/logs/. Additionally, proxy test failures are not logged anywhere, making debugging difficult.
+
+## Problem Statement
+1. The maintenance log message shows it finds 1 .log file at /etc/3proxy/logs, but the UI dashboard shows 0 files.
+2. Local log files at ./3proxy/logs are not discovered by the UI API.
+3. Proxy test errors have no logging - when "proxy test failed" tooltip appears, there is no corresponding log entry to investigate why.
+
+## Goals
+1. Make UI dashboard correctly display log files found in ./3proxy/logs directory.
+2. Add logging for proxy test failures (success and failure details).
+3. Ensure error logging covers curl command failures and connection errors.
+
+## Requirements
+
+### Log File Discovery
+- API endpoint that returns log files should search the local ./3proxy/logs path in addition to /etc/3proxy/logs
+- The path resolution should be platform-aware and use the project root for relative paths
+- Log file discovery should return files from all searched directories
+
+### Proxy Test Error Logging
+- logFinder should find local logs
+- When proxy test fails, log:
+  - Username being tested
+  - Error message
+  - Protocol that failed (socks5/http)
+  - curl command that was executed
+- Log at appropriate severity (info for success, error for failure)
+
+### Testing
+- Unit tests for log directory search including local path
+- Unit tests verifying proxy test failure errors are logged
+
+## Out of Scope
+- Adding new log file management features
+- Changing the log format

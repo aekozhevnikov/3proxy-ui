@@ -42,8 +42,8 @@ jest.mock("path", () => ({
     dirname: jest.fn((p: string) => p.split("/").slice(0, -1).join("/"))
 }));
 
-// Роут читает лог через смещения, а не целиком. Сам разбор логов и работа со
-// смещениями покрыты отдельно (tests/integration/lib/traffic-sync.test.ts).
+// The route reads the log through offsets rather than whole. Log parsing and
+// offset handling are covered separately (tests/integration/lib/traffic-sync.test.ts).
 jest.mock("@/src/lib/traffic-sync", () => ({
     readSyncState: jest.fn(async () => ({ offsets: {}, existed: true })),
     writeSyncState: jest.fn(async () => undefined),

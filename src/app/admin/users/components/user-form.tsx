@@ -26,7 +26,7 @@ export default function UserForm({ user, onCreate, onUpdate, onCancel = () => {}
     const [dataLimit, setDataLimit] = useState<string>("");
     const [dataLimitUnit, setDataLimitUnit] = useState<"MB" | "GB">("MB");
     const [expiresAt, setExpiresAt] = useState<string>("");
-    const [ipLimit, setIpLimit] = useState<number>(1);
+    const [ipLimit, setIpLimit] = useState<number>(0);
     const [telegramUserId, setTelegramUserId] = useState<string>("");
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,7 +62,7 @@ export default function UserForm({ user, onCreate, onUpdate, onCancel = () => {}
                 setExpiresAt("");
             }
 
-            setIpLimit(user.ipLimit || 1);
+            setIpLimit(user.ipLimit ?? 0);
             setTelegramUserId(user.telegramUserId ?? "");
             setError(null);
         } else {
@@ -74,7 +74,7 @@ export default function UserForm({ user, onCreate, onUpdate, onCancel = () => {}
             setDataLimit("");
             setDataLimitUnit("MB");
             setExpiresAt("");
-            setIpLimit(1);
+            setIpLimit(0);
             setTelegramUserId("");
             setError(null);
         }
@@ -139,7 +139,7 @@ export default function UserForm({ user, onCreate, onUpdate, onCancel = () => {}
                 username: username.trim(),
                 isActive,
                 dataLimit: dataLimitInMB,
-                ipLimit: ipLimit || 1,
+                ipLimit: ipLimit,
                 telegramUserId: telegramUserId?.trim() || null,
                 expiresAt: expiresAt ? new Date(expiresAt) : null
             };

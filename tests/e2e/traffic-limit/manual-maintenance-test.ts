@@ -1,7 +1,7 @@
 /**
  * E2E Test: Manual Maintenance Trigger
  *
- * Проверяет контракт ответа POST /api/users/maintenance.
+ * Verifies the response contract of POST /api/users/maintenance.
  */
 import { apiCall, createAdminSession } from "./shared-setup.js";
 

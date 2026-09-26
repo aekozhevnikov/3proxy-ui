@@ -1,0 +1,21 @@
+# PRD: Update E2E Tests and Create Test Logs
+
+## Objective
+Update E2E tests to use docker-compose.dev.yml as base, create realistic 3proxy test logs, and ensure traffic data is correctly recorded in DB.
+
+## Requirements
+1. Update docker-compose.e2e.yml based on docker-compose.dev.yml structure
+2. Create test 3proxy logs for validation
+3. Add unit tests for traffic parsing with realistic log data
+4. Add integration tests for DB traffic recording with test logs
+5. Ensure tests verify BigInt handling for large numbers
+
+## Technical Details
+- Test logs should include JSON format entries with auth.user, bytes.sent, bytes.received
+- Tests must verify dataUsed field is stored as BigInt
+- Integration tests use separate SQLite DB to avoid affecting production
+
+## Success Criteria
+- All e2e tests pass with updated docker-compose
+- Unit tests cover traffic parsing edge cases
+- Integration tests verify BigInt precision

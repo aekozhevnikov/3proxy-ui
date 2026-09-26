@@ -1,5 +1,4 @@
 import { JWTPayload } from "jose";
-import { SVGProps } from "react";
 
 // Session types
 export interface SessionPayload extends JWTPayload {

@@ -1,8 +1,8 @@
 /**
  * E2E Test Runner: Fail2ban Blocking
  *
- * Поднимает окружение один раз, выполняет тесты последовательно и честно
- * считает результат. Возвращает код выхода процесса.
+ * Brings the environment up once, runs the tests sequentially and counts
+ * the result honestly. Returns the process exit code.
  */
 import { pathToFileURL } from "url";
 

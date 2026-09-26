@@ -1,6 +1,6 @@
 /**
  * E2E Test: Fail2ban Regex Pattern Validation
- * Проверяет, что фильтр fail2ban в образе соответствует формату лога 3proxy.
+ * Verifies that the fail2ban filter in the image matches the 3proxy log format.
  */
 import { execInContainer } from "../utils/helpers.js";
 import { CONTAINER_NAME } from "./shared-mocks.js";

@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { usePress } from "@react-aria/interactions";
 
-import { donationAddresses } from "@/src/core/config";
+import { donationAddresses } from "@/src/core/donation";
 import useQrCode from "@/src/hooks/use-qr-code";
 
 interface Props {

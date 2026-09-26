@@ -1,10 +1,10 @@
-# E2E-окружение 3proxy-ui.
-# База — docker-compose.dev.yml: те же сервисы, те же env-переменные и тома.
-# Отличия только тестовые: контейнеры и тома переименованы, БД изолирована,
-# build context указан относительно этого файла (tests/e2e -> корень проекта).
+# E2E environment for 3proxy-ui.
+# Based on docker-compose.dev.yml: the same services, environment variables and
+# volumes. The only differences are test-specific: renamed containers and volumes,
+# an isolated database, and a build context relative to this file (tests/e2e -> repo root).
 #
-# Сервисы 3proxy-ui-e2e и 3proxy-ui-e2e-fail2ban не поднимаются одновременно:
-# оба публикуют порт 3000. Запускаются выборочно:
+# The 3proxy-ui-e2e and 3proxy-ui-e2e-fail2ban services are never started at the same
+# time: both publish port 3000. Start them selectively:
 #   docker compose -f tests/e2e/docker-compose.e2e.yml up -d 3proxy-ui-e2e
 #   docker compose -f tests/e2e/docker-compose.e2e.yml up -d 3proxy-ui-e2e-fail2ban
 
@@ -20,7 +20,7 @@ services:
     volumes:
       - ./test-fixtures/3proxy:/etc/3proxy
 
-  # Трафик, лимиты, деактивация, scheduler
+  # Traffic, limits, deactivation, scheduler
   3proxy-ui-e2e:
     build:
       context: ../..
@@ -49,13 +49,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - 3proxy
-    # На GitHub Actions (Linux) host.docker.internal не резолвится сам,
-    # а через него планировщик ходит в собственный API.
+    # On GitHub Actions (Linux) host.docker.internal does not resolve on its own,
+    # and the scheduler reaches the app's own API through it.
     extra_hosts:
       - "host.docker.internal:host-gateway"
     init: true
 
-  # Блокировка IP через fail2ban: нужны iptables и отдельный том jail
+  # IP blocking via fail2ban: needs iptables and a separate jail volume
   3proxy-ui-e2e-fail2ban:
     build:
       context: ../..
@@ -85,21 +85,20 @@ services:
       - e2e_fail2ban_data:/app/data
       - ./test-fixtures/3proxy:/etc/3proxy
       - e2e_fail2ban_jail:/var/lib/fail2ban
-      # docker.sock намеренно не монтируется: тесты этого набора не создают
-      # пользователей и не перезагружают конфиг 3proxy, поэтому код, который
-      # ходит в Docker (src/core/docker.ts), здесь не вызывается. Сокет даёт
-      # контейнеру полный контроль над Docker-хостом — для проверки банов это
-      # не требуется.
+      # docker.sock is deliberately not mounted: the tests in this suite do not
+      # create users and do not reload the 3proxy config, so the code that talks
+      # to Docker (src/core/docker.ts) is never called here. The socket would give
+      # the container full control over the Docker host, which is not needed to
+      # verify bans.
     depends_on:
       - 3proxy
-    # fail2ban правит правила iptables, для чего достаточно NET_ADMIN.
-    # Полный privileged даёт все capabilities и доступ к устройствам, что
-    # здесь не нужно.
+    # fail2ban edits iptables rules, for which NET_ADMIN is enough. Full
+    # privileged grants every capability and device access, which is not needed here.
     cap_add:
       - NET_ADMIN
       - NET_RAW
-    # На GitHub Actions (Linux) host.docker.internal не резолвится сам,
-    # а через него планировщик ходит в собственный API.
+    # On GitHub Actions (Linux) host.docker.internal does not resolve on its own,
+    # and the scheduler reaches the app's own API through it.
     extra_hosts:
       - "host.docker.internal:host-gateway"
     init: true

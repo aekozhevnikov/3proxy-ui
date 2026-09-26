@@ -1,7 +1,7 @@
 // Shared setup/cleanup for fail2ban-blocking E2E tests
 //
-// Окружение описано в tests/e2e/docker-compose.e2e.yml (сервис
-// 3proxy-ui-e2e-fail2ban), управляется через utils/environment.ts.
+// The environment is described in tests/e2e/docker-compose.e2e.yml (service
+// 3proxy-ui-e2e-fail2ban) and is driven through utils/environment.ts.
 
 import { getFail2banStatus, TEST_CONFIG, waitForService } from "../utils/helpers.js";
 import {
@@ -14,9 +14,9 @@ import {
 
 const CONTAINER_NAME = FAIL2BAN_CONTAINER;
 
-/** IP, который должен попасть в бан за неудачные попытки авторизации. */
+/** IP that must be banned after failed authentication attempts. */
 const TEST_IP = "192.168.99.100";
-/** IP, который не должен баниться при успешном трафике. */
+/** IP that must not be banned on successful traffic. */
 const LEGIT_IP = "192.168.99.101";
 
 export async function setupEnvironment() {

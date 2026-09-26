@@ -48,16 +48,16 @@ export async function POST(request: Request): Promise<Response> {
 
                         identities.push({ name, key, size });
                     } catch {
-                        // Файл мог исчезнуть между readdir и stat
+                        // File may have disappeared between readdir and stat
                     }
                 }
 
                 if (identities.length > 0) {
                     const state = await readSyncState();
 
-                    // Обновление со старой версии: файл состояния есть, а смещений
-                    // в нём нет — накопленная история уже учтена прежним кодом,
-                    // её нужно пропустить. Чистый старт читает лог с нуля.
+                    // Upgrade from the previous version: the state file exists but
+                    // carries no offsets, so the accumulated history was already
+                    // accounted for and must be skipped. A clean start reads from zero.
                     const offsets = state.offsets ?? (state.existed ? seedOffsets(identities) : {});
                     let contributor = "";
 
@@ -90,10 +90,10 @@ export async function POST(request: Request): Promise<Response> {
                             );
                         }
                     } finally {
-                        // Состояние сохраняется даже при ошибке: смещения уже
-                        // обработанных файлов отражают реально учтённые байты, и
-                        // lastSync не должен замирать из-за одной ошибки —
-                        // иначе следующий прогон не сможет продолжить учёт.
+                        // State is persisted even on error: the offsets of the
+                        // files already processed reflect the bytes really accounted
+                        // for, and lastSync must not freeze because of a single
+                        // failure — otherwise the next run cannot resume.
                         sourceFile = contributor || identities[0].name;
 
                         await writeSyncState({

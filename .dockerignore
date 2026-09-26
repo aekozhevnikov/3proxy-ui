@@ -37,15 +37,31 @@ prisma/*.db
 # We'll explicitly include the ones we need in the Dockerfile COPY commands
 3proxy/*
 !3proxy/3proxy.cfg
-!3proxy/docker/
-!3proxy/docker/fail2ban-filter-docker.conf
-!3proxy/docker/fail2ban-jail-docker.conf
-!3proxy/fail2ban-filter.conf
-!3proxy/fail2ban-filter-ip-limit.conf
-!3proxy/fail2ban-jail-ip-limit.conf
+!3proxy/fail2ban/
+!3proxy/fail2ban/3proxy-docker.conf
 
 node_modules
 tsconfig.tsbuildinfo
 *.md
 
-screenshots.cjs
+scripts/screenshots.cjs
+.taskmaster
+.idea
+.vscode
+.git
+.gitignore
+.github
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+dist
+.next
+out
+tests
+screenshots
+.github
+.claude
+data
+screenshots

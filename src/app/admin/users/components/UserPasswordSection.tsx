@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import PasswordInput from "@/src/components/password-input";
 
 interface UserPasswordSectionProps {
@@ -19,6 +21,8 @@ export default function UserPasswordSection({
     onConfirmPasswordChange,
     onPasswordGenerated
 }: UserPasswordSectionProps) {
+    const [showPassword, setShowPassword] = useState(false);
+
     if (isEdit) {
         return (
             <>
@@ -36,6 +40,8 @@ export default function UserPasswordSection({
                     value={password}
                     onChange={(e) => onPasswordChange(e.target.value)}
                     onPasswordGenerated={onPasswordGenerated}
+                    showPassword={showPassword}
+                    onTogglePassword={setShowPassword}
                 />
                 <PasswordInput
                     className="text-sm"
@@ -44,6 +50,8 @@ export default function UserPasswordSection({
                     placeholder="Confirm new password"
                     value={confirmPassword}
                     onChange={(e) => onConfirmPasswordChange(e.target.value)}
+                    showPassword={showPassword}
+                    onTogglePassword={setShowPassword}
                 />
             </>
         );
@@ -63,6 +71,8 @@ export default function UserPasswordSection({
                     onPasswordChange(pwd);
                     onConfirmPasswordChange(pwd);
                 }}
+                showPassword={showPassword}
+                onTogglePassword={setShowPassword}
             />
             <PasswordInput
                 required
@@ -71,6 +81,8 @@ export default function UserPasswordSection({
                 placeholder="Confirm password"
                 value={confirmPassword}
                 onChange={(e) => onConfirmPasswordChange(e.target.value)}
+                showPassword={showPassword}
+                onTogglePassword={setShowPassword}
             />
         </>
     );

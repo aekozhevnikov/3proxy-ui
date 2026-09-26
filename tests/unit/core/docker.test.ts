@@ -9,7 +9,7 @@ jest.mock("child_process", () => ({
 
 const execMock = exec as unknown as jest.Mock;
 
-/** Кто какой контейнер находит: имя из фильтра -> stdout команды docker ps. */
+/** Which container each lookup finds: filter name -> docker ps stdout. */
 function mockDockerPs(found: Record<string, string>): void {
     execMock.mockImplementation((command: string, _options: unknown, callback: Function) => {
         const match = command.match(/--filter 'name=\^(.+?)\$'/);

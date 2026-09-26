@@ -1,12 +1,12 @@
 /**
- * Генерация трафика через реальный прокси 3proxy.
+ * Traffic generation through the real 3proxy proxy.
  *
- * Вместо записи синтетических строк в лог поднимается локальная цель и
- * выполняются настоящие запросы через 3proxy изнутри контейнера. Так тест
- * проверяет весь путь: запрос -> байты в логе 3proxy -> dataUsed в БД.
+ * Instead of writing synthetic log lines, a local target is started and
+ * real requests are made through 3proxy from inside the container. The test
+ * then covers the whole path: request -> bytes in the log -> dataUsed in the DB.
  *
- * Node.js fetch не умеет прокси, поэтому запросы делает curl, а целевой
- * сервер — обычный http-модуль без зависимостей.
+ * Node.js fetch cannot do proxying, so curl makes the requests and the target
+ * server is a plain http module with no dependencies.
  */
 import { execInContainer, execInContainerDetached } from "./helpers.js";
 
@@ -22,8 +22,8 @@ export interface ProxyCredentials {
     password: string;
 }
 
-// Скрипт передаётся в контейнер в base64: в нём есть кавычки и переводы строк,
-// которые нельзя безопасно вложить в sh -c "...".
+// The script is passed to the container in base64: it contains quotes and
+// newlines that cannot be safely inlined into sh -c "...".
 const TARGET_SERVER_SCRIPT = `
 const http = require("http");
 const PORT = process.env.TARGET_PORT;
@@ -51,7 +51,7 @@ export interface LocalTargetOptions {
     responseBytes: number;
 }
 
-/** Поднимает локальный HTTP-сервер-цель внутри контейнера. */
+/** Starts a local HTTP target server inside the container. */
 export async function startLocalTarget(container: string, options: LocalTargetOptions): Promise<void> {
     const encoded = Buffer.from(TARGET_SERVER_SCRIPT, "utf-8").toString("base64");
 
@@ -62,7 +62,7 @@ export async function startLocalTarget(container: string, options: LocalTargetOp
         `TARGET_PORT=${options.port} RESPONSE_BYTES=${options.responseBytes} node /tmp/e2e-target.js > /tmp/e2e-target.log 2>&1`
     );
 
-    // Сервер поднимается мгновенно, но даём ему секунду и проверяем пробой.
+    // The server comes up instantly, but give it a second and probe it.
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const probe = await execInContainer(
@@ -90,8 +90,8 @@ export interface HttpTrafficOptions {
 }
 
 /**
- * Отправляет requestCount POST-запросов через прокси и возвращает фактически
- * переданные байты (по счётчикам curl).
+ * Sends requestCount POST requests through the proxy and returns the bytes
+ * actually transferred (from curl's counters).
  */
 export async function generateHttpTraffic(options: HttpTrafficOptions): Promise<ProxyTrafficStats> {
     const {

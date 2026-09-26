@@ -92,7 +92,7 @@ export class UserApiClient {
 
     async updateUser(id: number, data: Partial<UserData>): Promise<ProxyUser> {
         await this.ensureAuthenticated();
-        // Роут обновления объявлен на PUT, PATCH вернёт 405.
+        // The update route is declared as PUT; PATCH returns 405.
         const result = await apiCall(
             this.token!,
             `/api/admin/users/${id}`,

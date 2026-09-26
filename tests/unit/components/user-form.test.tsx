@@ -141,7 +141,7 @@ describe("UserForm", () => {
             password: "hashedpass",
             isActive: true,
             dataLimit: 10240,
-            ipLimit: 1,
+            ipLimit: 0,
             expiresAt: null,
             telegramUserId: null,
             dataUsed: 0,
@@ -236,11 +236,11 @@ describe("UserForm", () => {
             expect(dataLimitInput.value).toBe("");
         });
 
-        it("defaults ipLimit to 1", () => {
+        it("defaults ipLimit to 0", () => {
             render(<UserForm {...baseProps} />);
 
             const ipInput = asInputElement(screen.getByLabelText(/max ip/i));
-            expect(ipInput.value).toBe("1");
+            expect(ipInput.value).toBe("0");
         });
     });
 

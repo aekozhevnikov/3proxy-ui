@@ -13,6 +13,7 @@ interface UserDesktopTableProps {
     onEdit: (user: ProxyUser) => void;
     onDelete: (userId: number) => void;
     testingUserId: number | null;
+    testProxyError: string | null;
 }
 
 export default function UserDesktopTable({
@@ -23,7 +24,8 @@ export default function UserDesktopTable({
     onTestProxy,
     onEdit,
     onDelete,
-    testingUserId
+    testingUserId,
+    testProxyError
 }: UserDesktopTableProps) {
     if (users.length === 0) {
         return null;
@@ -67,6 +69,7 @@ export default function UserDesktopTable({
                                 key={user.id}
                                 expandedUserIds={expandedUserIds}
                                 testingUserId={testingUserId}
+                                testProxyError={testProxyError}
                                 toggleExpand={toggleExpand}
                                 user={user}
                                 onDelete={onDelete}

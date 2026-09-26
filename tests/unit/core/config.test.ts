@@ -1,4 +1,5 @@
-import { app, donationAddresses } from "@/src/core/config";
+import { app } from "@/src/core/config";
+import { donationAddresses } from "@/src/core/donation";
 
 describe("config", () => {
     describe("app config", () => {

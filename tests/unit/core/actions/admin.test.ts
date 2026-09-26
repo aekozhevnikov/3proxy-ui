@@ -90,7 +90,7 @@ describe("admin actions", () => {
 
         it("creates admin user when doesn't exist", async () => {
             const result = await ensureAdminUser();
-            expect(result).toEqual({ username: "admin", password: "admin" });
+            expect(result).toEqual({ username: "admin", password: expect.any(String) });
             expect(prisma.user.create).toHaveBeenCalled();
             expect(prisma.proxyUser.create).toHaveBeenCalled();
         });

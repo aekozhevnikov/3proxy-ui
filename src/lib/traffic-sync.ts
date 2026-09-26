@@ -12,15 +12,15 @@ export interface SyncState {
     totalTraffic?: number;
     sourceFile?: string;
     /**
-     * Сколько байт каждого файла уже учтено, по ключу из identifyLogFile.
-     * null — смещений ещё нет.
+     * How many bytes of each file were already accounted for, keyed by
+     * identifyLogFile. null — no offsets recorded yet.
      */
     offsets: Record<string, number> | null;
     /**
-     * Был ли файл состояния вообще. Различаем два случая:
-     *  - файл есть, но смещений нет — обновление со старой версии: накопленная
-     *    история уже учтена прежним кодом, её нужно пропустить;
-     *  - файла нет — чистый старт, читаем лог с нуля.
+     * Whether the state file existed at all. Two cases are distinguished:
+     *  - the file exists but has no offsets — an upgrade from the previous
+     *    version: the accumulated history was already counted and must be skipped;
+     *  - the file does not exist — a clean start, read the log from zero.
      */
     existed: boolean;
 }
@@ -45,7 +45,7 @@ export async function readSyncState(): Promise<SyncState> {
             existed: true
         };
     } catch {
-        // Файл повреждён — считаем, что учтённого ничего нет
+        // Corrupt file — assume nothing was accounted for
         return { offsets: null, existed: true };
     }
 }
@@ -55,24 +55,24 @@ export async function writeSyncState(state: SyncState): Promise<void> {
         await fs.mkdir(path.dirname(SYNC_INFO_FILE), { recursive: true });
         await fs.writeFile(SYNC_INFO_FILE, JSON.stringify(state), "utf-8");
     } catch (error) {
-        // Сбой записи состояния не должен ломать саму синхронизацию
+        // A failure to persist state must not break the sync itself
         logger.error("[maintenance] Failed to write sync info file:", error);
     }
 }
 
 export interface LogFileIdentity {
-    /** Ключ для смещений: dev:ino. */
+    /** Offset key: dev:ino. */
     key: string;
     size: number;
 }
 
 /**
- * Идентификатор файла лога.
+ * Identity of a log file.
  *
- * Ключ строится на inode, а не на имени: 3proxy при перезапуске ротирует лог,
- * переименовывая 3proxy.log в 3proxy.log.YYYY.MM.DD и продолжая писать уже в
- * переименованный файл. При учёте по имени уже учтённые байты получили бы
- * новое имя и были бы посчитаны повторно.
+ * The key is built from the inode rather than the name: on restart 3proxy
+ * rotates its log, renaming 3proxy.log to 3proxy.log.YYYY.MM.DD and
+ * continuing to write into the renamed file. Keyed by name, already
+ * counted bytes would simply get a new name and be counted twice.
  */
 export async function identifyLogFile(filePath: string): Promise<LogFileIdentity> {
     const stats = await fs.stat(filePath);
@@ -81,28 +81,27 @@ export async function identifyLogFile(filePath: string): Promise<LogFileIdentity
 }
 
 export interface NewLogContent {
-    /** Полные строки, готовые к разбору. */
+    /** Complete lines, ready to be parsed. */
     lines: string[];
-    /** Смещение после последней полной строки. */
+    /** Offset just past the last complete line. */
     nextOffset: number;
 }
 
 /**
- * Читает только то, что появилось в логе после прошлого учёта.
+ * Reads only what has appeared in the log since the last accounting.
  *
- * Чтение целиком приводило к тому, что одни и те же записи попадали в dataUsed
- * на каждом прогоне, а выбор «самого свежего по mtime» был гонкой с 3proxy,
- * который пишет лог параллельно.
+ * Reading the whole file made the same entries land in dataUsed on every run,
+ * and picking the newest file by mtime raced with 3proxy writing the log.
  *
- * Последняя строка может быть не дописана — она не считается и остаётся
- * ждать следующего прогона.
+ * The last line may still be being written — it is not consumed and waits for
+ * the next run.
  */
 export async function readNewLogContent(
     filePath: string,
     storedOffset: number | undefined,
     size: number
 ): Promise<NewLogContent> {
-    // Файл уменьшился или был перезаписан: начинаем читать заново
+    // File shrank or was rewritten: start reading from scratch
     const offset = storedOffset !== undefined && storedOffset <= size ? storedOffset : 0;
 
     if (offset >= size) {
@@ -134,8 +133,8 @@ export async function readNewLogContent(
 }
 
 /**
- * Первичная инициализация: текущий размер каждого лога считается уже учтённым.
- * Без этого переход на схему со смещениями задвоил бы исторический трафик.
+ * Initial seeding: the current size of every log counts as already accounted for.
+ * Without this, switching to the offset scheme would double the historical traffic.
  */
 export function seedOffsets(files: LogFileIdentity[]): Record<string, number> {
     const offsets: Record<string, number> = {};

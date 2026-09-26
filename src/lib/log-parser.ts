@@ -89,7 +89,7 @@ export async function getLogFiles(dateRange?: { start?: string; end?: string }):
             return files;
         }
 
-        const allFiles = fs.readdirSync(LOGS_DIR).filter((f: string) => f.startsWith("3proxy.log."));
+        const allFiles = fs.readdirSync(LOGS_DIR).filter((f: string) => f.startsWith("3proxy.log"));
 
         allFiles.sort().reverse();
 

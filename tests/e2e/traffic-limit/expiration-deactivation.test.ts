@@ -1,8 +1,8 @@
 /**
  * E2E Test: Expiration Deactivation
  *
- * createProxyUser не даёт создать активного пользователя с уже прошедшим
- * сроком, поэтому создаём с коротким будущим сроком и ждём его наступления.
+ * createProxyUser refuses to create an active user whose expiration has already
+ * passed, so we create one with a short future date and wait for it to elapse.
  */
 import { PROXYAUTH_CONTAINER_PATH } from "../utils/environment.js";
 import { CONTAINER_NAME, execInContainer, removeUserIfExists, UserApiClient } from "./shared-setup.js";

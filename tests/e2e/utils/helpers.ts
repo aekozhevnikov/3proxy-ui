@@ -1,7 +1,7 @@
 import { exec } from "child_process";
 
-// Сборка образа и вывод compose легко превышают дефолтный maxBuffer в 1 МБ,
-// из-за чего exec падает на ECONNRESET/ENOBUFS на длинном выводе.
+// Image build and compose output easily exceed the default 1 MB maxBuffer,
+// which makes exec fail with ECONNRESET/ENOBUFS on long output.
 const execAsync = (command: string): Promise<{ stdout: string; stderr: string }> =>
     new Promise((resolve, reject) => {
         exec(command, { maxBuffer: 32 * 1024 * 1024 }, (error, stdout, stderr) => {
@@ -23,7 +23,7 @@ const TEST_CONFIG = {
     testUser: {
         username: "e2etestuser",
         password: "TestPassword123!",
-        dataLimit: 100, // Поля dataLimit хранится в МБ (см. user-form.ts)
+        dataLimit: 100, // The dataLimit field is stored in MB (see user-form.ts)
         telegramUserId: "123456789"
     },
     expiredUser: {
@@ -102,8 +102,8 @@ async function waitForService(url: string, timeout = 60000): Promise<void> {
 }
 
 // Helper: Create admin session
-// Приложение авторизуется cookie-сессией (currentSession() читает cookie "session"),
-// поэтому логин возвращает JWT в Set-Cookie, а не в теле ответа.
+// The app authenticates with a cookie session (currentSession() reads the
+// "session" cookie), so login returns the JWT in Set-Cookie, not in the body.
 async function createAdminSession(): Promise<string> {
     const response = await fetch(`${TEST_CONFIG.apiUrl}/api/auth/login`, {
         method: "POST",
@@ -171,9 +171,9 @@ async function execInContainer(containerName: string, command: string): Promise<
     }
 }
 
-// Команды содержат JSON лога 3proxy с двойными кавычками, поэтому их нельзя
-// вставлять в sh -c "..." напрямую — вложенное экранирование ломает парсинг.
-// Передаём команду в base64 и декодируем уже внутри контейнера.
+// Commands embed 3proxy log JSON with double quotes, so they cannot be
+// inlined into sh -c "..." - nested escaping breaks parsing.
+// Pass the command in base64 and decode it inside the container.
 function encodeCommand(command: string): string {
     const encoded = Buffer.from(command, "utf-8").toString("base64");
 

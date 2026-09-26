@@ -1,6 +1,6 @@
 /**
- * Хелперы для записи событий авторизации в лог 3proxy.
- * Формат записи — тот же, что у настоящего 3proxy (см. utils/three-proxy-log.ts).
+ * Helpers for writing authentication events into the 3proxy log.
+ * The entry format matches real 3proxy output (see utils/three-proxy-log.ts).
  */
 import { getFail2banStatus, type Fail2banStatus } from "../utils/helpers.js";
 import { appendLogEntry, buildLogEntry, FAIL2BAN_LOG_PATH } from "../utils/three-proxy-log.js";
@@ -14,7 +14,7 @@ export interface AuthLogOptions {
     message?: string;
 }
 
-/** Пишет запись с кодом ошибки 407 (отказ авторизации) или 403 (запрещено). */
+/** Writes an entry with error code 407 (auth required) or 403 (forbidden). */
 export async function appendAuthFailure(code: "407" | "403", options: AuthLogOptions = {}): Promise<void> {
     const { username = "testuser", ip = TEST_IP, bytesSent = 0, bytesReceived = 0 } = options;
 
@@ -33,7 +33,7 @@ export async function appendAuthFailure(code: "407" | "403", options: AuthLogOpt
     );
 }
 
-/** Пишет запись об успешном запросе: fail2ban обязан её игнорировать. */
+/** Writes a successful request entry: fail2ban must ignore it. */
 export async function appendSuccess(options: AuthLogOptions = {}): Promise<void> {
     const { username = "legituser", ip = LEGIT_IP, bytesSent = 1024, bytesReceived = 2048 } = options;
 
@@ -56,7 +56,7 @@ export function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Ждёт появления IP в бане, возвращает итоговый статус jail. */
+/** Waits for the IP to appear in the ban list, returns the final jail status. */
 export async function waitForBan(
     ip: string,
     timeoutMs = 30000

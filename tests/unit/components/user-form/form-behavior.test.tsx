@@ -10,7 +10,7 @@ describe("UserForm data limit, active switch, and telegram ID", () => {
 
     it.each([
         { label: "data limit", expected: "" },
-        { label: "max ip", expected: "1" },
+        { label: "max ip", expected: "0" },
     ])("defaults %s input correctly", ({ label, expected }) => {
         render(<UserForm {...baseProps} />);
         const input = asInputElement(screen.getByLabelText(new RegExp(label, "i")));

@@ -1,6 +1,6 @@
 /**
  * E2E Test: Jail Configuration
- * Проверяет сгенерированный jail и параметры, заданные через окружение.
+ * Verifies the generated jail and the values passed through the environment.
  */
 import { execInContainer } from "../utils/helpers.js";
 import { CONTAINER_NAME } from "./shared-mocks.js";
@@ -8,7 +8,7 @@ import { CONTAINER_NAME } from "./shared-mocks.js";
 const JAIL_PATH = "/etc/fail2ban/jail.d/3proxy-docker.local";
 const FILTER_PATH = "/etc/fail2ban/filter.d/3proxy-docker.conf";
 
-/** Значения, выставленные в tests/e2e/docker-compose.e2e.yml. */
+/** Values set in tests/e2e/docker-compose.e2e.yml. */
 const EXPECTED_MAXRETRY = 2;
 const EXPECTED_BANTIME = 30;
 const EXPECTED_FINDTIME = 10;

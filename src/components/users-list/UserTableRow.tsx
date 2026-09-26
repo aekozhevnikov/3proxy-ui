@@ -1,8 +1,8 @@
 "use client";
 
 import UserActionsMenu from "./UserActionsMenu";
-import NoDataIcon from "./NoDataIcon";
 
+import { Infinity as LucideInfinity } from "lucide-react";
 import { ProxyUser } from "@/src/core/definitions";
 import { formatDate, formatGB } from "@/src/core/utils";
 
@@ -10,6 +10,7 @@ interface UserTableRowProps {
     user: ProxyUser;
     expandedUserIds: Set<number>;
     testingUserId: number | null;
+    testProxyError: string | null;
     onShare: (user: ProxyUser) => void;
     onTestProxy: (username: string, userId: number) => void;
     onEdit: (user: ProxyUser) => void;
@@ -21,6 +22,7 @@ export default function UserTableRow({
     user,
     expandedUserIds,
     testingUserId,
+    testProxyError,
     onShare,
     onTestProxy,
     onEdit,
@@ -52,16 +54,18 @@ export default function UserTableRow({
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm">
                     <div className="flex items-center justify-center">
-                        {user.dataLimit ? formatGB(Number(user.dataLimit)) : <NoDataIcon />}
+                        {user.dataLimit ? formatGB(Number(user.dataLimit)) : <LucideInfinity className="h-4 w-4" />}
                     </div>
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm">
                     <div className="flex items-center justify-center">
-                        {user.expiresAt ? formatDate(user.expiresAt) : <NoDataIcon />}
+                        {user.expiresAt ? formatDate(user.expiresAt) : <LucideInfinity className="h-4 w-4" />}
                     </div>
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm text-center">
-                    {user.ipLimit || 1}
+                    <div className="flex items-center justify-center">
+                        {user.ipLimit === 0 ? <LucideInfinity className="h-4 w-4" /> : user.ipLimit}
+                    </div>
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm">
                     <div className="flex items-center justify-center">
@@ -78,6 +82,7 @@ export default function UserTableRow({
                 <td className="px-3 py-3 whitespace-nowrap text-right flex items-center justify-end gap-2">
                     <UserActionsMenu
                         testingUserId={testingUserId}
+                        testProxyError={testProxyError}
                         user={user}
                         onDelete={onDelete}
                         onEdit={onEdit}
@@ -111,17 +116,27 @@ export default function UserTableRow({
                             <div className="flex items-center gap-1">
                                 <span className="text-gray-500 dark:text-gray-400">Data Limit:</span>
                                 <span className="font-medium text-gray-900 dark:text-white flex items-center gap-1">
-                                    {user.dataLimit ? formatGB(Number(user.dataLimit)) : <NoDataIcon />}
+                                    {user.dataLimit ? (
+                                        formatGB(Number(user.dataLimit))
+                                    ) : (
+                                        <LucideInfinity className="h-4 w-4" />
+                                    )}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1">
                                 <span className="text-gray-500 dark:text-gray-400">IP Limit:</span>
-                                <span className="font-medium text-gray-900 dark:text-white">{user.ipLimit || 1}</span>
+                                <span className="font-medium text-gray-900 dark:text-white flex items-center gap-1">
+                                    {user.ipLimit === 0 ? <LucideInfinity className="h-4 w-4" /> : user.ipLimit}
+                                </span>
                             </div>
                             <div className="flex items-center gap-1">
                                 <span className="text-gray-500 dark:text-gray-400">Expires:</span>
                                 <span className="font-medium text-gray-900 dark:text-white flex items-center gap-1">
-                                    {user.expiresAt ? formatDate(user.expiresAt) : <NoDataIcon />}
+                                    {user.expiresAt ? (
+                                        formatDate(user.expiresAt)
+                                    ) : (
+                                        <LucideInfinity className="h-4 w-4" />
+                                    )}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1">

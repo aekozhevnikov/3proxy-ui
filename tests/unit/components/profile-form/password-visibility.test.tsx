@@ -79,4 +79,39 @@ describe("ProfileForm password visibility and behavior", () => {
 
         expect(newPasswordInput.type).not.toBe("password");
     });
+
+    it("synchronizes new password and confirm password visibility", () => {
+        render(<ProfileForm currentUsername={mockCurrentUsername} />);
+
+        const newPasswordInput = asInputElement(screen.getByLabelText("New Password (optional)"));
+        const confirmPasswordInput = asInputElement(screen.getByLabelText("Confirm New Password"));
+
+        expect(newPasswordInput.type).toBe("password");
+        expect(confirmPasswordInput.type).toBe("password");
+
+        const toggleButtons = screen.getAllByLabelText("Show password");
+        fireEvent.click(toggleButtons[1]);
+
+        expect(newPasswordInput.type).toBe("text");
+        expect(confirmPasswordInput.type).toBe("text");
+
+        fireEvent.click(toggleButtons[1]);
+
+        expect(newPasswordInput.type).toBe("password");
+        expect(confirmPasswordInput.type).toBe("password");
+    });
+
+    it("does not synchronize current password with new/confirm", () => {
+        render(<ProfileForm currentUsername={mockCurrentUsername} />);
+
+        const currentPasswordInput = asInputElement(screen.getByLabelText("Current Password"));
+
+        const toggleButtons = screen.getAllByLabelText("Show password");
+        fireEvent.click(toggleButtons[0]);
+
+        expect(currentPasswordInput.type).toBe("text");
+
+        const newPasswordInput = asInputElement(screen.getByLabelText("New Password (optional)"));
+        expect(newPasswordInput.type).toBe("password");
+    });
 });

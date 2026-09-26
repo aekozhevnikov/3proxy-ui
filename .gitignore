@@ -38,8 +38,8 @@ node_modules/
 *.sw?
 # OS specific
 
+coverage
+
 # Task files
 # tasks.json
-# tasks/
-
-coverage
+# tasks/ 

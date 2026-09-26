@@ -15,6 +15,8 @@ interface PasswordInputProps {
     className?: string;
     showGenerate?: boolean;
     onPasswordGenerated?: (password: string) => void;
+    showPassword?: boolean;
+    onTogglePassword?: (show: boolean) => void;
 }
 
 export default function PasswordInput({
@@ -26,9 +28,22 @@ export default function PasswordInput({
     placeholder,
     className = "",
     showGenerate = false,
-    onPasswordGenerated
+    onPasswordGenerated,
+    showPassword: externalShowPassword,
+    onTogglePassword
 }: PasswordInputProps) {
-    const [showPassword, setShowPassword] = useState(false);
+    const [internalShowPassword, setInternalShowPassword] = useState(false);
+
+    const showPassword = externalShowPassword ?? internalShowPassword;
+
+    const handleToggle = () => {
+        const next = !(externalShowPassword ?? internalShowPassword);
+        if (onTogglePassword) {
+            onTogglePassword(next);
+        } else {
+            setInternalShowPassword(next);
+        }
+    };
 
     const handleGenerate = () => {
         const newPassword = generatePassword();
@@ -57,7 +72,7 @@ export default function PasswordInput({
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                     tabIndex={-1}
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={handleToggle}
                 >
                     {showPassword ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                     <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>

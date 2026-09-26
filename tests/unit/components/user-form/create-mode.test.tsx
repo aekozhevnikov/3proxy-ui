@@ -78,4 +78,27 @@ describe("UserForm Create mode", () => {
         fireEvent.click(cancelButton!);
         expect(baseProps.onCancel).toHaveBeenCalled();
     });
+
+    it("synchronizes password and confirm password visibility toggle", () => {
+        render(<UserForm {...baseProps} />);
+
+        const passwordInput = screen.getByPlaceholderText(/enter password/i);
+        const confirmPasswordInput = screen.getByPlaceholderText(/confirm password/i);
+        const passwordEl = passwordInput as HTMLInputElement;
+        const confirmPasswordEl = confirmPasswordInput as HTMLInputElement;
+
+        expect(passwordEl.type).toBe("password");
+        expect(confirmPasswordEl.type).toBe("password");
+
+        const toggleButtons = screen.getAllByLabelText(/show password|hide password/i);
+        fireEvent.click(toggleButtons[0]);
+
+        expect(passwordEl.type).toBe("text");
+        expect(confirmPasswordEl.type).toBe("text");
+
+        fireEvent.click(toggleButtons[0]);
+
+        expect(passwordEl.type).toBe("password");
+        expect(confirmPasswordEl.type).toBe("password");
+    });
 });

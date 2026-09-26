@@ -1,8 +1,8 @@
 /**
  * E2E Test: Traffic Limit
  *
- * Точка входа сохранена для `npm run test:e2e` и tests/e2e/verify-setup.sh.
- * Реализация вынесена в ./traffic-limit/ — там же лежат отдельные тесты.
+ * Entry point kept for `npm run test:e2e` and tests/e2e/verify-setup.sh.
+ * The implementation lives in ./traffic-limit/, where the individual tests are.
  */
 import { runAll } from "./traffic-limit/run-all.test.js";
 

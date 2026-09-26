@@ -48,6 +48,7 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
         expandedUserIds,
         isReloading,
         testingUserId,
+        testProxyError,
         isDeleting,
         setStatusFilter,
         toggleExpand,
@@ -97,6 +98,7 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
                         <UserDesktopTable
                             expandedUserIds={expandedUserIds}
                             testingUserId={testingUserId}
+                            testProxyError={testProxyError}
                             toggleExpand={toggleExpand}
                             users={filteredUsers}
                             onDelete={openDeleteModal}
@@ -114,6 +116,7 @@ export default function UsersList({ users: initialUsers, fetchEnabled = true }: 
                                     expandedUserIds.has(user.id) || expandedUserIds.size === currentUsers.length
                                 }
                                 testingUserId={testingUserId}
+                                testProxyError={testProxyError}
                                 user={user}
                                 onDelete={openDeleteModal}
                                 onEdit={(user) => handleOpenEditModalWithFetch(user, openEditModal)}

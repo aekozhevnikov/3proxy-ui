@@ -10,12 +10,12 @@ export const dockerExec = (cmd: string, timeoutMs = 5000): Promise<{ stdout: str
 };
 
 /**
- * Имена контейнера 3proxy, в порядке поиска.
+ * 3proxy container names, in lookup order.
  *
- * PROXY_CONTAINER_NAME задан в docker-compose.dev.yml и docker-compose.yml,
- * но раньше не читался: имя жёстко кодировалось, и переименование контейнера
- * (например в E2E-окружении) молча ломало перезагрузку конфигурации —
- * .proxyauth не перечитывался, и 3proxy отвечал 407 на все запросы.
+ * PROXY_CONTAINER_NAME is set in docker-compose.dev.yml and docker-compose.yml
+ * but was never read: the name was hardcoded, so renaming the container (as the
+ * E2E stack does) silently broke config reloads — .proxyauth was never re-read
+ * and 3proxy answered 407 to every request.
  */
 function containerNameCandidates(): string[] {
     return [process.env.PROXY_CONTAINER_NAME, "3proxy", "vpn-3proxy"].filter((name): name is string => Boolean(name));
@@ -32,7 +32,7 @@ export async function find3proxyContainer(): Promise<{ id: string; name: string 
                 return { id, name: foundName || name };
             }
         } catch {
-            // Пробуем следующий кандидат
+            // Try the next candidate
         }
     }
 
@@ -41,9 +41,7 @@ export async function find3proxyContainer(): Promise<{ id: string; name: string 
 
 export async function get3proxyContainerPid(containerId: string): Promise<number | null> {
     try {
-        const { stdout: isRunning } = await dockerExec(
-            `docker inspect --format '{{.State.Running}}' ${containerId}`
-        );
+        const { stdout: isRunning } = await dockerExec(`docker inspect --format '{{.State.Running}}' ${containerId}`);
 
         if (isRunning.trim() !== "true") {
             return null;
@@ -59,7 +57,7 @@ export async function get3proxyContainerPid(containerId: string): Promise<number
 }
 
 export async function restart3proxyContainer(containerId: string): Promise<string> {
-    // Перезапуск контейнера занимает заметно дольше дефолтных 5 секунд.
+    // Restarting a container takes noticeably longer than the 5s default timeout.
     const { stdout } = await dockerExec(`docker restart ${containerId}`, 60000);
 
     return stdout.trim() || "Container restarted";

@@ -1,8 +1,8 @@
 /**
  * E2E Test: Real Proxy Traffic
  *
- * Сквозной путь вместо подставных строк лога: реальные запросы через 3proxy ->
- * записи в логе от самого 3proxy -> dataUsed в БД после maintenance.
+ * End-to-end path instead of synthetic log lines: real requests through 3proxy,
+ * entries in the log written by 3proxy itself, then dataUsed in the database.
  */
 import { generateHttpTraffic, startLocalTarget } from "../utils/proxy-traffic-generator.js";
 import { containerIp, dumpTrafficState } from "../utils/environment.js";
@@ -14,8 +14,8 @@ import { CONTAINER_NAME, removeUserIfExists, UserApiClient } from "./shared-setu
 const USERNAME = "realtrafficuser";
 const PASSWORD = "RealTraffic123!";
 
-// 3proxy резолвит хосты через собственные n-серверы, а не через Docker DNS,
-// поэтому цель для проксирования адресуем по IP контейнера.
+// 3proxy resolves hosts through its own n-servers rather than Docker DNS,
+// so the proxy target has to be addressed by container IP.
 const PROXY_HOST = "3proxy-e2e-3proxy";
 const PROXY_PORT = 3128;
 const TARGET_PORT = 8099;
@@ -36,8 +36,8 @@ export async function testRealProxyTraffic(): Promise<void> {
         isActive: true
     });
 
-    // Новый пользователь попадает в .proxyauth при создании, но 3proxy читает
-    // файл только на старте — нужен перезапуск контейнера.
+    // A new user lands in .proxyauth on creation, but 3proxy reads the file
+    // only on start, so the container has to be restarted.
     await reloadConfig();
 
     await startLocalTarget(CONTAINER_NAME, {
@@ -67,8 +67,8 @@ export async function testRealProxyTraffic(): Promise<void> {
     const expectedSent = REQUEST_BYTES * REQUEST_COUNT;
     const expectedReceived = TARGET_RESPONSE_BYTES * REQUEST_COUNT;
 
-    // 3proxy пишет лог асинхронно относительно возврата curl, поэтому ждём
-    // появления записи, а не читаем файл один раз сразу.
+    // 3proxy writes the log asynchronously relative to curl returning, so wait
+    // for the entry to appear instead of reading the file once.
     const deadline = Date.now() + 15000;
     let logContent = "";
     let fromLog: { sent: number; received: number; requests: number } | undefined;
@@ -117,6 +117,6 @@ async function reloadConfig(): Promise<void> {
         throw new Error(`Config reload failed: ${result.error}`);
     }
 
-    // Перезапуск контейнера 3proxy занимает несколько секунд.
+    // Restarting the 3proxy container takes a few seconds.
     await new Promise((resolve) => setTimeout(resolve, 5000));
 }

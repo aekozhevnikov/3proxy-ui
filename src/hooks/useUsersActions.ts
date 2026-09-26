@@ -18,6 +18,7 @@ export function useUsersActions({ users, createUser, updateUser, deleteUser, ref
     const [expandedUserIds, setExpandedUserIds] = useState<Set<number>>(new Set());
     const [isReloading, setIsReloading] = useState(false);
     const [testingUserId, setTestingUserId] = useState<number | null>(null);
+    const [testProxyError, setTestProxyError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const toggleExpand = (userId: number) => {
@@ -63,6 +64,7 @@ export function useUsersActions({ users, createUser, updateUser, deleteUser, ref
 
     const handleTestProxy = async (username: string, userId: number) => {
         setTestingUserId(userId);
+        setTestProxyError(null);
         try {
             const response = await fetch("/api/admin/users/test-proxy", {
                 method: "POST",
@@ -75,9 +77,11 @@ export function useUsersActions({ users, createUser, updateUser, deleteUser, ref
             if (response.ok && data.success) {
                 showToast(`Proxy test successful for ${username}`, "success");
             } else {
+                setTestProxyError(data.error || "Proxy test failed");
                 showToast(data.error || "Proxy test failed", "error");
             }
         } catch {
+            setTestProxyError("Failed to test proxy");
             showToast("Failed to test proxy", "error");
         } finally {
             setTestingUserId(null);
@@ -137,6 +141,7 @@ export function useUsersActions({ users, createUser, updateUser, deleteUser, ref
         expandedUserIds,
         isReloading,
         testingUserId,
+        testProxyError,
         isDeleting,
         setStatusFilter,
         toggleExpand,

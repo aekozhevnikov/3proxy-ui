@@ -74,7 +74,9 @@ export async function processTrafficLimits({
         const totalUsedBytes = BigInt(totalUsed);
         const newDataUsed = user.dataUsed + totalUsedBytes;
         const shouldDeactivate =
-            user.dataLimit !== null && newDataUsed >= BigInt(Number(user.dataLimit) * 1024 * 1024) && user.isActive === true;
+            user.dataLimit !== null &&
+            newDataUsed >= BigInt(Number(user.dataLimit) * 1024 * 1024) &&
+            user.isActive === true;
 
         await prisma.proxyUser.update({
             where: { id: user.id },

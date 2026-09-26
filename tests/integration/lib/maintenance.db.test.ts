@@ -7,7 +7,7 @@
  */
 import { execSync } from "child_process";
 
-// `prisma migrate deploy` в beforeAll занимает заметно больше дефолтных 5 секунд
+// `prisma migrate deploy` in beforeAll takes noticeably longer than the 5s default
 jest.setTimeout(30000);
 
 import { existsSync, unlinkSync } from "fs";

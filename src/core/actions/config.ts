@@ -1,6 +1,5 @@
 "use server";
 
-import { exec } from "child_process";
 import fs from "fs";
 import path from "path";
 
@@ -8,15 +7,7 @@ import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/src/prisma/db";
 import { hashProxyPassword } from "@/src/core/password-hash";
-
-const execWithTimeout = (cmd: string, timeout = 5000): Promise<{ stdout: string; stderr: string }> => {
-    return new Promise((resolve, reject) => {
-        exec(cmd, { timeout }, (error, stdout, stderr) => {
-            if (error) reject(error);
-            else resolve({ stdout, stderr });
-        });
-    });
-};
+import { find3proxyContainer, restart3proxyContainer } from "@/src/core/docker";
 
 export async function update3proxyConfig(): Promise<{ success: boolean; message: string; userCount: number }> {
     try {
@@ -44,7 +35,7 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
         });
 
         // Write .proxyauth file (complete regeneration)
-        const proxyauthPath = path.join(process.cwd(), "3proxy", "users", ".proxyauth");
+        const proxyauthPath = process.env.PROXYAUTH_PATH || path.join(process.cwd(), "3proxy", "users", ".proxyauth");
 
         console.debug(`[config] Writing .proxyauth to: ${proxyauthPath}`);
         fs.mkdirSync(path.dirname(proxyauthPath), { recursive: true });
@@ -63,42 +54,14 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
 
         // Try to restart 3proxy Docker container for immediate effect
         try {
-            // Find 3proxy container
-            let containerId = null;
-
             console.debug("[config] Searching for 3proxy Docker container...");
-            try {
-                const { stdout } = await execWithTimeout(
-                    "docker ps --filter 'name=3proxy' --format '{{.ID}}' | head -1"
-                );
+            const containerInfo = await find3proxyContainer();
 
-                containerId = stdout.trim();
-                if (containerId) {
-                    console.debug(`[config] Found container with name filter '3proxy': ${containerId}`);
-                }
-            } catch {
-                // ignore errors, try alternative name
-            }
-
-            if (!containerId) {
-                try {
-                    const { stdout } = await execWithTimeout(
-                        "docker ps --filter 'name=vpn-3proxy' --format '{{.ID}}' | head -1"
-                    );
-
-                    containerId = stdout.trim();
-                    if (containerId) {
-                        console.debug(`[config] Found container with name filter 'vpn-3proxy': ${containerId}`);
-                    }
-                } catch {
-                    // ignore
-                }
-            }
-
-            if (containerId) {
-                console.debug(`[config] Restarting container ${containerId}...`);
-                await execWithTimeout(`docker restart ${containerId}`, 10000);
-                console.debug(`[config] Container ${containerId} restarted successfully`);
+            if (containerInfo) {
+                console.debug(`[config] Found 3proxy container: ${containerInfo.id} (${containerInfo.name})`);
+                console.debug(`[config] Restarting container ${containerInfo.id}...`);
+                await restart3proxyContainer(containerInfo.id);
+                console.debug(`[config] Container ${containerInfo.id} restarted successfully`);
             } else {
                 console.debug("[config] WARNING: No 3proxy Docker container found, config file updated only");
                 console.debug("[config] 3proxy may need to be restarted manually or may auto-reload on file change");

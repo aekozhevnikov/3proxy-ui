@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 
 import { prisma } from "@/src/prisma/db";
+import { generatePassword } from "@src/core/password-hash";
 
 interface AdminUser {
     username: string;
@@ -25,8 +26,8 @@ export async function ensureAdminUser(
         ...overrides
     };
 
-    // Hash the password once for both User and ProxyUser
-    const hashedPassword = await bcrypt.hash(adminConfig.password, 10);
+    // bcrypt hash for User table (panel login)
+    const bcryptHashedPassword = await bcrypt.hash(adminConfig.password, 10);
 
     try {
         // Check if admin already exists in User table
@@ -40,7 +41,7 @@ export async function ensureAdminUser(
             await prisma.user.create({
                 data: {
                     username: adminConfig.username,
-                    password: hashedPassword,
+                    password: bcryptHashedPassword,
                     name: adminConfig.name,
                     isAdmin: true
                 }
@@ -48,15 +49,18 @@ export async function ensureAdminUser(
         }
 
         // Ensure proxy user exists for admin in ProxyUser table (Option 1: all proxy users in DB)
+        // Store the plain password — hashProxyPassword() will apply CRYPT-MD5 when writing .proxyauth
         const existingProxyUser = await prisma.proxyUser.findFirst({
             where: { username: adminConfig.username }
         });
+
+        const generatedPassword = generatePassword();
 
         if (!existingProxyUser) {
             await prisma.proxyUser.create({
                 data: {
                     username: adminConfig.username,
-                    password: hashedPassword,
+                    password: generatedPassword,
                     isActive: true,
                     dataLimit: null, // unlimited
                     dataUsed: 0,
@@ -68,7 +72,7 @@ export async function ensureAdminUser(
             });
         }
 
-        return existing ? null : { username: adminConfig.username, password: adminConfig.password };
+        return existing ? null : { username: adminConfig.username, password: generatedPassword };
     } catch (error) {
         console.error("[ensureAdmin] Failed to ensure admin user:", error);
         throw error;

@@ -1,7 +1,7 @@
 /**
  * E2E Test: Auth Failure Banning
- * Проверяет, что IP с неудачными попытками авторизации (407/403) попадает
- * в бан fail2ban и в правило iptables.
+ * Verifies that an IP with failed auth attempts (407/403) ends up both in
+ * the fail2ban ban list and in an iptables rule.
  */
 import { execInContainer } from "../utils/helpers.js";
 import { appendAuthFailure, waitForBan } from "./log-helper.js";
@@ -11,7 +11,7 @@ const BANTIME_SECONDS = 30;
 const FAILRETRY = 2;
 
 export async function testAuthFailureBanning(): Promise<void> {
-    // maxretry = 2, поэтому достаточно двух отказов; пишем с запасом
+    // maxretry = 2, so two failures are enough; write a few for margin
     for (let i = 0; i < FAILRETRY + 1; i++) {
         await appendAuthFailure("407", { username: "banneduser" });
     }
@@ -32,8 +32,8 @@ export async function testAuthFailureBanning(): Promise<void> {
         throw new Error(`Expected an iptables rule for ${TEST_IP}, got:\n${iptables}`);
     }
 
-    // Бан должен быть временным: правило сбрасывается по истечении bantime.
-    // Проверяем, что jail действительно настроен на конечное время.
+    // The ban must be temporary: the rule is cleared when bantime expires.
+    // Check that the jail really is configured with a finite time.
     const jailContent = await execInContainer(CONTAINER_NAME, "cat /etc/fail2ban/jail.d/3proxy-docker.local");
     if (!jailContent.includes(`bantime = ${BANTIME_SECONDS}`)) {
         throw new Error(`Jail should use bantime = ${BANTIME_SECONDS}, got:\n${jailContent}`);

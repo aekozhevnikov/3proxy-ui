@@ -4,6 +4,8 @@ import { promisify } from "util";
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/src/prisma/db";
+import { find3proxyContainer } from "@/src/core/docker";
+import { logger } from "@/src/core/logger";
 
 const execAsync = promisify(exec);
 
@@ -56,12 +58,9 @@ export async function POST(request: NextRequest) {
 
         try {
             // First check Docker container (if used)
-            const { stdout: dockerPs } = await execAsync(
-                "docker ps --filter 'name=3proxy' --format '{{.Names}}' 2>/dev/null",
-                { timeout: 5000 }
-            );
+            const containerInfo = await find3proxyContainer();
 
-            if (dockerPs.trim()) {
+            if (containerInfo) {
                 isRunning = true;
             } else {
                 // Otherwise check local process
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
         // Try to get info from system status or use defaults
         let socks5Port: number | null = null;
         let httpPort: number | null = null;
-        let proxyHost = "127.0.0.1";
+        let proxyHost = process.env.PROXY_HOST || "127.0.0.1";
 
         try {
             // Try to get system status via local API
@@ -90,13 +89,13 @@ export async function POST(request: NextRequest) {
             );
             const statusData = JSON.parse(statusJson);
 
-            if (statusData?.proxyPort) {
-                // In 3proxy typically one port for all protocols
-                const port = statusData.proxyPort;
-
-                socks5Port = port;
-                httpPort = port;
-                proxyHost = statusData.bindAddress || "127.0.0.1";
+            if (statusData?.proxy?.socks5Port) {
+                socks5Port = statusData.proxy.socks5Port;
+                proxyHost = statusData.proxy.host || proxyHost;
+            }
+            if (statusData?.proxy?.httpPort) {
+                httpPort = statusData.proxy.httpPort;
+                proxyHost = statusData.proxy.host || proxyHost;
             }
         } catch (error) {
             console.error(error);
@@ -119,18 +118,29 @@ export async function POST(request: NextRequest) {
         // Build URL with authentication (password is already hashed via MD5-crypt for 3proxy)
         const authString = `${encodeURIComponent(user.username)}:${encodeURIComponent(user.password)}`;
 
+        logger.info(`[proxy-test] Testing proxy for user "${username}" at ${proxyHost}:${socks5Port}/${httpPort}`);
+
         // Test connection via curl (with authentication)
         const testPromises = protocols.map((p) =>
             execAsync(
-                `curl -s ${p.protocol === "socks5" ? `--socks5 ${authString}@${proxyHost}:${p.port}` : `-x http://${authString}@${proxyHost}:${p.port}`} http://example.com --max-time 5`,
+                `curl --connect-timeout 3 --max-time 5 ${p.protocol === "socks5" ? `--socks5 ${authString}@${proxyHost}:${p.port}` : `-x http://${authString}@${proxyHost}:${p.port}`} http://example.com`,
                 { timeout: 6000 }
             )
-                .then(() => ({ protocol: p.protocol, success: true }))
-                .catch((err: Error) => ({ protocol: p.protocol, success: false, error: err.message }))
+                .then(({ stdout }) => {
+                    const output = stdout ? stdout.trim() : "";
+                    return { protocol: p.protocol, success: true, response: output.substring(0, 200) };
+                })
+                .catch((err: Error & { stderr?: string }) => ({
+                    protocol: p.protocol,
+                    success: false,
+                    error: err.message,
+                    stderr: err.stderr
+                }))
         );
 
         const results = await Promise.allSettled(testPromises);
-        const tests: Array<{ protocol: string; success: boolean; error?: string }> = [];
+        const tests: Array<{ protocol: string; success: boolean; error?: string; stderr?: string; response?: string }> =
+            [];
 
         for (let i = 0; i < results.length; i++) {
             const result = results[i];
@@ -145,6 +155,14 @@ export async function POST(request: NextRequest) {
         const allSuccess = tests.every((t) => t.success);
         const anySuccess = tests.some((t) => t.success);
 
+        if (allSuccess) {
+            logger.info(`[proxy-test] Proxy test successful for user "${username}"`);
+        } else if (anySuccess) {
+            logger.warn(`[proxy-test] Proxy test partially successful for user "${username}"`, tests);
+        } else {
+            logger.error(`[proxy-test] Proxy test failed for user "${username}"`, tests);
+        }
+
         return NextResponse.json({
             success: anySuccess,
             message: allSuccess
@@ -154,14 +172,16 @@ export async function POST(request: NextRequest) {
                   : `Proxy test failed for user ${username}`,
             data: {
                 username,
-                tests: tests.reduce<Record<string, { protocol: string; success: boolean; error?: string }>>(
-                    (acc, test) => {
-                        acc[test.protocol] = test;
+                tests: tests.reduce<
+                    Record<
+                        string,
+                        { protocol: string; success: boolean; error?: string; stderr?: string; response?: string }
+                    >
+                >((acc, test) => {
+                    acc[test.protocol] = test;
 
-                        return acc;
-                    },
-                    {}
-                ),
+                    return acc;
+                }, {}),
                 proxyConfig: {
                     host: proxyHost,
                     socks5Port,
@@ -171,7 +191,7 @@ export async function POST(request: NextRequest) {
             }
         });
     } catch (error) {
-        console.error("Error testing proxy:", error);
+        logger.error("[proxy-test] Error testing proxy:", error);
 
         return NextResponse.json({ success: false, error: "Failed to test proxy" }, { status: 500 });
     }

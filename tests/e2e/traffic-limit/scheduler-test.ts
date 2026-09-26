@@ -1,8 +1,8 @@
 /**
  * E2E Test: Scheduler Execution
  *
- * Проверяет, что планировщик (TRAFFIC_SYNC_INTERVAL) сам подхватывает трафик
- * из лога и пишет его в dataUsed — без ручного вызова /api/users/maintenance.
+ * Verifies that the scheduler (TRAFFIC_SYNC_INTERVAL) picks up log traffic on
+ * its own and writes it to dataUsed, with no manual /api/users/maintenance call.
  */
 import { appendLogEntry, buildLogEntry } from "../utils/three-proxy-log.js";
 import { dumpTrafficState } from "../utils/environment.js";
@@ -58,11 +58,11 @@ export async function testScheduler(): Promise<void> {
             lastSeenSync = current;
             lastChangeAt = Date.now();
         } else if (Date.now() - lastChangeAt > stallTimeout) {
-            // Планировщик — фоновый cron внутри Next.js. В собранном
-            // standalone-образе он стартует вместе с прогревом страницы, но
-            // дальше продолжает работать не всегда. Если за 16 секунд не было
-            // ни одного прогона maintenance, проверять нечего: это факт
-            // окружения, а не ошибка учёта трафика.
+            // The scheduler is a background cron inside Next.js. In the built
+            // standalone image it starts together with the page warm-up, but it
+            // does not always keep running afterwards. If there was no maintenance
+            // run for 16 seconds there is nothing to check: that is a fact about
+            // the environment, not a traffic accounting error.
             console.warn(
                 `  SKIP: maintenance scheduler did not run during the test window ` +
                     `(lastSync stayed at ${current ?? "unknown"})`
@@ -91,7 +91,7 @@ export async function testScheduler(): Promise<void> {
     );
 }
 
-/** Метка времени последнего прогона maintenance из traffic-sync.json. */
+/** Timestamp of the last maintenance run, from traffic-sync.json. */
 async function lastSyncTimestamp(): Promise<string | null> {
     const raw = await execInContainer(
         CONTAINER_NAME,

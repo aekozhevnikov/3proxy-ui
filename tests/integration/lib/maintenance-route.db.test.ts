@@ -1,13 +1,13 @@
 /**
  * @jest-environment node
  *
- * Проверяет сквозное поведение POST /api/users/maintenance на реальной SQLite:
- * трафик из лога попадает в dataUsed ровно один раз, даже если maintenance
- * вызывается многократно, а ротация логов не приводит к потере записей.
+ * Verifies the end-to-end behaviour of POST /api/users/maintenance on real
+ * SQLite: log traffic lands in dataUsed exactly once even if maintenance
+ * runs repeatedly, and log rotation does not lose entries.
  */
 import { execSync } from "child_process";
 
-// `prisma migrate deploy` в beforeAll занимает заметно больше дефолтных 5 секунд
+// `prisma migrate deploy` in beforeAll takes noticeably longer than the 5s default
 jest.setTimeout(30000);
 
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, appendFileSync, renameSync } from "fs";
@@ -18,8 +18,8 @@ const TEST_DIR = mkdtempSync(path.join(os.tmpdir(), "maintenance-route-"));
 const TEST_DB = path.join(TEST_DIR, "route.db");
 const LOGS_DIR = path.join(TEST_DIR, "logs");
 
-// Все переменные читаются модулями на этапе загрузки, поэтому выставляем их
-// до require.
+// All variables are read by the modules at load time, so they are set
+// before require.
 process.env.DATABASE_URL = `file:${TEST_DB}`;
 process.env.LOGS_DIR = LOGS_DIR;
 process.env.SYNC_INFO_FILE = path.join(TEST_DIR, "traffic-sync.json");
@@ -92,7 +92,7 @@ describe("maintenance route traffic accounting", () => {
             data: { dataUsed: BigInt(0), isActive: true, deactivatedAt: null, dataLimit: null }
         });
 
-        // Чистый старт: файла состояния нет, логи пусты
+        // Clean start: no state file, empty logs
         rmSync(process.env.SYNC_INFO_FILE!, { force: true });
         rmSync(LOGS_DIR, { recursive: true, force: true });
         mkdirSync(LOGS_DIR, { recursive: true });
@@ -106,7 +106,7 @@ describe("maintenance route traffic accounting", () => {
         expect((await first.json()).totalTraffic).toBe(5000);
         expect(await dataUsedFor("routeuser")).toBe(BigInt(5000));
 
-        // Второй и третий прогоны не должны прибавлять те же байты снова
+        // The second and third runs must not add the same bytes again
         for (let i = 0; i < 2; i++) {
             const response = await POST(request());
             expect(response.status).toBe(200);
@@ -136,8 +136,8 @@ describe("maintenance route traffic accounting", () => {
         writeFileSync(logPath, logLine("routeuser", 4000));
         await POST(request());
 
-        // Ротация 3proxy: файл переименовывается (inode сохраняется), запись
-        // продолжается в переименованный файл, а новый 3proxy.log пустой
+        // 3proxy rotation: the file is renamed (inode preserved), writing
+        // continues into the renamed file, and the new 3proxy.log is empty
         renameSync(logPath, rotatedPath);
         appendFileSync(rotatedPath, logLine("routeuser", 7000));
         writeFileSync(logPath, "");
@@ -149,13 +149,13 @@ describe("maintenance route traffic accounting", () => {
     });
 
     it("skips history accumulated before the upgrade to offset tracking", async () => {
-        // Файл состояния есть, но записан старой версией кода — без смещений
+        // The state file exists but was written by the old code, with no offsets
         writeFileSync(
             process.env.SYNC_INFO_FILE!,
             JSON.stringify({ lastSync: "2026-09-25T00:00:00.000Z", sourceFile: "3proxy.log", updatedCount: 3 })
         );
 
-        // Лог накоплен до включения синхронизации по смещениям
+        // Log accumulated before offset tracking was introduced
         writeFileSync(path.join(LOGS_DIR, "3proxy.log"), logLine("routeuser", 900000));
 
         const response = await POST(request());
@@ -163,7 +163,7 @@ describe("maintenance route traffic accounting", () => {
         expect((await response.json()).totalTraffic).toBe(0);
         expect(await dataUsedFor("routeuser")).toBe(BigInt(0));
 
-        // После перехода новые строки считаются как обычно
+        // After the switch, new lines are counted as usual
         appendFileSync(path.join(LOGS_DIR, "3proxy.log"), logLine("routeuser", 1000));
 
         const next = await POST(request());

@@ -1,34 +1,30 @@
-# PRD: Добавление тестового покрытия для компонентов UI
+# Docker Image Size Optimization
 
-## Обзор
-Проект имеет неполное тестовое покрытие. Необходимо добавить unit-тесты для компонентов и страниц, которые пока не имеют тестов.
+## Objective
+Reduce 3proxy-ui Docker image from 1.3GB to at most 900MB while maintaining functionality.
 
-## Список компонентов без тестов
+## Current Analysis
+- Base: node:20.18-alpine
+- Runtime packages: curl, docker-cli, fail2ban, iptables, python3, sqlite-libs
+- node_modules 1GB with devDependencies still present in runtime stage
+- Multi-stage build already in place
 
-### Страницы (pages)
-1. `src/app/page.tsx` - Главная страница
-2. `src/app/login/page.tsx` - Страница логина (уже есть тест, но можно расширить)
-3. `src/app/admin/page.tsx` - Админ панель
-4. `src/app/admin/dashboard/page.tsx` - Дашборд
-5. `src/app/admin/profile/page.tsx` - Профиль (уже есть тест формы)
-6. `src/app/admin/users/page.tsx` - Страница пользователей
-7. `src/app/admin/users/create/page.tsx` - Создание пользователя
-8. `src/app/admin/users/[id]/edit/page.tsx` - Редактирование пользователя
-9. `src/app/not-found.tsx` - Страница 404
+## Tasks
 
-### Компоненты
-1. `src/components/modals/donation-modal.tsx` - Модал доната
-2. `src/components/side-menu.tsx` - Боковое меню
-3. `src/components/side-menu-drawer.tsx` - Drawer бокового меню
-4. `src/components/footer.tsx` - Футер
-5. `src/components/icons.tsx` - Иконки
-6. `src/components/session-provider.tsx` - Провайдер сессии
-7. `src/components/custom-date-picker.tsx` - Date picker
-8. `src/app/admin/users/components/share-modal.tsx` - Модал поделиться
-9. `src/hooks/use-qr-code.tsx` - Хук QR кода
+### Task 1: Analyze Docker image size breakdown
+Run docker history or dive to identify largest layers. Document findings.
 
-## Требования
-- Использовать Jest + React Testing Library
-- Тестировать рендеринг, взаимодействие, валидацию форм
-- Достичь минимум 80% покрытия для каждого компонента
-- Следовать существующим паттернам тестирования в проекте
+### Task 2: Remove devDependencies from runtime stage
+Modify Dockerfile to install only production dependencies in runtime stage using npm ci --omit=dev.
+
+### Task 3: Remove unnecessary runtime packages
+Evaluate and remove docker-cli if not needed. Only keep essential packages.
+
+### Task 4: Optimize node_modules in build stage
+Remove types, tests, docs after install. Prune aggressively.
+
+### Task 5: Build and verify optimized image
+Build image, check size <=900MB. Verify app starts and features work.
+
+### Task 6: Run tests for verification
+Run test suite to ensure no regressions.

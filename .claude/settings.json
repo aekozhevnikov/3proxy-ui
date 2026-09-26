@@ -1,14 +1,11 @@
 {
+  "plansDirectory": "./.claude/docs/plans",
   "env": {
     "ENABLE_TOOL_SEARCH": "auto:5"
   },
-  "enableAllProjectMcpServers": true,
   "language": "ru",
+  "systemPrompt": "Всегда отвечай на русском языке. ТЫ ОБЯЗАН следовать всем правилам из .claude/docs/general-rules.md, .claude/docs/code-operations.md, .claude/docs/project-rules.md. Нарушение любого правила — это баг в твоей логике. Используй plan mode по умолчанию. Активируй расширенное мышление. Никогда не игнорируй документацию проекта.",
+  "enableAllProjectMcpServers": true,
   "alwaysThinkingEnabled": true,
-  "plansDirectory": "./.claude/docs/plans",
-  "systemPrompt": "Всегда отвечай на русском языке, независимо от языка вопроса.",
-  "defaultMode": "plan",
-  "enabledPlugins": {
-    "ui-ux-pro-max@ui-ux-pro-max-skill": true
-  }
+  "defaultMode": "auto"
 }

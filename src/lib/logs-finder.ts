@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 
-const POSSIBLE_LOGS_DIRS = [process.env.LOGS_DIR, "/var/log/3proxy", "./logs", "./3proxy/logs"] as const;
+const POSSIBLE_LOGS_DIRS = [process.env.LOGS_DIR, "/etc/3proxy/logs", "/var/log/3proxy"] as const;
 
 let cachedLogsDir: string | null = null;
 

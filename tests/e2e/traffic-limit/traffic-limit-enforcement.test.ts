@@ -1,8 +1,8 @@
 /**
  * E2E Test: Traffic Limit Enforcement
  *
- * Пользователь с лимитом 100 МБ получает запись лога сверх лимита,
- * после чего maintenance деактивирует его и комментирует запись в .proxyauth.
+ * A user with a 100 MB limit gets a log entry above the limit, after which
+ * maintenance deactivates it and comments out the .proxyauth entry.
  */
 import { PROXYAUTH_CONTAINER_PATH } from "../utils/environment.js";
 import { appendLogEntry, buildLogEntry } from "../utils/three-proxy-log.js";
@@ -29,7 +29,7 @@ export async function testTrafficLimitEnforcement(): Promise<void> {
     }
 
     const limitBytes = TEST_CONFIG.testUser.dataLimit * MB;
-    // 110 МБ — с запасом над лимитом в 100 МБ
+    // 110 MB, with margin over the 100 MB limit
     const trafficBytes = 110 * MB;
 
     await appendLogEntry(

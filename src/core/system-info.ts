@@ -1,9 +1,14 @@
-import { exec as execCb } from "child_process";
 import { promises as fs } from "fs";
 import path from "path";
 
+import { dockerExec, find3proxyContainer, get3proxyContainerPid } from "@/src/core/docker";
+
+export { find3proxyContainer, get3proxyContainerPid };
+
 export const exec = (cmd: string, timeoutMs = 5000): Promise<{ stdout: string; stderr: string }> => {
     return new Promise((resolve, reject) => {
+        const { exec: execCb } = require("child_process");
+
         execCb(cmd, { timeout: timeoutMs }, (error, stdout, stderr) => {
             if (error) reject(error);
             else resolve({ stdout, stderr });
@@ -90,17 +95,6 @@ export async function get3proxyPid(): Promise<number | null> {
     }
 }
 
-export async function get3proxyPidFromDocker(containerId: string): Promise<number | null> {
-    try {
-        const { stdout } = await exec(`docker inspect --format '{{.State.Pid}}' ${containerId}`);
-        const pid = parseInt(stdout.trim());
-
-        return isNaN(pid) ? null : pid;
-    } catch {
-        return null;
-    }
-}
-
 export async function get3proxyVersion(containerInfo: { id: string; name: string } | null): Promise<string> {
     try {
         const { stdout } = await exec("3proxy -v");
@@ -109,22 +103,32 @@ export async function get3proxyVersion(containerInfo: { id: string; name: string
     } catch {
         if (containerInfo) {
             try {
-                const { stdout: dockerVersion } = await exec(
-                    `docker exec ${containerInfo.id} 3proxy -v 2>&1 || echo "version-check-failed"`
+                const { stdout: isRunning } = await dockerExec(
+                    `docker inspect --format '{{.State.Running}}' ${containerInfo.id}`
                 );
 
-                if (dockerVersion.trim() && !dockerVersion.includes("version-check-failed")) {
-                    return dockerVersion.trim().split("\n")[0];
+                if (isRunning.trim() === "true") {
+                    try {
+                        const { stdout: dockerVersion } = await dockerExec(
+                            `docker exec ${containerInfo.id} 3proxy -v 2>&1 || echo "version-check-failed"`
+                        );
+
+                        if (dockerVersion.trim() && !dockerVersion.includes("version-check-failed")) {
+                            return dockerVersion.trim().split("\n")[0];
+                        }
+                    } catch {
+                        // exec failed, fall through to image name approach
+                    }
                 }
 
-                const { stdout: imageName } = await exec(
-                    `docker ps --filter 'name=${containerInfo.name}' --format '{{.Image}}' | head -1`
+                const { stdout: imageName } = await dockerExec(
+                    `docker inspect --format '{{.Config.Image}}' ${containerInfo.id}`
                 );
                 const tag = extractImageTag(imageName.trim());
 
-                return tag || "Running (Docker)";
+                return tag || "Not found";
             } catch {
-                return "Running";
+                return "Not found";
             }
         }
 
@@ -135,7 +139,7 @@ export async function get3proxyVersion(containerInfo: { id: string; name: string
 export async function get3proxyMemoryUsage(containerInfo: { id: string; name: string } | null): Promise<number | null> {
     if (containerInfo) {
         try {
-            const { stdout } = await exec(
+            const { stdout } = await dockerExec(
                 `docker stats --no-stream --format '{{.MemUsage}}' ${containerInfo.id} | head -1`
             );
             const memUsageStr = stdout.trim().split(" / ")[0];
@@ -157,29 +161,4 @@ export async function get3proxyMemoryUsage(containerInfo: { id: string; name: st
     }
 
     return null;
-}
-
-export async function find3proxyContainer(): Promise<{ id: string; name: string } | null> {
-    try {
-        const { stdout } = await exec("docker ps --filter 'name=3proxy' --format '{{.ID}}\t{{.Names}}' | head -1");
-
-        const parts = stdout.trim().split("\t");
-
-        if (parts[0] && parts[0].length > 0) {
-            return { id: parts[0], name: parts[1] || "3proxy" };
-        }
-
-        const { stdout: stdout2 } = await exec(
-            "docker ps --filter 'name=vpn-3proxy' --format '{{.ID}}\t{{.Names}}' | head -1"
-        );
-        const parts2 = stdout2.trim().split("\t");
-
-        if (parts2[0] && parts2[0].length > 0) {
-            return { id: parts2[0], name: parts2[1] || "vpn-3proxy" };
-        }
-
-        return null;
-    } catch {
-        return null;
-    }
 }

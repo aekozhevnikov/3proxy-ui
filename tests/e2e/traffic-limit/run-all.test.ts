@@ -1,9 +1,9 @@
 /**
  * E2E Test Runner: Traffic Limit
  *
- * Поднимает окружение один раз, выполняет тесты последовательно и честно
- * считает результат: упавший тест идёт в failed и не маскируется следующими.
- * Возвращает код выхода процесса.
+ * Brings the environment up once, runs the tests sequentially and counts
+ * the result honestly: a failed test counts as failed and is not masked by
+ * the ones after it. Returns the process exit code.
  */
 import { pathToFileURL } from "url";
 

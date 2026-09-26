@@ -1,0 +1,45 @@
+services:
+
+  3proxy:
+    image: 3proxy/3proxy:0.9.5
+    container_name: 3proxy
+    restart: unless-stopped
+    ports:
+      - "3128:3128"
+      - "1080:1080"
+      - "8088:8088"  # admin web panel
+    volumes:
+      - ./3proxy:/etc/3proxy
+
+  3proxy-ui:
+    image: 3proxy-ui:dev
+    build:
+      context: .
+    container_name: 3proxy-ui
+    ports:
+      - "3001:3000"   # Web UI
+    environment:
+      - JWT_SECRET=981f761acc3584b64fd72cddf17fd25f511a445af68b5c2b698897a72e88077d
+      - PROXY_DOMAIN=proxy.example.com
+      - HTTP_PORT=3128
+      - SOCKS_PORT=1080
+      - DATABASE_URL=file:/app/data/app.db
+      - ENABLE_FAIL2BAN=true
+      - FAIL2BAN_MAXRETRY=3
+      - FAIL2BAN_BANTIME=1800
+      - FAIL2BAN_FINDTIME=600
+      - HOST=0.0.0.0
+      - API_URL=http://host.docker.internal:3000
+      - LOGS_DIR=/etc/3proxy/logs
+      - PROXYAUTH_PATH=/etc/3proxy/users/.proxyauth
+      - PROXY_CONTAINER_NAME=3proxy
+      - PROXY_HOST=3proxy
+      - TRAFFIC_SYNC_INTERVAL=*/1 * * * *
+    volumes:
+      - 3proxy-data:/app/data
+      - ./3proxy:/etc/3proxy
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  3proxy-data:

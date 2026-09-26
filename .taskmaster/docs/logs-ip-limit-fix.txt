@@ -1,0 +1,49 @@
+# PRD: Fix log directory search and IP limit default for new users
+
+## Overview
+Two issues need fixing:
+1. Log directory search (`findLogsDir`) searches multiple paths (including incorrect ones like `/app/.next/standalone/3proxy/logs`) when it should only use `/etc/3proxy/logs` or `LOGS_DIR` env variable.
+2. When creating a new proxy user, IP limit defaults to `1` (one IP only). It should default to `0` (unlimited IPs) for a better out-of-box user experience.
+
+## Problem Statement
+
+### Issue 1: Redundant log directory search paths
+Current `POSSIBLE_LOGS_DIRS` in `logs-finder.ts` includes:
+- `process.env.LOGS_DIR`
+- `path.join(process.cwd(), "3proxy", "logs")` — invalid in Docker (`/app/.next/standalone/3proxy/logs`)
+- `path.join(process.cwd(), "logs")` — also invalid in Docker
+- `/etc/3proxy/logs`
+- `/var/log/3proxy`
+
+In Docker container, `process.cwd()` = `/app/.next/standalone`, so `process.cwd()/3proxy/logs` = `/app/.next/standalone/3proxy/logs` (doesn't exist). Only `/etc/3proxy/logs` is valid. The extra search paths cause confusing debug logs and potential cache issues.
+
+### Issue 2: IP limit defaults to 1
+When creating a new user in the form, `ipLimit` is initialized to `1`. Users must manually change it to `0` for unlimited. The default should be `0` (unlimited) to match the principle of "connect from any IP".
+
+## Goals
+1. Simplify log directory search to only use `LOGS_DIR` env or `/etc/3proxy/logs`
+2. Set default IP limit to `0` (unlimited) in the create user form
+3. Ensure all tests pass and type checking is clean
+
+## Requirements
+
+### Log Directory Search Simplification
+- Modify `src/lib/logs-finder.ts` to replace `POSSIBLE_LOGS_DIRS` with a simpler list: `process.env.LOGS_DIR` → `/etc/3proxy/logs` → `/var/log/3proxy`
+- Remove `path.join(process.cwd(), "3proxy", "logs")` and `path.join(process.cwd(), "logs")` from search paths
+- Keep fallback to `/var/log/3proxy` for non-Docker deployments
+
+### IP Limit Default Change
+- Find where user form initializes `ipLimit` (likely in `useUserForm` hook or `UserModal` component)
+- Change default from `1` to `0`
+- Ensure UI label/placeholder indicates `0` = unlimited
+- Verify 3proxy accepts `0` as unlimited (it does — 3proxy uses `0` or absent for no limit)
+
+### Testing
+- Update/add unit tests for the new log search path behavior
+- Ensure existing user-form tests pass with new default IP limit
+- Run full type check and test suite
+
+## Out of Scope
+- Adding new log sources
+- Changing 3proxy authentication behavior
+- Migrating existing users' IP limits

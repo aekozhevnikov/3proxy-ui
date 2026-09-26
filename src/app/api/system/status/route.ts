@@ -5,12 +5,13 @@ import { NextResponse } from "next/server";
 
 import {
     getDirectoryStats,
-    get3proxyPid,
-    get3proxyPidFromDocker,
     find3proxyContainer,
-    get3proxyVersion,
-    get3proxyMemoryUsage
+    get3proxyContainerPid,
+    get3proxyMemoryUsage,
+    get3proxyPid,
+    get3proxyVersion
 } from "@/src/core/system-info";
+import { findLogsDir } from "@/src/lib/logs-finder";
 
 export async function GET() {
     try {
@@ -25,15 +26,15 @@ export async function GET() {
             containerInfo = await find3proxyContainer();
 
             if (containerInfo) {
-                is3proxyRunning = true;
-                pid = await get3proxyPidFromDocker(containerInfo.id);
+                pid = await get3proxyContainerPid(containerInfo.id);
+                is3proxyRunning = pid !== null;
             }
         }
 
         const version = await get3proxyVersion(containerInfo);
 
         // Check .proxyauth file stats
-        const proxyauthPath = path.join(process.cwd(), "3proxy", "users", ".proxyauth");
+        const proxyauthPath = process.env.PROXYAUTH_PATH || path.join(process.cwd(), "3proxy", "users", ".proxyauth");
         let userCount = 0;
         let proxyauthSize = 0;
         let proxyauthModified: string | null = null;
@@ -70,17 +71,19 @@ export async function GET() {
         }
 
         // Check disk space for logs
-        const logsPath = path.join(process.cwd(), "3proxy", "logs");
+        const logsPath = await findLogsDir();
         let logSize = 0;
         let logFileCount = 0;
 
-        try {
-            const logStats = await getDirectoryStats(logsPath);
+        if (logsPath) {
+            try {
+                const logStats = await getDirectoryStats(logsPath);
 
-            logSize = logStats.totalSize;
-            logFileCount = logStats.fileCount;
-        } catch {
-            // Logs directory doesn't exist
+                logSize = logStats.totalSize;
+                logFileCount = logStats.fileCount;
+            } catch {
+                // Logs directory doesn't exist or can't be read
+            }
         }
 
         // Read traffic sync info
@@ -118,6 +121,11 @@ export async function GET() {
                 count: userCount,
                 proxyauthSize,
                 proxyauthModified
+            },
+            proxy: {
+                host: process.env.PROXY_HOST || "127.0.0.1",
+                socks5Port: parseInt(process.env.SOCKS_PORT || process.env.SOCKS5_PORT || "1080", 10),
+                httpPort: parseInt(process.env.HTTP_PORT || "3128", 10)
             },
             logs: {
                 size: logSize,

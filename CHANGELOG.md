@@ -28,6 +28,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   file), and `test:all` no longer repeats suites that `test:unit` already runs
 
 ### Fixed
+- E2E log reset no longer fails on CI with `EACCES`: the log files are created by 3proxy inside the
+  container and belong to root there, while the checkout belongs to the runner user, so they are
+  now truncated from inside the container with a host-side fallback
+- `format:check` no longer fails on patterns that match no files (`src/**/*.json`,
+  `scripts/**/*.tsx`); the globs are quoted so the shell does not expand them first
+- Integration tests no longer time out in `beforeAll` while `prisma migrate deploy` runs, which
+  silently cut the migration short
+- `host.docker.internal` is mapped to the host gateway in the E2E stack, so the scheduler can
+  reach the app on Linux runners
+- Docker image build and compose output are streamed line by line instead of appearing in one
+  burst at the end of the run
 - Honour `PROXY_CONTAINER_NAME` when locating the 3proxy container — the name was hardcoded to
   `3proxy`/`vpn-3proxy`, so any renamed deployment silently lost config reloads (`.proxyauth`
   was never re-read and 3proxy answered 407 to every request)

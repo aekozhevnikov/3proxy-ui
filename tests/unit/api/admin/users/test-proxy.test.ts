@@ -5,6 +5,18 @@
 import { mocked } from '@/tests/unit/test-utils/mock-helpers';
 import { NextRequest } from "next/server";
 
+jest.mock("@/src/core/logger", () => ({
+    logger: {
+        debug: jest.fn(),
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn()
+    }
+}));
+jest.mock("@/src/core/docker", () => ({
+    find3proxyContainer: jest.fn(),
+}));
+
 jest.mock("@/src/prisma/db", () => {
     const mockProxyUser = {
         findFirst: jest.fn(),
@@ -25,6 +37,9 @@ jest.mock("util", () => ({
 }));
 
 import { prisma } from "@/src/prisma/db";
+import { find3proxyContainer } from "@/src/core/docker";
+
+const mockedFind3proxyContainer = jest.mocked(find3proxyContainer);
 
 const createRequest = (body: Record<string, unknown>) => {
     return new NextRequest("http://localhost/api/admin/users/test-proxy", {
@@ -41,6 +56,7 @@ describe("admin/users/test-proxy API", () => {
         const route = await import("@/src/app/api/admin/users/test-proxy/route");
         POST = route.POST;
         mockExecAsync.mockReset();
+        mockedFind3proxyContainer.mockReset();
     });
 
     it("returns 400 when username is not provided", async () => {
@@ -99,6 +115,7 @@ describe("admin/users/test-proxy API", () => {
             isActive: true,
             deactivatedAt: null,
         } as any);
+        mockedFind3proxyContainer.mockResolvedValue(null);
         mockExecAsync.mockRejectedValue(new Error("Service not found"));
 
         const result = await POST(createRequest({ username: "testuser" }));
@@ -115,10 +132,10 @@ describe("admin/users/test-proxy API", () => {
             isActive: true,
             deactivatedAt: null,
         } as any);
+        mockedFind3proxyContainer.mockResolvedValue({ id: "test-id", name: "3proxy" });
         mockExecAsync
-            .mockResolvedValueOnce({ stdout: "3proxy", stderr: "" })
-            .mockResolvedValueOnce({ stdout: "{}", stderr: "" })
-            .mockResolvedValue({ stdout: "", stderr: "" });
+            .mockResolvedValueOnce({ stdout: '{"proxyPort": 1080, "bindAddress": "127.0.0.1"}', stderr: "" })
+            .mockResolvedValue({ stdout: "<html>OK</html>", stderr: "" });
 
         const result = await POST(createRequest({ username: "testuser" }));
         const data = await result.json() as { success: boolean; data: { username: string; tests: Record<string, unknown> } };

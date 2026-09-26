@@ -1,25 +1,19 @@
 #!/bin/sh
 set -e
 
+export DATABASE_URL="${DATABASE_URL:-file:/app/data/app.db}"
+
 echo "=== 3proxy-ui Starting ==="
 
 # ============================================
-# Initialize database
+# Database initialization is handled by start.js (prisma migrate deploy + seed)
 # ============================================
-if [ ! -f /app/data/app.db ]; then
-    echo "→ Initializing database..."
-    npx prisma migrate deploy
-fi
 
 # ============================================
 # Configure and start fail2ban
 # ============================================
 if [ "${ENABLE_FAIL2BAN:-true}" = "true" ]; then
     echo "→ Configuring fail2ban..."
-
-    # Create 3proxy log directory and file
-    mkdir -p /etc/3proxy/logs
-    touch /etc/3proxy/logs/3proxy.log
 
     # Generate jail configuration dynamically based on environment variables
     cat > /etc/fail2ban/jail.d/3proxy-docker.local <<EOF
@@ -33,12 +27,6 @@ maxretry = ${FAIL2BAN_MAXRETRY:-3}
 bantime = ${FAIL2BAN_BANTIME:-1800}
 findtime = ${FAIL2BAN_FINDTIME:-600}
 action = iptables-multiport[name=3proxy-docker, port="3128,1080", protocol=tcp]
-
-[Definition]
-failregex = .*"error":{"code":"(407|403)"}.*"auth":{"user":"[^"]+"},"client":{"ip":"<HOST>"
-            .*"error":\{[^}]*\}.*"client":{"ip":"<HOST>"}
-ignoreregex = .*"error":{"code":"00000"}
-              .*"error":{"code":"200"}
 EOF
 
     echo "  Jail configuration generated with:"
@@ -72,7 +60,19 @@ else
 fi
 
 # ============================================
+# Initialize database
+# ============================================
+echo "→ Initializing database..."
+node_modules/.bin/prisma migrate deploy
+
+# ============================================
+# Create admin user (checks if exists, creates if not)
+# ============================================
+echo "→ Ensuring admin user exists..."
+node ./dist/scripts/setup.js
+
+# ============================================
 # Start main application
 # ============================================
 echo "→ Starting 3proxy-ui..."
-exec npm run start:docker
+exec node ./dist/scripts/start.js

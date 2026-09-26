@@ -14,6 +14,7 @@ interface UserMobileCardProps {
     onEdit: (user: ProxyUser) => void;
     onDelete: (userId: number) => void;
     testingUserId: number | null;
+    testProxyError: string | null;
 }
 
 export default function UserMobileCard({
@@ -24,7 +25,8 @@ export default function UserMobileCard({
     onTestProxy,
     onEdit,
     onDelete,
-    testingUserId
+    testingUserId,
+    testProxyError
 }: UserMobileCardProps) {
     const actionButtons = (
         <>
@@ -51,7 +53,13 @@ export default function UserMobileCard({
             <button
                 className="p-1.5 flex items-center justify-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={testingUserId === user.id || !user.isActive}
-                title={user.isActive ? "Test Proxy" : "Test disabled for deactivated users"}
+                title={
+                    testProxyError && testingUserId === null
+                        ? testProxyError
+                        : user.isActive
+                          ? "Test Proxy"
+                          : "Test disabled for deactivated users"
+                }
                 onClick={() => user.isActive && onTestProxy(user.username, user.id)}
             >
                 {testingUserId === user.id ? (
@@ -162,7 +170,9 @@ export default function UserMobileCard({
                     </div>
                     <div className="flex justify-between text-[10px] gap-1">
                         <span className="text-gray-500 dark:text-gray-400 shrink-0">IP Limit:</span>
-                        <span className="text-gray-900 dark:text-white text-right">{user.ipLimit || 1}</span>
+                        <span className="text-gray-900 dark:text-white flex items-center gap-0.5 justify-end">
+                            {user.ipLimit === 0 ? <LucideInfinity className="h-2.5 w-2.5" /> : user.ipLimit}
+                        </span>
                     </div>
                     <div className="flex justify-between text-[10px] gap-1">
                         <span className="text-gray-500 dark:text-gray-400 shrink-0">Telegram:</span>

@@ -7,6 +7,7 @@ import { ProxyUser } from "@/src/core/definitions";
 interface UserActionsMenuProps {
     user: ProxyUser;
     testingUserId: number | null;
+    testProxyError: string | null;
     onShare: (user: ProxyUser) => void;
     onTestProxy: (username: string, userId: number) => void;
     onEdit: (user: ProxyUser) => void;
@@ -16,6 +17,7 @@ interface UserActionsMenuProps {
 export default function UserActionsMenu({
     user,
     testingUserId,
+    testProxyError,
     onShare,
     onTestProxy,
     onEdit,
@@ -38,7 +40,13 @@ export default function UserActionsMenu({
             <button
                 className="p-2 sm:p-3 flex items-center justify-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={testingUserId === user.id || !user.isActive}
-                title={user.isActive ? "Test Proxy" : "Test disabled for deactivated users"}
+                title={
+                    testProxyError && testingUserId === null
+                        ? testProxyError
+                        : user.isActive
+                          ? "Test Proxy"
+                          : "Test disabled for deactivated users"
+                }
                 onClick={() => user.isActive && onTestProxy(user.username, user.id)}
             >
                 {testingUserId === user.id ? (

@@ -1,6 +1,8 @@
 "use client";
 
-import PasswordInputWithToggle from "@/src/components/password-input-with-toggle";
+import { useState } from "react";
+
+import PasswordInput from "@/src/components/password-input";
 
 interface PasswordChangeSectionProps {
     currentPassword: string;
@@ -19,6 +21,8 @@ export default function PasswordChangeSection({
     onNewPasswordChange,
     onConfirmPasswordChange
 }: PasswordChangeSectionProps) {
+    const [showNewPassword, setShowNewPassword] = useState(false);
+
     return (
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Change Password</h3>
@@ -27,7 +31,7 @@ export default function PasswordChangeSection({
             </p>
 
             <div className="space-y-4">
-                <PasswordInputWithToggle
+                <PasswordInput
                     required
                     id="currentPassword"
                     label="Current Password"
@@ -36,20 +40,24 @@ export default function PasswordChangeSection({
                     onChange={(e) => onCurrentPasswordChange(e.target.value)}
                 />
 
-                <PasswordInputWithToggle
+                <PasswordInput
                     id="newPassword"
                     label="New Password (optional)"
                     placeholder="Enter new password"
                     value={newPassword}
                     onChange={(e) => onNewPasswordChange(e.target.value)}
+                    showPassword={showNewPassword}
+                    onTogglePassword={setShowNewPassword}
                 />
 
-                <PasswordInputWithToggle
+                <PasswordInput
                     id="confirmPassword"
                     label="Confirm New Password"
                     placeholder="Confirm new password"
                     value={confirmPassword}
                     onChange={(e) => onConfirmPasswordChange(e.target.value)}
+                    showPassword={showNewPassword}
+                    onTogglePassword={setShowNewPassword}
                 />
             </div>
         </div>

@@ -17,6 +17,8 @@ interface PasswordInputProps {
     placeholder?: string;
     maxLength?: number;
     className?: string;
+    showPassword?: boolean;
+    onTogglePassword?: (show: boolean) => void;
 }
 
 export default function PasswordInputWithToggle({
@@ -27,9 +29,22 @@ export default function PasswordInputWithToggle({
     required,
     placeholder,
     maxLength = 128,
-    className = ""
+    className = "",
+    showPassword: externalShow,
+    onTogglePassword
 }: PasswordInputProps) {
-    const [show, setShow] = useState(false);
+    const [internalShow, setInternalShow] = useState(false);
+
+    const show = externalShow ?? internalShow;
+
+    const handleToggle = () => {
+        const next = !(externalShow ?? internalShow);
+        if (onTogglePassword) {
+            onTogglePassword(next);
+        } else {
+            setInternalShow(next);
+        }
+    };
 
     return (
         <div className="relative">
@@ -55,7 +70,7 @@ export default function PasswordInputWithToggle({
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors z-10"
                 tabIndex={-1}
                 type="button"
-                onClick={() => setShow(!show)}
+                onClick={handleToggle}
             >
                 <span className="sr-only">{show ? "Hide password" : "Show password"}</span>
             </button>

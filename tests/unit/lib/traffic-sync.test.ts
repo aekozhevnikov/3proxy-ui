@@ -1,8 +1,8 @@
 /**
  * @jest-environment node
  *
- * Смещения в логах 3proxy: главное свойство — одни и те же записи не должны
- * попадать в dataUsed повторно, а незавершённая строка не должна теряться.
+ * 3proxy log offsets: the main property is that the same entries never land
+ * in dataUsed twice and that an unfinished line is not lost.
  */
 import {
     existsSync,
@@ -20,8 +20,8 @@ import path from "path";
 const TEST_DIR = mkdtempSync(path.join(os.tmpdir(), "traffic-sync-test-"));
 const LOG_FILE = path.join(TEST_DIR, "3proxy.log");
 
-// Модуль читает SYNC_INFO_FILE на этапе загрузки, поэтому переменная
-// выставляется до require.
+// The module reads SYNC_INFO_FILE at load time, so the variable is set
+// before require.
 process.env.SYNC_INFO_FILE = path.join(TEST_DIR, "traffic-sync.json");
 
 type TrafficSync = typeof import("@/src/lib/traffic-sync");
@@ -41,7 +41,7 @@ function logLine(user: string, sent: number): string {
     });
 }
 
-/** Читает лог так же, как это делает роут: сначала идентификатор, затем чтение. */
+/** Reads the log the same way the route does: identify first, then read. */
 async function readFrom(
     filePath: string,
     storedOffset?: number
@@ -100,10 +100,10 @@ describe("readNewLogContent", () => {
 
         const first = await readFrom(LOG_FILE);
 
-        // Незавершённая строка не должна попасть в разбор
+        // The unfinished line must not reach the parser
         expect(first.lines).toHaveLength(1);
 
-        // 3proxy дописывает остаток строки и завершает её переводом строки
+        // 3proxy appends the rest of the line and terminates it
         appendFileSync(LOG_FILE, `${logLine("b", 20).slice(40)}\n`);
 
         const second = await readFrom(LOG_FILE, first.nextOffset);
@@ -156,7 +156,7 @@ describe("readNewLogContent", () => {
 
         const before = await readFrom(LOG_FILE);
 
-        // Ротация 3proxy: файл переименовывается, содержимое и inode те же
+        // 3proxy rotation: the file is renamed, content and inode are the same
         renameSync(LOG_FILE, path.join(TEST_DIR, "3proxy.log.2026.09.20"));
 
         const after = await readFrom(path.join(TEST_DIR, "3proxy.log.2026.09.20"), before.nextOffset);
@@ -166,6 +166,8 @@ describe("readNewLogContent", () => {
     });
 
     it("handles multi-byte characters without corrupting the offset", async () => {
+        // Non-ASCII payload on purpose: byte length and character count differ,
+        // which is exactly what the offset bookkeeping must not confuse.
         const line = JSON.stringify({ message: "привет мир", auth: { user: "юзер" } });
 
         writeFileSync(LOG_FILE, `${line}\n`);
@@ -174,7 +176,7 @@ describe("readNewLogContent", () => {
 
         expect(first.lines).toHaveLength(1);
         expect(JSON.parse(first.lines[0]).message).toBe("привет мир");
-        // Смещение обязано совпадать с размером файла в байтах, а не в символах
+        // The offset must match the file size in bytes, not in characters
         expect(first.nextOffset).toBe(Buffer.byteLength(`${line}\n`, "utf-8"));
     });
 });
