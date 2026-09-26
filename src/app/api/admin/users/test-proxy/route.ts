@@ -115,7 +115,8 @@ export async function POST(request: NextRequest) {
         if (socks5Port) protocols.push({ protocol: "socks5", port: socks5Port });
         if (httpPort && httpPort !== socks5Port) protocols.push({ protocol: "http", port: httpPort });
 
-        // Build URL with authentication (password is already hashed via MD5-crypt for 3proxy)
+        // 3proxy hashes the incoming password itself and compares it against the
+        // entry in .proxyauth, so the request has to carry the plain password.
         const authString = `${encodeURIComponent(user.username)}:${encodeURIComponent(user.password)}`;
 
         logger.info(`[proxy-test] Testing proxy for user "${username}" at ${proxyHost}:${socks5Port}/${httpPort}`);
@@ -128,6 +129,7 @@ export async function POST(request: NextRequest) {
             )
                 .then(({ stdout }) => {
                     const output = stdout ? stdout.trim() : "";
+
                     return { protocol: p.protocol, success: true, response: output.substring(0, 200) };
                 })
                 .catch((err: Error & { stderr?: string }) => ({

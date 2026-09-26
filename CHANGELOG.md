@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Proxy passwords are hashed for `.proxyauth` with MD5-crypt (`$1$`) and a per-user random salt.
+  The previous setup used the traditional DES variant with a hardcoded `"qwer"` salt, which ignored
+  everything after the 8th character of the password — `generatePassword()` produces 32 characters,
+  so three quarters of every generated password never reached the hash
+- `GET /api/admin/users` no longer returns the `password` column, so rendering the users table no
+  longer hands every proxy credential to the browser. The share modal fetches the password for a
+  single user on demand through `GET /api/admin/users/[id]/share`, and each read is logged
+- Corrected a comment in the proxy test route that claimed the stored password was already hashed;
+  3proxy hashes the incoming password itself, so the request has to carry the plain one
+
 ## [0.5.1] - 2026-09-26
 
 ### Changed
