@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-09-26
+
+### Changed
+- `linux/amd64` and `linux/arm64` are now built on runners of their own architecture and merged
+  into a single multi-arch manifest, instead of emulating arm64 with QEMU
+
+### Fixed
+- The arm64 build no longer hangs forever in `npm install`: the emulated process was dying with
+  `SIGILL` and buildx kept waiting on the dead step, so the publish job burned the 6-hour default
+  timeout and no release shipped an arm64 image
+- Release jobs carry `timeout-minutes`, so a stuck build fails in minutes instead of hours
+- Docker layers are cached between releases, so a release no longer rebuilds the Next.js bundle
+  from scratch
+- `npm install --no-cache` is replaced with `npm ci`, which replays the lockfile instead of
+  re-resolving the dependency tree
+- Build tools (`python3`, `make`, `g++`, `sqlite-dev`) are installed before the dependency
+  install, so a package without a prebuild for the target platform can still fall back to
+  `node-gyp`
+
 ## [0.5.0] - 2026-09-26
 
 ### Added
@@ -230,7 +249,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - Initial version
 
-[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.0...v0.5.1
 [0.2.9]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.6...v0.2.7
