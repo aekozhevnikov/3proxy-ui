@@ -374,7 +374,7 @@
         "description": "End-to-end verification of the whole fix set, then ship it. Covers: a new E2E test proving a deactivated user is rejected by 3proxy and a user over their data limit is cut off; a container run proving the scheduler reaches its endpoint and .proxyauth carries the flags; an independent security pass re-checking the Critical and High findings are closed and introducing nothing new; and a release. v0.5.1 is already published, so this needs 0.5.2 or later plus a release tag.</description>\n<parameter name=\"details\">The enforcement fix is the one that needs proving rather than asserting, because a wrong flag value miscounts a paying customer's traffic. Bring up the real two-container stack, create a user with a small data limit, drive traffic through 3proxy until the limit is exceeded, restart 3proxy and confirm the user is refused. Then deactivate a user outright and confirm authentication fails after a restart. Only after both pass, run the independent security pass. This is also the point to settle whether docker-compose.yml stays gitignored now that it no longer contains a hardcoded secret, which is a decision the owner should make explicitly rather than by omission.",
         "details": "",
         "testStrategy": "Two new E2E assertions: a deactivated user receives an auth failure from 3proxy, and a user past their data limit is cut off. Container run shows .proxyauth with flags and the scheduler succeeding. Independent audit reports no open Critical or High. Release tag published and the multi-arch image carries both platforms.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "8",
           "9",
@@ -385,7 +385,8 @@
           "16"
         ],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2026-09-27T01:16:40.211Z"
       },
       {
         "id": "18",
@@ -426,9 +427,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-27T00:14:45.364Z",
+      "lastModified": "2026-09-27T01:16:40.211Z",
       "taskCount": 19,
-      "completedCount": 18,
+      "completedCount": 19,
       "tags": [
         "master"
       ]
