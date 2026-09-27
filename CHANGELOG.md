@@ -7,16 +7,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-09-27
+
+### Security
+- Eight routes ran with no authorisation: two returned every proxy user's plaintext password to any
+  caller, four could change state, and one accepted a caller-supplied log directory that fed crafted
+  log lines into the limit enforcer, which writes to the database and deactivates users. All of them
+  now require an admin session, and the role is read from the database on every call, so a de-admined
+  or deleted account stops working immediately
+- The server actions were reachable straight from the browser, with the middleware as the only gate.
+  `createProxyUser`, `updateProxyUser`, `deleteProxyUser` and `update3proxyConfig` now assert a
+  session themselves, and the edit page no longer relies on the middleware alone
+- The user detail route returned the password, which reached the browser in the RSC payload of the
+  edit page every time the modal opened. The share endpoint stays the one path that serves a
+  plaintext, because the config it builds needs one
+- Logins are throttled per username and source address with an exponential backoff, and every outcome
+  is logged. The endpoint previously had no counter, no delay and no log line
+- A password change now ends the sessions issued before it, and the session cookie's `secure` flag
+  comes from one definition instead of three that had drifted apart
+- Next.js upgraded to 16.3.6, closing four open middleware/proxy bypass advisories. One of them,
+  GHSA-6gpp, matched this project exactly: Turbopack has been the default bundler since 16.0
+- A username is validated before it is written. It becomes a token in the file 3proxy parses, where
+  whitespace and a colon are argument separators, so an unvalidated value could add entries to
+  3proxy that the database has no record of and the panel cannot revoke
+- Security headers added: a CSP with `frame-ancestors 'none'`, plus `X-Frame-Options`,
+  `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`
+- Wildcard `Access-Control-Allow-Origin` removed from the logs, system status and traffic routes. The
+  log endpoint returns every proxy customer's identity, source address and destination
+- The log endpoint no longer reads whole log files into memory, and its `limit` is clamped
+- Error responses return a neutral message and log the original server-side, so Prisma text carrying
+  schema and paths no longer reaches the browser
+- `setup.ts` hardcoded `admin`/`admin` while the rest of the code read `ADMIN_USERNAME` and
+  `ADMIN_PASSWORD`, so the first account always had a well-known password. Both compose stacks now
+  require `ADMIN_PASSWORD`
+- `.dockerignore` used `prisma/*.db`, which does not match `prisma/sqlite/app.db`, so a local
+  database of plaintext proxy passwords was entering the build context and the build-stage layers
+- `getAllProxyUsers`, a server action with no callers and no authorisation, returned every proxy
+  user's plaintext password. Removed, with a test that fails if it is reintroduced
+- The user list, detail, share and profile routes checked only that a session existed, not the role.
+  They now use the same admin check as the rest, which matters for the share route in particular
+- The login throttle keyed on `x-forwarded-for`, which the caller sets freely, so rotating the header
+  gave unlimited attempts at the configured rate. It now keys on the username and sweeps expired
+  entries
+- The password-change endpoint minted a new token without comparing the token's session version to
+  the database, so a revoked token plus a known password could resurrect a session. The increment now
+  comes from the stored row
+- The session cookie's `Secure` flag now comes from `SESSION_COOKIE_SECURE` instead of `NODE_ENV`.
+  The standalone server sets `NODE_ENV=production` unconditionally, so the shipped compose stack was
+  marking the cookie Secure while serving plain HTTP, and a browser refused to store it
+
 ### Fixed
-- Proxy passwords are hashed for `.proxyauth` with MD5-crypt (`$1$`) and a per-user random salt.
-  The previous setup used the traditional DES variant with a hardcoded `"qwer"` salt, which ignored
+- **Deactivated users could still use the proxy.** They were written as a
+  `# DEACTIVATED <date>: user:CR:"…"` line, but `#` is not a comment in a file 3proxy pulls in with
+  its `$` directive: the included content is parsed by a recursive parser with no `#` handling, so
+  the user stayed registered and authenticated normally. Deactivated users now leave the file
+  entirely, and 3proxy is restarted when the served set changes, so a deactivation takes effect on the
+  run that caused it rather than on the next unrelated restart
+- The maintenance scheduler could not reach its own endpoint over loopback, so traffic accounting and
+  expiry enforcement never ran inside a container. The job now runs in-process
+- The scheduler's success was never logged, which is how a job failing on every start went unnoticed
+- Proxy passwords are hashed for `.proxyauth` with MD5-crypt (`$1$`) and a per-user random salt. The
+  previous setup used the traditional DES variant with a hardcoded `"qwer"` salt, which ignored
   everything after the 8th character of the password — `generatePassword()` produces 32 characters,
   so three quarters of every generated password never reached the hash
-- `GET /api/admin/users` no longer returns the `password` column, so rendering the users table no
-  longer hands every proxy credential to the browser. The share modal fetches the password for a
-  single user on demand through `GET /api/admin/users/[id]/share`, and each read is logged
-- Corrected a comment in the proxy test route that claimed the stored password was already hashed;
-  3proxy hashes the incoming password itself, so the request has to carry the plain one
+- `GET /api/admin/users` no longer returns the `password` column, so rendering the users table does
+  not hand every proxy credential to the browser
+- The traffic sync offsets were written into an image layer instead of the data volume, so a rebuilt
+  container restarted from zero and re-counted the whole log history
+- `NODE_TLS_REJECT_UNAUTHORIZED=0` removed from the environment template
+- Corrected a comment in the proxy test route that claimed the stored password was already hashed
+- A failed 3proxy restart no longer strands a deactivation: the reload decision compared against
+  what was on disk, so a single transient failure looked like "already applied" and the change was
+  never retried
+- Jest ignored `/dist/` for test discovery but not for module resolution, so running
+  `npm run compile` before the suite — which the Docker build and CI both do — put compiled copies
+  of the manual mocks into the haste map
 
 ## [0.5.1] - 2026-09-26
 
@@ -260,7 +325,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - Initial version
 
-[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.0...v0.5.1
 [0.2.9]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.2.7...v0.2.8
