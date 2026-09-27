@@ -1,4 +1,4 @@
-import { mocked } from '@/tests/unit/test-utils/mock-helpers';
+import { mocked } from "@/tests/unit/test-utils/mock-helpers";
 import { deleteProxyUser } from "@/src/core/actions/proxy-user";
 import prisma from "@/prisma/db";
 
@@ -15,21 +15,21 @@ jest.mock("@/prisma/db", () => {
         findFirst: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
-        delete: jest.fn(),
+        delete: jest.fn()
     };
     return {
         __esModule: true,
         default: { proxyUser: mockProxyUser },
-        prisma: { proxyUser: mockProxyUser },
+        prisma: { proxyUser: mockProxyUser }
     };
 });
 
 jest.mock("next/cache", () => ({
-    revalidatePath: jest.fn(),
+    revalidatePath: jest.fn()
 }));
 
 jest.mock("@/src/core/actions/config", () => ({
-    update3proxyConfig: jest.fn(),
+    update3proxyConfig: jest.fn()
 }));
 
 const mockUser = {
@@ -44,7 +44,7 @@ const mockUser = {
     deactivatedAt: null,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
-    dataUsed: 0,
+    dataUsed: 0
 };
 
 describe("deleteProxyUser", () => {
@@ -53,8 +53,16 @@ describe("deleteProxyUser", () => {
     });
 
     it("deletes a proxy user when found", async () => {
-        mocked(prisma.proxyUser.findUnique).mockResolvedValue({ ...mockUser, dataLimit: BigInt(10240), dataUsed: BigInt(0) });
-        mocked(prisma.proxyUser.delete).mockResolvedValue({ ...mockUser, dataLimit: BigInt(10240), dataUsed: BigInt(0) });
+        mocked(prisma.proxyUser.findUnique).mockResolvedValue({
+            ...mockUser,
+            dataLimit: BigInt(10240),
+            dataUsed: BigInt(0)
+        });
+        mocked(prisma.proxyUser.delete).mockResolvedValue({
+            ...mockUser,
+            dataLimit: BigInt(10240),
+            dataUsed: BigInt(0)
+        });
 
         await deleteProxyUser(1);
 

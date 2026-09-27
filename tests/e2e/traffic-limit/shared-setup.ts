@@ -9,7 +9,7 @@ import {
     execAsync,
     execInContainer,
     TEST_CONFIG,
-    waitForService,
+    waitForService
 } from "../utils/helpers.js";
 import {
     downService,
@@ -17,7 +17,7 @@ import {
     teardown,
     TRAFFIC_CONTAINER,
     TRAFFIC_SERVICE,
-    upService,
+    upService
 } from "../utils/environment.js";
 import { UserApiClient } from "../utils/user-api.js";
 
@@ -123,5 +123,5 @@ export {
     execAsync,
     execInContainer,
     resetRuntimeState,
-    TEST_CONFIG,
+    TEST_CONFIG
 };

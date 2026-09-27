@@ -19,6 +19,32 @@ import { CONTAINER_NAME, execInContainer, removeUserIfExists, UserApiClient } fr
 const USERNAME = "expireduser";
 const PASSWORD = "ExpiredPass123!";
 
+/**
+ * Polls until the proxy answers with `expected`, because maintenance restarts
+ * 3proxy and a fixed sleep races the restart. Returns the last status seen.
+ */
+async function waitForProxyStatus(
+    user: string,
+    password: string,
+    expected: number,
+    timeoutMs = 30000
+): Promise<number> {
+    const deadline = Date.now() + timeoutMs;
+    let last = 0;
+
+    while (Date.now() < deadline) {
+        last = await proxyStatusFor(user, password);
+
+        if (last === expected) {
+            return last;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    return last;
+}
+
 /** 3proxy answers an unauthenticated request to a protected service with 407. */
 async function proxyStatusFor(user: string, password: string): Promise<number> {
     const url = `http://${encodeURIComponent(user)}:${encodeURIComponent(password)}@127.0.0.1:3128/`;
@@ -39,7 +65,9 @@ export async function testExpirationDeactivation(): Promise<void> {
 
     await removeUserIfExists(users, USERNAME);
 
-    const expiresAt = new Date(Date.now() + 3000);
+    // Long enough that the active check below can observe the account working
+    // before it lapses, including a 3proxy restart in the middle.
+    const expiresAt = new Date(Date.now() + 20000);
 
     const created = await users.createUser({
         username: USERNAME,
@@ -54,17 +82,19 @@ export async function testExpirationDeactivation(): Promise<void> {
     }
 
     // While active, the credentials must actually work, otherwise the check
-    // below would pass for the wrong reason.
+    // below would pass for the wrong reason. Maintenance rewrites the users file
+    // and restarts 3proxy, so allow it to come back up before probing.
     await users.triggerMaintenance();
-    await execInContainer(CONTAINER_NAME, "true");
 
-    const beforeStatus = await proxyStatusFor(USERNAME, PASSWORD);
+    const beforeStatus = await waitForProxyStatus(USERNAME, PASSWORD, 200, 8000);
 
     if (beforeStatus === 407) {
-        throw new Error("A user that is still active should be able to authenticate through 3proxy");
+        throw new Error(
+            `A user that is still active should be able to authenticate through 3proxy, got ${beforeStatus}`
+        );
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 4000));
+    await new Promise((resolve) => setTimeout(resolve, Math.max(0, expiresAt.getTime() - Date.now()) + 1000));
 
     await users.triggerMaintenance();
 
@@ -90,18 +120,13 @@ export async function testExpirationDeactivation(): Promise<void> {
         );
     }
 
-    // 3proxy caches the user list, so it has to re-read the file before the
-    // rejection is meaningful. Reloading is what the panel's config update does.
-    await execInContainer(CONTAINER_NAME, "true");
+    // Maintenance restarts 3proxy when the set of served users changes, so the
+    // rejection has to land without an operator doing anything else.
     await users.triggerMaintenance();
-    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const afterStatus = await proxyStatusFor(USERNAME, PASSWORD);
+    const afterStatus = await waitForProxyStatus(USERNAME, PASSWORD, 407);
 
     if (afterStatus !== 407) {
-        throw new Error(
-            `A deactivated user must be refused by 3proxy with 407, got status ${afterStatus}. ` +
-                "If the file was rewritten, 3proxy has to restart before it re-reads the user list."
-        );
+        throw new Error(`A deactivated user must be refused by 3proxy with 407, got status ${afterStatus}`);
     }
 }

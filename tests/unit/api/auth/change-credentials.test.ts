@@ -52,6 +52,7 @@ const createMockUser = (overrides: Record<string, unknown> = {}) => ({
     password: "hashedpass",
     name: "Admin",
     isAdmin: true,
+    sessionVersion: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides

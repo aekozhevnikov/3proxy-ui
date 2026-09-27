@@ -38,6 +38,7 @@ export const mockAuthenticatedUser = (
         password: "hashedpass",
         name: "Admin",
         isAdmin: true,
+        sessionVersion: 0,
         ...user
     });
 };

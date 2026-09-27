@@ -12,7 +12,7 @@ export const mockProxyUser: ProxyUser = {
     deactivatedAt: null,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
-    dataUsed: 0,
+    dataUsed: 0
 };
 
 export const mockUsersList: ProxyUser[] = [
@@ -20,8 +20,8 @@ export const mockUsersList: ProxyUser[] = [
     {
         ...mockProxyUser,
         id: 2,
-        username: "anotheruser",
-    },
+        username: "anotheruser"
+    }
 ];
 
 export const setupPrismaMock = (mockProxyUser: {
@@ -36,19 +36,19 @@ export const setupPrismaMock = (mockProxyUser: {
         return {
             __esModule: true,
             default: { proxyUser: mockProxyUser },
-            prisma: { proxyUser: mockProxyUser },
+            prisma: { proxyUser: mockProxyUser }
         };
     });
 };
 
 export const setupNextCacheMock = () => {
     jest.mock("next/cache", () => ({
-        revalidatePath: jest.fn(),
+        revalidatePath: jest.fn()
     }));
 };
 
 export const setupConfigMock = () => {
     jest.mock("@/src/core/actions/config", () => ({
-        update3proxyConfig: jest.fn(),
+        update3proxyConfig: jest.fn()
     }));
 };

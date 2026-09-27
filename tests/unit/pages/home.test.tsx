@@ -3,25 +3,27 @@ import { asHtmlElement } from "@/tests/unit/test-utils/mock-helpers";
 
 jest.mock("next/navigation", () => ({
     useRouter: () => ({
-        replace: jest.fn(),
-    }),
+        replace: jest.fn()
+    })
 }));
 
 jest.mock("next/image", () => ({
     __esModule: true,
-    default: ({ alt, src, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => <img alt={alt} src={src || ""} {...props} />,
+    default: ({ alt, src, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
+        <img alt={alt} src={src || ""} {...props} />
+    )
 }));
 
 jest.mock("next-themes", () => ({
     useTheme: () => ({
         theme: "light",
-        setTheme: jest.fn(),
-    }),
+        setTheme: jest.fn()
+    })
 }));
 
 jest.mock("@/src/components/icons", () => ({
     MoonFilledIcon: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="moon-icon" {...props} />,
-    SunFilledIcon: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="sun-icon" {...props} />,
+    SunFilledIcon: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="sun-icon" {...props} />
 }));
 
 import HomePage from "@/src/app/page";

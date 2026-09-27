@@ -1,12 +1,5 @@
-import {
-    getAllProxyUsers,
-    getProxyUserById,
-    createProxyUser,
-    updateProxyUser,
-    deleteProxyUser,
-    incrementDataUsage,
-} from "@/src/core/actions/proxy-user";
 import prisma from "@/prisma/db";
+import { getProxyUserById, createProxyUser, updateProxyUser, deleteProxyUser, incrementDataUsage } from "@/src/core/actions/proxy-user";
 import { NewProxyUserRequest, EditProxyUserRequest } from "@/src/core/definitions";
 
 jest.mock("@/src/core/auth", () => ({
@@ -22,21 +15,21 @@ jest.mock("@/prisma/db", () => {
         findFirst: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
-        delete: jest.fn(),
+        delete: jest.fn()
     };
     return {
         __esModule: true,
         default: { proxyUser: mockProxyUser },
-        prisma: { proxyUser: mockProxyUser },
+        prisma: { proxyUser: mockProxyUser }
     };
 });
 
 jest.mock("next/cache", () => ({
-    revalidatePath: jest.fn(),
+    revalidatePath: jest.fn()
 }));
 
 jest.mock("@/src/core/actions/config", () => ({
-    update3proxyConfig: jest.fn(),
+    update3proxyConfig: jest.fn()
 }));
 
 import { mocked } from "@/tests/unit/test-utils/mock-helpers";
@@ -53,58 +46,27 @@ const mockUser = {
     deactivatedAt: null,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
-    dataUsed: 500,
+    dataUsed: 500
 };
 
 const mockUsers = [
     {
         ...mockUser,
         dataLimit: 10240n,
-        dataUsed: 500n,
+        dataUsed: 500n
     },
     {
         ...mockUser,
         id: 2,
         username: "user2",
         dataLimit: 5120n,
-        dataUsed: 1000n,
-    },
+        dataUsed: 1000n
+    }
 ];
 
 describe("proxy-user actions", () => {
     beforeEach(() => {
         jest.clearAllMocks();
-    });
-
-    describe("getAllProxyUsers", () => {
-        it("returns users with dataLimit and dataUsed as numbers", async () => {
-            mocked(prisma.proxyUser.findMany).mockResolvedValue(mockUsers);
-
-            const result = await getAllProxyUsers();
-
-            expect(result[0].dataLimit).toBe(10240);
-            expect(result[0].dataUsed).toBe(500);
-        });
-
-        it("returns users sorted by createdAt descending", async () => {
-            mocked(prisma.proxyUser.findMany).mockResolvedValue([{ ...mockUser, dataLimit: 10240n, dataUsed: 0n }]);
-
-            await getAllProxyUsers();
-
-            expect(prisma.proxyUser.findMany).toHaveBeenCalledWith({
-                orderBy: { createdAt: "desc" },
-            });
-        });
-
-        it("handles null dataLimit", async () => {
-            mocked(prisma.proxyUser.findMany).mockResolvedValue([
-                { ...mockUser, dataLimit: null, dataUsed: 0n },
-            ]);
-
-            const result = await getAllProxyUsers();
-
-            expect(result[0].dataLimit).toBeNull();
-        });
     });
 
     describe("getProxyUserById", () => {
@@ -113,10 +75,12 @@ describe("proxy-user actions", () => {
 
             const result = await getProxyUserById(1);
 
-            expect(result).toEqual(expect.objectContaining({
-                id: 1,
-                username: "testuser",
-            }));
+            expect(result).toEqual(
+                expect.objectContaining({
+                    id: 1,
+                    username: "testuser"
+                })
+            );
             expect(prisma.proxyUser.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 1 } }));
         });
 
@@ -135,7 +99,7 @@ describe("proxy-user actions", () => {
         it("creates a new proxy user with default values", async () => {
             const data: NewProxyUserRequest = {
                 username: "newuser",
-                password: "pass123",
+                password: "pass123"
             };
 
             mocked(prisma.proxyUser.findFirst).mockResolvedValue(null);
@@ -148,8 +112,8 @@ describe("proxy-user actions", () => {
                     data: expect.objectContaining({
                         username: "newuser",
                         isActive: true,
-                        ipLimit: 1,
-                    }),
+                        ipLimit: 1
+                    })
                 })
             );
             expect(result.username).toBe("testuser");
@@ -158,10 +122,15 @@ describe("proxy-user actions", () => {
         it("throws when username already exists", async () => {
             const data: NewProxyUserRequest = {
                 username: "existinguser",
-                password: "pass123",
+                password: "pass123"
             };
 
-            mocked(prisma.proxyUser.findFirst).mockResolvedValue({ ...mockUser, id: 99, dataLimit: BigInt(10240), dataUsed: BigInt(500) });
+            mocked(prisma.proxyUser.findFirst).mockResolvedValue({
+                ...mockUser,
+                id: 99,
+                dataLimit: BigInt(10240),
+                dataUsed: BigInt(500)
+            });
 
             await expect(createProxyUser(data)).rejects.toThrow("already exists");
         });
@@ -173,7 +142,7 @@ describe("proxy-user actions", () => {
                 username: "expireduser",
                 password: "pass123",
                 isActive: true,
-                expiresAt: pastDate,
+                expiresAt: pastDate
             };
 
             await expect(createProxyUser(data)).rejects.toThrow("expired or past expiration date");
@@ -184,7 +153,7 @@ describe("proxy-user actions", () => {
                 username: "inactiveuser",
                 password: "pass123",
                 isActive: false,
-                expiresAt: pastDate,
+                expiresAt: pastDate
             };
 
             mocked(prisma.proxyUser.findFirst).mockResolvedValue(null);
@@ -199,11 +168,21 @@ describe("proxy-user actions", () => {
         it("updates user username and keeps isActive true", async () => {
             const data: EditProxyUserRequest = {
                 id: 1,
-                username: "updateduser",
+                username: "updateduser"
             };
 
-            mocked(prisma.proxyUser.findUnique).mockResolvedValue({ ...mockUser, dataLimit: 10240n, dataUsed: 0n, isActive: true });
-            mocked(prisma.proxyUser.update).mockResolvedValue({ ...mockUser, username: "updateduser", dataLimit: 10240n, dataUsed: 0n });
+            mocked(prisma.proxyUser.findUnique).mockResolvedValue({
+                ...mockUser,
+                dataLimit: 10240n,
+                dataUsed: 0n,
+                isActive: true
+            });
+            mocked(prisma.proxyUser.update).mockResolvedValue({
+                ...mockUser,
+                username: "updateduser",
+                dataLimit: 10240n,
+                dataUsed: 0n
+            });
 
             const result = await updateProxyUser(data);
 
@@ -211,8 +190,8 @@ describe("proxy-user actions", () => {
                 where: { id: 1 },
                 data: expect.objectContaining({
                     username: "updateduser",
-                    isActive: true,
-                }),
+                    isActive: true
+                })
             });
             expect(result.username).toBe("updateduser");
         });
@@ -221,20 +200,25 @@ describe("proxy-user actions", () => {
             mocked(prisma.proxyUser.findUnique).mockResolvedValue(null);
             const data: EditProxyUserRequest = {
                 id: 999,
-                username: "nonexistent",
+                username: "nonexistent"
             };
 
             await expect(updateProxyUser(data)).rejects.toThrow("not found");
         });
 
         it("throws when activating with past expiration date", async () => {
-            mocked(prisma.proxyUser.findUnique).mockResolvedValue({ ...mockUser, isActive: false, dataLimit: 10240n, dataUsed: 0n });
+            mocked(prisma.proxyUser.findUnique).mockResolvedValue({
+                ...mockUser,
+                isActive: false,
+                dataLimit: 10240n,
+                dataUsed: 0n
+            });
             const pastDate = new Date("2020-01-01");
             const data: EditProxyUserRequest = {
                 id: 1,
                 username: "testuser",
                 isActive: true,
-                expiresAt: pastDate,
+                expiresAt: pastDate
             };
 
             await expect(updateProxyUser(data)).rejects.toThrow("expired or past expiration date");
@@ -244,10 +228,15 @@ describe("proxy-user actions", () => {
             const data: EditProxyUserRequest = {
                 id: 1,
                 username: "testuser",
-                isActive: false,
+                isActive: false
             };
 
-            mocked(prisma.proxyUser.findUnique).mockResolvedValue({ ...mockUser, dataLimit: 10240n, dataUsed: 0n, isActive: true });
+            mocked(prisma.proxyUser.findUnique).mockResolvedValue({
+                ...mockUser,
+                dataLimit: 10240n,
+                dataUsed: 0n,
+                isActive: true
+            });
             mocked(prisma.proxyUser.update).mockResolvedValue({ ...mockUser, dataLimit: 10240n, dataUsed: 0n });
 
             await updateProxyUser(data);
@@ -255,18 +244,28 @@ describe("proxy-user actions", () => {
             expect(prisma.proxyUser.update).toHaveBeenCalledWith({
                 where: { id: 1 },
                 data: expect.objectContaining({
-                    deactivatedAt: expect.any(Date),
-                }),
+                    deactivatedAt: expect.any(Date)
+                })
             });
         });
 
         it("clears deactivatedAt when reactivating", async () => {
-            mocked(prisma.proxyUser.findUnique).mockResolvedValue({ ...mockUser, isActive: false, dataLimit: 10240n, dataUsed: 0n });
-            mocked(prisma.proxyUser.update).mockResolvedValue({ ...mockUser, isActive: true, dataLimit: 10240n, dataUsed: 0n });
+            mocked(prisma.proxyUser.findUnique).mockResolvedValue({
+                ...mockUser,
+                isActive: false,
+                dataLimit: 10240n,
+                dataUsed: 0n
+            });
+            mocked(prisma.proxyUser.update).mockResolvedValue({
+                ...mockUser,
+                isActive: true,
+                dataLimit: 10240n,
+                dataUsed: 0n
+            });
             const data: EditProxyUserRequest = {
                 id: 1,
                 username: "testuser",
-                isActive: true,
+                isActive: true
             };
 
             await updateProxyUser(data);
@@ -274,8 +273,8 @@ describe("proxy-user actions", () => {
             expect(prisma.proxyUser.update).toHaveBeenCalledWith({
                 where: { id: 1 },
                 data: expect.objectContaining({
-                    deactivatedAt: null,
-                }),
+                    deactivatedAt: null
+                })
             });
         });
     });
@@ -310,7 +309,7 @@ describe("proxy-user actions", () => {
             deactivatedAt: null,
             createdAt: new Date("2024-01-01"),
             updatedAt: new Date("2024-01-01"),
-            dataUsed: BigInt(0),
+            dataUsed: BigInt(0)
         };
 
         it("increments data usage by given bytes divided by 1MB", async () => {
@@ -322,9 +321,9 @@ describe("proxy-user actions", () => {
                 where: { username: "testuser" },
                 data: {
                     dataUsed: {
-                        increment: 1,
-                    },
-                },
+                        increment: 1
+                    }
+                }
             });
         });
 
@@ -337,9 +336,9 @@ describe("proxy-user actions", () => {
                 where: { username: "testuser" },
                 data: {
                     dataUsed: {
-                        increment: 0,
-                    },
-                },
+                        increment: 0
+                    }
+                }
             });
         });
     });

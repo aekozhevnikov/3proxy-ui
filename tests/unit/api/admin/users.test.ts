@@ -6,6 +6,12 @@ import { mocked } from "@/tests/unit/test-utils/mock-helpers";
 import { GET, POST } from "@/src/app/api/admin/users/route";
 import { NextRequest } from "next/server";
 
+jest.mock("@/src/core/auth", () => ({
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null })),
+    resolveAdmin: jest.fn(async () => ({ id: 1, username: "admin" })),
+    assertAdmin: jest.fn(async () => ({ id: 1, username: "admin" }))
+}));
+
 jest.mock("@/src/prisma/db", () => {
     const mockProxyUser = {
         findMany: jest.fn(),
@@ -18,16 +24,15 @@ jest.mock("@/src/prisma/db", () => {
     };
 });
 
-jest.mock("@/src/core/session", () => ({
-    currentSession: jest.fn()
-}));
+jest.mock("@/src/core/session", () => ({}));
 
 jest.mock("@/src/core/actions/proxy-user", () => ({
     createProxyUser: jest.fn()
 }));
 
 import { prisma } from "@/src/prisma/db";
-import { currentSession } from "@/src/core/session";
+import { requireAdmin } from "@/src/core/auth";
+import { NextResponse } from "next/server";
 import { createProxyUser } from "@/src/core/actions/proxy-user";
 
 const createRequest = (body: Record<string, unknown>) => {
@@ -40,12 +45,17 @@ const createRequest = (body: Record<string, unknown>) => {
 
 describe("admin/users API", () => {
     beforeEach(() => {
-        mocked(currentSession).mockResolvedValue({ isAuthorized: true });
+        // A Response body can only be read once, and mockResolvedValue survives
+        // clearAllMocks, so each test needs a freshly built default.
+        mocked(requireAdmin).mockResolvedValue({ user: { id: 1, username: "admin" }, denial: null });
     });
 
     describe("POST", () => {
         it("returns 401 when unauthorized", async () => {
-            mocked(currentSession).mockResolvedValue({ isAuthorized: false });
+            mocked(requireAdmin).mockResolvedValue({
+                user: undefined,
+                denial: NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+            });
 
             const result = await POST(createRequest({ username: "test", password: "pass" }));
             const data = await result.json();
@@ -103,7 +113,10 @@ describe("admin/users API", () => {
 
     describe("GET", () => {
         it("returns 401 when unauthorized", async () => {
-            mocked(currentSession).mockResolvedValue({ isAuthorized: false });
+            mocked(requireAdmin).mockResolvedValue({
+                user: undefined,
+                denial: NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+            });
 
             const result = await GET(new NextRequest("http://localhost/api/admin/users"));
             const data = await result.json();

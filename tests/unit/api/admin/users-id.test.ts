@@ -8,9 +8,13 @@ import { NextRequest } from "next/server";
 import { getProxyUserById, deleteProxyUser, updateProxyUser } from "@/src/core/actions/proxy-user";
 import { ProxyUser } from "@/src/core/definitions";
 
-jest.mock("@/src/core/session", () => ({
-    currentSession: jest.fn()
+jest.mock("@/src/core/auth", () => ({
+    requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null })),
+    resolveAdmin: jest.fn(async () => ({ id: 1, username: "admin" })),
+    assertAdmin: jest.fn(async () => ({ id: 1, username: "admin" }))
 }));
+
+jest.mock("@/src/core/session", () => ({}));
 
 jest.mock("@/src/core/actions/proxy-user", () => ({
     getProxyUserById: jest.fn(),
@@ -18,18 +22,24 @@ jest.mock("@/src/core/actions/proxy-user", () => ({
     updateProxyUser: jest.fn()
 }));
 
-import { currentSession } from "@/src/core/session";
+import { requireAdmin } from "@/src/core/auth";
+import { NextResponse } from "next/server";
 
 const mockParams = Promise.resolve({ id: "1" });
 
 describe("admin/users/[id] API", () => {
     describe("GET", () => {
         beforeEach(() => {
-            mocked(currentSession).mockResolvedValue({ isAuthorized: true });
+            // A Response body can only be read once, and mockResolvedValue survives
+            // clearAllMocks, so each test needs a freshly built default.
+            mocked(requireAdmin).mockResolvedValue({ user: { id: 1, username: "admin" }, denial: null });
         });
 
         it("returns 401 when unauthorized", async () => {
-            mocked(currentSession).mockResolvedValue({ isAuthorized: false });
+            mocked(requireAdmin).mockResolvedValue({
+                user: undefined,
+                denial: NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+            });
 
             const request = new NextRequest("http://localhost/api/admin/users/1");
             const result = await GET(request, { params: mockParams });
@@ -79,11 +89,16 @@ describe("admin/users/[id] API", () => {
 
     describe("PUT", () => {
         beforeEach(() => {
-            mocked(currentSession).mockResolvedValue({ isAuthorized: true });
+            // A Response body can only be read once, and mockResolvedValue survives
+            // clearAllMocks, so each test needs a freshly built default.
+            mocked(requireAdmin).mockResolvedValue({ user: { id: 1, username: "admin" }, denial: null });
         });
 
         it("returns 401 when unauthorized", async () => {
-            mocked(currentSession).mockResolvedValue({ isAuthorized: false });
+            mocked(requireAdmin).mockResolvedValue({
+                user: undefined,
+                denial: NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+            });
 
             const request = new NextRequest("http://localhost/api/admin/users/1", {
                 method: "PUT",
@@ -131,11 +146,16 @@ describe("admin/users/[id] API", () => {
 
     describe("DELETE", () => {
         beforeEach(() => {
-            mocked(currentSession).mockResolvedValue({ isAuthorized: true });
+            // A Response body can only be read once, and mockResolvedValue survives
+            // clearAllMocks, so each test needs a freshly built default.
+            mocked(requireAdmin).mockResolvedValue({ user: { id: 1, username: "admin" }, denial: null });
         });
 
         it("returns 401 when unauthorized", async () => {
-            mocked(currentSession).mockResolvedValue({ isAuthorized: false });
+            mocked(requireAdmin).mockResolvedValue({
+                user: undefined,
+                denial: NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+            });
 
             const request = new NextRequest("http://localhost/api/admin/users/1", {
                 method: "DELETE"

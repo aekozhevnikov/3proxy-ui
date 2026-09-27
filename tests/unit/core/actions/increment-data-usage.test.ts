@@ -1,4 +1,4 @@
-import { mocked } from '@/tests/unit/test-utils/mock-helpers';
+import { mocked } from "@/tests/unit/test-utils/mock-helpers";
 import { incrementDataUsage } from "@/src/core/actions/proxy-user";
 import prisma from "@/prisma/db";
 
@@ -9,21 +9,21 @@ jest.mock("@/prisma/db", () => {
         findFirst: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
-        delete: jest.fn(),
+        delete: jest.fn()
     };
     return {
         __esModule: true,
         default: { proxyUser: mockProxyUser },
-        prisma: { proxyUser: mockProxyUser },
+        prisma: { proxyUser: mockProxyUser }
     };
 });
 
 jest.mock("next/cache", () => ({
-    revalidatePath: jest.fn(),
+    revalidatePath: jest.fn()
 }));
 
 jest.mock("@/src/core/actions/config", () => ({
-    update3proxyConfig: jest.fn(),
+    update3proxyConfig: jest.fn()
 }));
 
 describe("incrementDataUsage", () => {
@@ -43,7 +43,7 @@ describe("incrementDataUsage", () => {
         deactivatedAt: null,
         createdAt: new Date("2024-01-01"),
         updatedAt: new Date("2024-01-01"),
-        dataUsed: BigInt(0),
+        dataUsed: BigInt(0)
     };
 
     it("converts bytes to MB and increments", async () => {
@@ -55,9 +55,9 @@ describe("incrementDataUsage", () => {
             where: { username: "testuser" },
             data: {
                 dataUsed: {
-                    increment: 1,
-                },
-            },
+                    increment: 1
+                }
+            }
         });
     });
 
@@ -70,9 +70,9 @@ describe("incrementDataUsage", () => {
             where: { username: "testuser" },
             data: {
                 dataUsed: {
-                    increment: 0,
-                },
-            },
+                    increment: 0
+                }
+            }
         });
     });
 });

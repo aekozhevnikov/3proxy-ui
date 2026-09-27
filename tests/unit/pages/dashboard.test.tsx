@@ -1,4 +1,4 @@
-import { mocked } from '@/tests/unit/test-utils/mock-helpers';
+import { mocked } from "@/tests/unit/test-utils/mock-helpers";
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 
@@ -6,28 +6,30 @@ const mockSetTheme = jest.fn();
 jest.mock("next-themes", () => ({
     useTheme: () => ({
         theme: "light",
-        setTheme: mockSetTheme,
-    }),
+        setTheme: mockSetTheme
+    })
 }));
 
 jest.mock("next/navigation", () => ({
-    useRouter: () => ({ replace: jest.fn() }),
+    useRouter: () => ({ replace: jest.fn() })
 }));
 
 jest.mock("next/image", () => ({
     __esModule: true,
-    default: ({ alt, src, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => <img alt={alt} src={src || ""} {...props} />,
+    default: ({ alt, src, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
+        <img alt={alt} src={src || ""} {...props} />
+    )
 }));
 
 jest.mock("@/src/components/icons", () => ({
     MoonFilledIcon: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="moon-icon" {...props} />,
     SunFilledIcon: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="sun-icon" {...props} />,
-    HeartFilledIcon: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="heart-icon" {...props} />,
+    HeartFilledIcon: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="heart-icon" {...props} />
 }));
 
 jest.mock("@/src/app/admin/dashboard/useDashboardData", () => ({
     __esModule: true,
-    default: jest.fn(),
+    default: jest.fn()
 }));
 
 jest.mock("@/src/app/admin/dashboard/DashboardHeader", () => {
@@ -70,10 +72,10 @@ const mockData = {
         config: { exists: true, modified: "2025-01-01" },
         users: { count: 10, proxyauthSize: 100, proxyauthModified: "2025-01-01" },
         logs: { size: 0, fileCount: 0 },
-        timestamp: "2025-01-01T00:00:00Z",
+        timestamp: "2025-01-01T00:00:00Z"
     },
     userSummary: { total: 10, active: 8, inactive: 2, withDataLimit: 5 },
-    trafficStats: { totalSent: 1024, totalReceived: 2048, totalRequests: 100 },
+    trafficStats: { totalSent: 1024, totalReceived: 2048, totalRequests: 100 }
 };
 
 describe("DashboardPage", () => {
@@ -82,7 +84,13 @@ describe("DashboardPage", () => {
     });
 
     it("renders loading spinner on initial load", () => {
-        mocked(useDashboardData).mockReturnValue({ data: null, loading: true, refreshing: false, error: null, refresh: jest.fn() });
+        mocked(useDashboardData).mockReturnValue({
+            data: null,
+            loading: true,
+            refreshing: false,
+            error: null,
+            refresh: jest.fn()
+        });
 
         const { container } = render(<DashboardPage />);
         const spinner = container.querySelector(".animate-spin");
@@ -90,7 +98,13 @@ describe("DashboardPage", () => {
     });
 
     it("renders dashboard title after load", async () => {
-        mocked(useDashboardData).mockReturnValue({ data: mockData, loading: false, refreshing: false, error: null, refresh: jest.fn() });
+        mocked(useDashboardData).mockReturnValue({
+            data: mockData,
+            loading: false,
+            refreshing: false,
+            error: null,
+            refresh: jest.fn()
+        });
 
         render(<DashboardPage />);
 
@@ -100,7 +114,13 @@ describe("DashboardPage", () => {
     });
 
     it("renders all cards when loaded", async () => {
-        mocked(useDashboardData).mockReturnValue({ data: mockData, loading: false, refreshing: false, error: null, refresh: jest.fn() });
+        mocked(useDashboardData).mockReturnValue({
+            data: mockData,
+            loading: false,
+            refreshing: false,
+            error: null,
+            refresh: jest.fn()
+        });
 
         render(<DashboardPage />);
 
@@ -113,7 +133,13 @@ describe("DashboardPage", () => {
     });
 
     it("renders error state with retry button", () => {
-        mocked(useDashboardData).mockReturnValue({ data: null, loading: false, refreshing: false, error: "Failed to load", refresh: jest.fn() });
+        mocked(useDashboardData).mockReturnValue({
+            data: null,
+            loading: false,
+            refreshing: false,
+            error: "Failed to load",
+            refresh: jest.fn()
+        });
 
         render(<DashboardPage />);
 
@@ -124,9 +150,15 @@ describe("DashboardPage", () => {
     it("shows stopped status when proxy not running", async () => {
         const stoppedData = {
             ...mockData,
-            systemStatus: { ...mockData.systemStatus, status: { ...mockData.systemStatus.status, isRunning: false } },
+            systemStatus: { ...mockData.systemStatus, status: { ...mockData.systemStatus.status, isRunning: false } }
         };
-        mocked(useDashboardData).mockReturnValue({ data: stoppedData, loading: false, refreshing: false, error: null, refresh: jest.fn() });
+        mocked(useDashboardData).mockReturnValue({
+            data: stoppedData,
+            loading: false,
+            refreshing: false,
+            error: null,
+            refresh: jest.fn()
+        });
 
         render(<DashboardPage />);
 

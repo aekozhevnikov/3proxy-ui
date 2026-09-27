@@ -5,7 +5,7 @@
 import { GET } from "@/src/app/api/auth/session/route";
 
 jest.mock("@/src/core/session", () => ({
-    currentSession: jest.fn(),
+    currentSession: jest.fn()
 }));
 
 describe("auth/session API", () => {
