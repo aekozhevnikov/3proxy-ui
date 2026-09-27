@@ -29,11 +29,7 @@ export async function GET() {
             };
         });
 
-        return NextResponse.json(result, {
-            headers: {
-                "Access-Control-Allow-Origin": "*"
-            }
-        });
+        return NextResponse.json(result, {});
     } catch (error) {
         console.error("Failed to read traffic logs:", error);
 

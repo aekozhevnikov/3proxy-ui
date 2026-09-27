@@ -21,6 +21,20 @@ function parseLogType(value: string | null): LogType {
     return "all";
 }
 
+const DEFAULT_LIMIT = 1000;
+const MAX_LIMIT = 5000;
+
+/** A caller cannot ask for the whole log: the parser would page it into memory. */
+function parseLimit(raw: string | null): number {
+    const parsed = raw === null ? DEFAULT_LIMIT : Number.parseInt(raw, 10);
+
+    if (!Number.isFinite(parsed) || parsed < 1) {
+        return DEFAULT_LIMIT;
+    }
+
+    return Math.min(parsed, MAX_LIMIT);
+}
+
 export async function GET(request: NextRequest) {
     try {
 
@@ -37,7 +51,7 @@ export async function GET(request: NextRequest) {
             endDate: searchParams.get("endDate") || undefined,
             username: searchParams.get("username") || undefined,
             logType: parseLogType(searchParams.get("logType")),
-            limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 1000,
+            limit: parseLimit(searchParams.get("limit")),
             offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : 0
         };
 
@@ -55,13 +69,6 @@ export async function GET(request: NextRequest) {
                 stats,
                 filter: {
                     applied: filter
-                }
-            },
-            {
-                headers: {
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type"
                 }
             }
         );

@@ -99,7 +99,7 @@
         "id": "8",
         "title": "Restore limit enforcement in proxyauth file generation",
         "description": "Ensure that the live user file (/etc/3proxy/users/.proxyauth) carries the d<bytes>, e<timestamp>, and i<count> flags alongside the CR hash. Decide the source of truth for each flag (dataLimit in MB -> bytes, expiresAt -> unix seconds, ipLimit) and emit them in proxyauthEntry(). Remove the dead write to /etc/3proxy-users.cfg and verify against the deployed 3proxy build whether shaper and ipcount support are present.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "14"
         ],
@@ -141,7 +141,7 @@
             "updatedAt": "2026-09-27T00:00:13.844Z"
           }
         ],
-        "updatedAt": "2026-09-27T00:00:19.753Z"
+        "updatedAt": "2026-09-27T00:00:43.848Z"
       },
       {
         "id": "9",
@@ -410,9 +410,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-27T00:00:19.753Z",
+      "lastModified": "2026-09-27T00:00:43.848Z",
       "taskCount": 19,
-      "completedCount": 13,
+      "completedCount": 14,
       "tags": [
         "master"
       ]

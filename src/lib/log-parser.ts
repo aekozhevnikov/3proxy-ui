@@ -117,7 +117,13 @@ export async function getLogFiles(dateRange?: { start?: string; end?: string }):
     }
 }
 
-export function readLogFile(filePath: string): string[] {
+/**
+ * Reads the tail of a log file rather than the whole thing. 3proxy logs grow
+ * without bound, and reading one in full costs its size in memory whatever the
+ * caller asked for. The first line of the tail is dropped unless the read
+ * started at byte zero, so a partial line is never parsed as a record.
+ */
+export function readLogFile(filePath: string, maxBytes = 1024 * 1024): string[] {
     try {
         if (!fs.existsSync(filePath)) {
             console.warn("Log file does not exist:", filePath);
@@ -125,9 +131,37 @@ export function readLogFile(filePath: string): string[] {
             return [];
         }
 
-        const content = fs.readFileSync(filePath, "utf8");
+        const size = fs.statSync(filePath)?.size;
 
-        return content.split("\n").filter((line: string) => line.trim().length > 0);
+        // A size we cannot read, or a file small enough already, takes the
+        // simple path rather than guessing at an offset.
+        if (typeof size !== "number" || size <= maxBytes) {
+            return fs
+                .readFileSync(filePath, "utf8")
+                .split("\n")
+                .filter((line: string) => line.trim().length > 0);
+        }
+
+        const start = size - maxBytes;
+        const buffer = Buffer.alloc(maxBytes);
+        const fd = fs.openSync(filePath, "r");
+
+        try {
+            fs.readSync(fd, buffer, 0, maxBytes, start);
+        } finally {
+            fs.closeSync(fd);
+        }
+
+        const lines = buffer
+            .toString("utf8")
+            .split("\n")
+            .filter((line: string) => line.trim().length > 0);
+
+        if (start > 0) {
+            lines.shift();
+        }
+
+        return lines;
     } catch (error) {
         console.error("Error reading log file:", error, filePath);
 
