@@ -1,6 +1,9 @@
 import { Metadata } from "next";
 
+import { redirect } from "next/navigation";
+
 import UserForm from "@/src/app/admin/users/components/user-form";
+import { resolveAdmin } from "@/src/core/auth";
 import { createProxyUser } from "@/src/core/actions/proxy-user";
 import { createPageTitle } from "@/src/core/utils";
 
@@ -8,7 +11,11 @@ export const metadata: Metadata = {
     title: createPageTitle("Create Proxy User")
 };
 
-export default function CreateProxyUserPage() {
+export default async function CreateProxyUserPage() {
+    if (!(await resolveAdmin())) {
+        redirect("/login");
+    }
+
     return (
         <div className="container mx-auto px-4 py-6 sm:py-8">
             <div className="max-w-2xl mx-auto">

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { currentSession } from "@/src/core/session";
+import { requireAdmin } from "@/src/core/auth";
 import { logger } from "@/src/core/logger";
 import { prisma } from "@/src/prisma/db";
 
@@ -15,10 +15,10 @@ export const revalidate = 0;
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const session = await currentSession();
+        const auth = await requireAdmin();
 
-        if (!session.isAuthorized) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (auth.denial) {
+            return auth.denial;
         }
 
         const { id } = await params;

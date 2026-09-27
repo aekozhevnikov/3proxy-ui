@@ -8,6 +8,13 @@ import { find3proxyContainer, restart3proxyContainer } from "@/src/core/docker";
 
 const PROXYAUTH_PATH = process.env.PROXYAUTH_PATH || path.join(process.cwd(), "3proxy", "users", ".proxyauth");
 
+/**
+ * Set when a restart failed. The comparison below is against what is on disk,
+ * so without this a single failed restart would look identical to "already
+ * applied" and the deactivation would never take effect.
+ */
+let reloadPending = false;
+
 export interface ProxyauthUpdateResult {
     updatedCount: number;
     deactivatedCount: number;
@@ -49,7 +56,7 @@ export async function updateProxyauthFile(): Promise<ProxyauthUpdateResult> {
     // Every hash uses a fresh random salt, so the bytes differ on every write
     // even when nothing about the accounts changed. Comparing the usernames
     // that would be served is what actually decides whether a reload is needed.
-    const shouldReload = activeSignature(previous) !== activeSignature(finalContent);
+    const shouldReload = reloadPending || activeSignature(previous) !== activeSignature(finalContent);
 
     await fs.writeFile(PROXYAUTH_PATH, finalContent, "utf-8");
 
@@ -58,7 +65,12 @@ export async function updateProxyauthFile(): Promise<ProxyauthUpdateResult> {
     );
     logger.debug(`[maintenance] File at: ${PROXYAUTH_PATH}`);
 
-    const reloaded = shouldReload ? await reload3proxy() : false;
+    let reloaded = false;
+
+    if (shouldReload) {
+        reloaded = await reload3proxy();
+        reloadPending = !reloaded;
+    }
 
     return {
         updatedCount: allUsers.length,

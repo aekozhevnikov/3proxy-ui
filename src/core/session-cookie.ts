@@ -9,13 +9,18 @@ export const SESSION_MAX_AGE = 60 * 60;
  * while the other two used NODE_ENV. Which flag a live session carried
  * therefore depended on which endpoint had run last. One definition, used
  * everywhere.
+ *
+ * The Secure flag is opt-in through SESSION_COOKIE_SECURE rather than derived
+ * from NODE_ENV. The standalone server sets NODE_ENV=production unconditionally,
+ * so keying off it marked the cookie Secure even though the shipped compose
+ * stack serves plain HTTP on port 3000, and a browser refuses to store a Secure
+ * cookie that arrives over http, which locked people out. Turn it on only when
+ * the panel is actually behind TLS.
  */
 export function sessionCookieOptions() {
     return {
         httpOnly: true,
-        // The compose stack publishes port 3000 directly, without TLS, so a
-        // strict flag would break the panel there. It is on everywhere else.
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.SESSION_COOKIE_SECURE === "true",
         sameSite: "lax" as const,
         maxAge: SESSION_MAX_AGE,
         path: "/"

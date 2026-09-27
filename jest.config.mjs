@@ -7,6 +7,10 @@ export default {
         "^@src/(.*)$": "<rootDir>/src/$1"
     },
     testPathIgnorePatterns: ["/node_modules/", "/.next/", "/dist/", "/tests/e2e/"],
+    // tsc -p tsconfig.scripts.json compiles tests/**/*.ts into dist, so running
+    // `npm run compile` before the suite left compiled copies of the manual
+    // mocks in the haste map. The Docker build and CI both do exactly that.
+    modulePathIgnorePatterns: ["<rootDir>/dist/", "<rootDir>/.next/"],
     testRegex: ["/tests/unit/.*\\.test\\.(ts|tsx)$", "/tests/integration/.*\\.db\\.test\\.(ts|tsx)$"],
     transform: {
         "^.+\\.(t|j)sx?$": ["ts-jest", { tsconfig: "tsconfig.json", diagnostics: false }]

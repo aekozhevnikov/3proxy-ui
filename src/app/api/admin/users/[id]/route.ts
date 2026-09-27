@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { currentSession } from "@/src/core/session";
+import { requireAdmin } from "@/src/core/auth";
 import { getProxyUserById, deleteProxyUser, updateProxyUser } from "@/src/core/actions/proxy-user";
 import { logger } from "@/src/core/logger";
 import { isValidationError } from "@/src/core/errors";
@@ -11,10 +11,10 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const session = await currentSession();
+        const auth = await requireAdmin();
 
-        if (!session.isAuthorized) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (auth.denial) {
+            return auth.denial;
         }
 
         const { id } = await params;
@@ -34,10 +34,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const session = await currentSession();
+        const auth = await requireAdmin();
 
-        if (!session.isAuthorized) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (auth.denial) {
+            return auth.denial;
         }
 
         const { id } = await params;
@@ -72,10 +72,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const session = await currentSession();
+        const auth = await requireAdmin();
 
-        if (!session.isAuthorized) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (auth.denial) {
+            return auth.denial;
         }
 
         const { id } = await params;

@@ -29,10 +29,25 @@ export function resetLoginAttempts(): void {
     attempts.clear();
 }
 
-function attemptKey(username: string, request: NextRequest): string {
-    const source = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
+/**
+ * Keyed on the username alone. It used to include the leftmost
+ * x-forwarded-for, which the caller sets freely, so rotating the header per
+ * request gave unlimited attempts at the configured rate and the map grew
+ * without bound. The cost is that an attacker can lock a known account out
+ * for the backoff window, which is the better trade for a self-hosted panel
+ * with one admin account.
+ */
+function attemptKey(username: string): string {
+    return username;
+}
 
-    return `${source}:${username}`;
+/** Keeps the counter map bounded when accounts are probed that do not exist. */
+function sweep(now: number): void {
+    for (const [key, record] of attempts) {
+        if (record.lockedUntil <= now) {
+            attempts.delete(key);
+        }
+    }
 }
 
 function lockedFor(record: AttemptRecord | undefined, now: number): number {
@@ -64,8 +79,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Username and password are required" }, { status: 400 });
         }
 
-        const key = attemptKey(username, request);
-        const remaining = lockedFor(attempts.get(key), Date.now());
+        const now = Date.now();
+
+        sweep(now);
+
+        const key = attemptKey(username);
+        const remaining = lockedFor(attempts.get(key), now);
 
         if (remaining > 0) {
             logger.warn(`[login] throttled "${username}" for ${remaining}ms after repeated failures`);

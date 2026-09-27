@@ -24,20 +24,6 @@ function assertValidUsername(username: string): void {
     }
 }
 
-export async function getAllProxyUsers(): Promise<ProxyUser[]> {
-    const users = await prisma.proxyUser.findMany({
-        orderBy: {
-            createdAt: "desc"
-        }
-    });
-
-    return users.map((user) => ({
-        ...user,
-        dataLimit: user.dataLimit ? Number(user.dataLimit) : null,
-        dataUsed: Number(user.dataUsed)
-    }));
-}
-
 export async function getProxyUserById(id: number): Promise<ProxyUser | null> {
     // The password is deliberately excluded. This result is returned by
     // GET /api/admin/users/[id] and is passed as a prop to a client component,

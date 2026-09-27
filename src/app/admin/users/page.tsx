@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { currentSession } from "@/src/core/session";
+import { resolveAdmin } from "@/src/core/auth";
 import { createPageTitle } from "@/src/core/utils";
 import UsersList from "@/src/app/admin/users/components/users-list";
 
@@ -12,9 +12,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
-    const session = await currentSession();
-
-    if (!session.isAuthorized) {
+    if (!(await resolveAdmin())) {
         redirect("/login");
     }
 

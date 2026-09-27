@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { currentSession } from "@/src/core/session";
+import { requireAdmin } from "@/src/core/auth";
 import { createProxyUser } from "@/src/core/actions/proxy-user";
 import { prisma } from "@/src/prisma/db";
 import { logger } from "@/src/core/logger";
@@ -19,10 +19,10 @@ function withoutPassword<T extends { password?: string }>(user: T): Omit<T, "pas
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await currentSession();
+        const auth = await requireAdmin();
 
-        if (!session.isAuthorized) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (auth.denial) {
+            return auth.denial;
         }
 
         const body = await request.json();
@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await currentSession();
+        const auth = await requireAdmin();
 
-        if (!session.isAuthorized) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (auth.denial) {
+            return auth.denial;
         }
 
         const searchParams = request.nextUrl.searchParams;

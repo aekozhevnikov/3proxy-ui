@@ -50,6 +50,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
+        // This endpoint mints a fresh token, so it is the one place a revoked
+        // token could resurrect itself. currentSession compares the version
+        // against the database; this must too, before issuing a replacement.
+        const tokenVersion =
+            "sessionVersion" in decoded && typeof decoded.sessionVersion === "number" ? decoded.sessionVersion : 0;
+
+        if (tokenVersion !== user.sessionVersion) {
+            return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+        }
+
         // Verify current password
         const isValid = await bcrypt.compare(currentPassword, user.password);
 
@@ -77,9 +87,10 @@ export async function POST(request: NextRequest) {
         if (newPassword) {
             updateData.password = await bcrypt.hash(newPassword, 10);
             // Every token issued before this stops verifying, so a lost device
-            // cannot keep its session for the rest of the hour. The token minted
-            // below carries the new value and stays valid.
-            updateData.sessionVersion = sessionVersion + 1;
+            // cannot keep its session for the rest of the hour. The increment
+            // comes from the stored row, not from the token, so two devices
+            // changing the password at once cannot land on the same version.
+            updateData.sessionVersion = user.sessionVersion + 1;
         }
 
         const updatedUser = await prisma.user.update({

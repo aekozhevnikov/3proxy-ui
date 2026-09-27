@@ -2,12 +2,12 @@ import { redirect } from "next/navigation";
 
 import ProfileForm from "./components/profile-form";
 
-import { currentSession } from "@/src/core/session";
+import { resolveAdmin } from "@/src/core/auth";
 
 export default async function ProfilePage() {
-    const session = await currentSession();
+    const admin = await resolveAdmin();
 
-    if (!session.isAuthorized || !session.username) {
+    if (!admin) {
         redirect("/login");
     }
 
@@ -19,7 +19,7 @@ export default async function ProfilePage() {
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6">
-                <ProfileForm currentUsername={session.username} />
+                <ProfileForm currentUsername={admin.username} />
             </div>
         </div>
     );
