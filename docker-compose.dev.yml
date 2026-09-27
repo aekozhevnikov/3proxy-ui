@@ -26,6 +26,11 @@ services:
       - HTTP_PORT=3128
       - SOCKS_PORT=1080
       - DATABASE_URL=file:/app/data/app.db
+      # Offsets must live on the data volume. The default resolves against
+      # process.cwd(), which in the image is the standalone directory inside the
+      # image layer, so a rebuilt container would restart from zero and count
+      # the whole log history again.
+      - SYNC_INFO_FILE=/app/data/traffic-sync.json
       - ENABLE_FAIL2BAN=true
       - FAIL2BAN_MAXRETRY=3
       - FAIL2BAN_BANTIME=1800

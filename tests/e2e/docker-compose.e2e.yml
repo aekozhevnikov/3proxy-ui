@@ -36,6 +36,7 @@ services:
       - HTTP_PORT=3128
       - SOCKS_PORT=1080
       - DATABASE_URL=file:/app/data/e2e.db
+      - SYNC_INFO_FILE=/app/data/traffic-sync.json
       - NEXT_PUBLIC_API_URL=http://localhost:3000
       - ENABLE_FAIL2BAN=false
       - LOGS_DIR=/etc/3proxy/logs
@@ -71,6 +72,7 @@ services:
       - HTTP_PORT=3128
       - SOCKS_PORT=1080
       - DATABASE_URL=file:/app/data/fail2ban.db
+      - SYNC_INFO_FILE=/app/data/traffic-sync.json
       - NEXT_PUBLIC_API_URL=http://localhost:3000
       - ENABLE_FAIL2BAN=true
       - FAIL2BAN_MAXRETRY=2

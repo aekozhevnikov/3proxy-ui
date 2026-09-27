@@ -350,10 +350,11 @@
         "description": "Remove Access-Control-Allow-Origin: * from /api/logs (line 54), /api/system/status (line 141) and /api/users/traffic (line 27), and bound the `limit` query parameter on /api/logs. The limit is read as a bare parseInt with no clamp and used as a ceiling while getLogs slurps whole files via readLogFile before slicing, so ?limit=999999999 is a memory and response size DoS.</description>\n<parameter name=\"details\">The wildcard CORS header made the log endpoint readable from any website the operator visited, before authentication was added. It is unnecessary even for a same-origin panel and only widens exposure. Bound the limit with a clamp such as Math.min(Math.max(limit ?? 1000, 1), 5000) and reject a non-numeric value instead of letting parseInt produce NaN. Also check readLogFile: it reads the entire file into memory before slicing, so a large log file costs memory regardless of the limit; consider reading only the tail that the limit needs.",
         "details": "",
         "testStrategy": "Response headers carry no Access-Control-Allow-Origin. A request with limit=999999999 returns at most the cap. A request with limit=abc does not produce NaN behaviour. Confirm the response size stays bounded for a large log file.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2026-09-27T00:04:03.040Z"
       },
       {
         "id": "16",
@@ -361,10 +362,11 @@
         "description": "Upgrade next from the installed 16.2.3 to a release that closes four open High middleware/proxy-bypass advisories: GHSA-6gpp-xcg3-4w24 (&lt;16.2.11, CVSS 8.3), GHSA-492v-c6pp-mqqv (&lt;16.2.5, dynamic route parameter injection), GHSA-267c-6grr-h53f (&lt;16.2.5, segment prefetch) and GHSA-26hh-7cqf-hhc6 (&lt;16.2.6, incomplete fix). This is a High on its own and is not cosmetic like the headers work it was bundled with in task 13.</description>\n<parameter name=\"details\">GHSA-6gpp applies to this project: its condition is Turbopack plus a single locale, Turbopack became the default bundler for next build in 16.0.0, scripts/build.ts runs a bare next build, and there is no i18n config so the single-locale condition holds trivially. Run this as its own change with its own verification, not bundled with config edits, because a Next major or minor bump can move behaviour the build depends on. Check the upgrade guide for the middleware to proxy rename, verify next.config.js still applies, and confirm the Docker build stage still produces a working standalone bundle. Note that the two CRITICAL advisories against next (GHSA-p293-qw3h-jr36 Windows path traversal, GHSA-2xp9-vwfh-vxw4 AVIF RCE) do not apply to a Linux Alpine build, but check that the upgrade does not introduce a new i18n or image-optimizer path that would make the AVIF one reachable.",
         "details": "",
         "testStrategy": "npm audit --omit=dev reports no open High or Critical advisory against next. tsc, unit, integration and fail2ban suites pass. The Docker image builds and the standalone bundle serves /api/health. Proxy behaviour (src/proxy.ts) still guards /admin paths.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2026-09-27T00:05:30.903Z"
       },
       {
         "id": "17",
@@ -391,10 +393,23 @@
         "description": "OPTIONAL / DECISION REQUIRED. Native per-user traffic limiting is now the only remaining enforcement gap, and it is not reachable from the users file. 3proxy defines a user entry as exactly login:type:password with CL, CR and NT as the only types, and directs limits to ACLs; its auth.c enforces limits from conf.trafcounter, which is populated from 3proxy.cfg rather than from the users list. Work out what that requires in this deployment and decide whether it is worth doing, because panel-side enforcement now actually works: a user who exceeds their quota is set inactive and leaves the file, so 3proxy refuses them on the next reload.</description>\n<parameter name=\"details\">Tradeoff to weigh. Panel-side enforcement depends on the panel being up and on a maintenance run happening, so a user can overshoot by whatever they transfer between runs, and enforcement stops entirely if the panel is down. Native enforcement would cut off inside 3proxy and keep working when the panel is not, but it means generating and managing per-user ACL rules in 3proxy.cfg, which the panel does not currently write at all, and it may need compile-time support in the 3proxy build that silently does nothing when absent. First step is to establish whether the shipped 3proxy/3proxy:0.9.5 image supports per-user traffic counters at all, and what the config syntax is; the howtoe ACL section covers allow, deny and flush but the counter directive was not located in the documentation read so far. Not blocking: the deactivated-user fix in task 9 removed the silent failure, so limits are enforced as of that commit, just not natively.",
         "details": "",
         "testStrategy": "Spike: determine the counter directive and whether the shipped build honours it, by configuring a limit for one user in 3proxy.cfg and pushing traffic past it. If the build lacks support, record that and close the task as not applicable.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Record the decision and why the users-file route is closed",
+            "description": "Not pursued. The users-file route is closed, not merely unexplored: 3proxy defines a user entry as exactly login:type:password with CL, CR and NT as the only types, and h_users in src/conf.c takes everything after CR: as the password without parsing a fourth field. Appending d/e/i was implemented, measured to break authentication for every user with a 407, and reverted. The remaining route is ACL traffic counters in 3proxy.cfg, whose directive syntax was not established and which the panel does not write today. It is also worth less than it was, because panel-side enforcement now works: a user over quota is set inactive and leaves the user file, so 3proxy refuses them. The cost of the panel-side model is that a user can overshoot between maintenance runs and enforcement stops if the panel is down, which is a real limitation but not a broken promise.</description>\n<parameter name=\"id\">18",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 18,
+            "parentId": "undefined",
+            "updatedAt": "2026-09-27T00:14:45.354Z"
+          }
+        ],
+        "updatedAt": "2026-09-27T00:14:45.354Z"
       },
       {
         "id": "19",
@@ -402,17 +417,18 @@
         "description": "SYNC_INFO_FILE defaults to path.join(process.cwd(), \"data\", \"traffic-sync.json\"), and in the container cwd is /app/.next/standalone, so the per-inode log offsets land at /app/.next/standalone/data/traffic-sync.json, inside the image layer rather than on the /app/data volume. The file is lost whenever the container is recreated from the image, the offsets reset to zero, and every logged byte is accounted again. Point SYNC_INFO_FILE at /app/data in the compose stacks, or derive it from the database location so it follows the volume automatically. Found while verifying the maintenance scheduler: the job reported success and regenerated the user file, but no traffic-sync.json existed under /app/data. The impact is double counting rather than an outage, which for a metered service means billing twice for the same traffic. The integration test sets SYNC_INFO_FILE explicitly, which is why the suite never caught it. The same class of problem applies to any other default path that resolves against cwd rather than the volume.</description>\n<parameter name=\"file\">.taskmaster/tasks/tasks.json",
         "details": "",
         "testStrategy": "Container run: after a maintenance pass the offsets file exists under /app/data, and after recreating the container a second pass reports zero newly accounted bytes instead of re-reading the whole log.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2026-09-27T00:14:45.364Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-27T00:00:43.848Z",
+      "lastModified": "2026-09-27T00:14:45.364Z",
       "taskCount": 19,
-      "completedCount": 14,
+      "completedCount": 18,
       "tags": [
         "master"
       ]

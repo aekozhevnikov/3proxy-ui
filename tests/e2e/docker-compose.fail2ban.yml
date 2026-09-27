@@ -8,6 +8,7 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=file:/app/data/test.db
+      - SYNC_INFO_FILE=/app/data/traffic-sync.json
       - NEXT_PUBLIC_API_URL=http://localhost:3000
       - API_URL=http://localhost:3000
       - JWT_SECRET=test-secret-key-minimum-32-characters-long
