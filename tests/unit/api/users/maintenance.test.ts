@@ -8,6 +8,13 @@ jest.mock("@/src/core/auth", () => ({
     requireAdmin: jest.fn(async () => ({ user: { id: 1, username: "admin" }, denial: null }))
 }));
 
+// updateProxyauthFile restarts 3proxy when the served set changes, which
+// shells out to the docker CLI. Mocked so the suite does not depend on it.
+jest.mock("@/src/core/docker", () => ({
+    find3proxyContainer: jest.fn(async () => ({ id: "abc123", name: "3proxy" })),
+    restart3proxyContainer: jest.fn(async () => "")
+}));
+
 jest.mock("@/src/prisma/db", () => {
     const mockProxyUser = {
         findFirst: jest.fn(),

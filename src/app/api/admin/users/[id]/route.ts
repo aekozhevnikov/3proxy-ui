@@ -56,7 +56,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             expiresAt: body.expiresAt ? new Date(body.expiresAt) : null
         });
 
-        return NextResponse.json({ success: true, user });
+        const { password: _password, ...safeUser } = user;
+
+        return NextResponse.json({ success: true, user: safeUser });
     } catch (error) {
         if (isValidationError(error)) {
             return NextResponse.json({ error: (error as Error).message }, { status: 400 });

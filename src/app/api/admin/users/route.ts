@@ -10,6 +10,13 @@ import { isValidationError } from "@/src/core/errors";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+/** The caller supplied the password, but echoing it back widens where it lives. */
+function withoutPassword<T extends { password?: string }>(user: T): Omit<T, "password"> {
+    const { password: _password, ...rest } = user;
+
+    return rest;
+}
+
 export async function POST(request: NextRequest) {
     try {
         const session = await currentSession();
@@ -30,7 +37,7 @@ export async function POST(request: NextRequest) {
             expiresAt: body.expiresAt ? new Date(body.expiresAt) : null
         });
 
-        return NextResponse.json({ success: true, user });
+        return NextResponse.json({ success: true, user: withoutPassword(user) });
     } catch (error) {
         if (isValidationError(error)) {
             return NextResponse.json({ error: (error as Error).message }, { status: 400 });
