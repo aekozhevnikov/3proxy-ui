@@ -1,4 +1,4 @@
-import { createPageTitle, formatGB, formatDate } from "@/src/core/utils";
+import { createPageTitle, formatBytes, formatDate } from "@/src/core/utils";
 
 describe("createPageTitle", () => {
     it("returns just app name when no title provided", () => {
@@ -18,21 +18,26 @@ describe("createPageTitle", () => {
     });
 });
 
-describe("formatGB", () => {
-    it("converts MB to GB with 2 decimal places", () => {
-        expect(formatGB(1024)).toBe("1.00 GB");
+describe("formatBytes", () => {
+    it("shows bytes (<1024) with B", () => {
+        expect(formatBytes(512)).toBe("512 B");
+    });
+
+    it("shows KB for 1024-1048575 bytes", () => {
+        expect(formatBytes(1536)).toBe("1.5 KB");
+    });
+
+    it("shows MB for 1MB-1GB", () => {
+        expect(formatBytes(1048576)).toBe("1 MB");
+    });
+
+    it("shows GB for 1GB and above", () => {
+        expect(formatBytes(1073741824)).toBe("1 GB");
+        expect(formatBytes(2147483648)).toBe("2 GB");
     });
 
     it("handles zero", () => {
-        expect(formatGB(0)).toBe("0.00 GB");
-    });
-
-    it("handles decimal MB values", () => {
-        expect(formatGB(1536)).toBe("1.50 GB");
-    });
-
-    it("handles large values", () => {
-        expect(formatGB(1048576)).toBe("1024.00 GB");
+        expect(formatBytes(0)).toBe("0 B");
     });
 });
 
