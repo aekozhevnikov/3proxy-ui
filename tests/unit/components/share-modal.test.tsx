@@ -13,7 +13,8 @@ jest.mock("@/src/core/toast-utils", () => ({
 jest.mock("@/src/core/proxy-config", () => ({
     generateHttpConfig: jest.fn().mockResolvedValue("http://user:pass@localhost:1234"),
     generateHttpsConfig: jest.fn().mockResolvedValue("https://user:pass@localhost:1234"),
-    generateSocksConfig: jest.fn().mockResolvedValue("socks5://user:pass@localhost:1234")
+    generateSocksConfig: jest.fn().mockResolvedValue("socks5://user:pass@localhost:1234"),
+    fetchProxyConfig: jest.fn().mockResolvedValue({ domain: "localhost", httpPort: "3128", socksPort: "1080" })
 }));
 
 const mockWriteText = jest.fn().mockResolvedValue(undefined);

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CheckIcon, ClipboardIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-import { generateHttpConfig, generateHttpsConfig, generateSocksConfig } from "@/src/core/proxy-config";
+import { generateHttpConfig, generateHttpsConfig, generateSocksConfig, fetchProxyConfig } from "@/src/core/proxy-config";
 import { showToast } from "@/src/core/toast-utils";
 
 interface ShareModalProps {
@@ -88,9 +88,10 @@ export default function ShareModal({ username, password, isOpen, onClose }: Shar
     };
 
     const copyProxyData = async () => {
+        const config = await fetchProxyConfig();
         const proxyData = [
-            "IP: ",
-            "PORTS: HTTP: 3128, HTTPS: 3128, SOCKS5: 1080",
+            `IP: ${config.domain}`,
+            `PORTS: HTTP: ${config.httpPort}, HTTPS: ${config.httpPort}, SOCKS5: ${config.socksPort}`,
             `USERNAME: ${username}`,
             `PASSWORD: ${password}`
         ].join("\n");
