@@ -31,7 +31,7 @@ export async function readSyncState(): Promise<SyncState> {
     let content: string;
 
     try {
-        content = await fs.readFile(SYNC_INFO_FILE, "utf-8");
+        content = await fs.readFile(SYNC_INFO_FILE /*turbopackIgnore: true*/, "utf-8");
     } catch {
         return emptySyncState();
     }
