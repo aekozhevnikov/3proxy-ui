@@ -155,14 +155,14 @@ export default function UserMobileCard({
                     <div className="flex justify-between text-[10px] gap-1">
                         <span className="text-gray-500 dark:text-gray-400 shrink-0">Data Usage:</span>
                         <span className="text-gray-900 dark:text-white text-right break-all">
-                            {formatGB(Number(user.dataUsed))}
+                            {formatBytes(Number(user.dataUsed))}
                         </span>
                     </div>
                     <div className="flex justify-between text-[10px] gap-1">
                         <span className="text-gray-500 dark:text-gray-400 shrink-0">Data Limit:</span>
                         <span className="text-gray-900 dark:text-white flex items-center gap-0.5 justify-end">
                             {user.dataLimit ? (
-                                formatGB(Number(user.dataLimit))
+                                formatBytes(Number(user.dataLimit))
                             ) : (
                                 <LucideInfinity className="h-2.5 w-2.5" />
                             )}

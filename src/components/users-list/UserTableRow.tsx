@@ -50,11 +50,11 @@ export default function UserTableRow({
                     </span>
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm text-center">
-                    {formatGB(Number(user.dataUsed))}
+                    {formatBytes(Number(user.dataUsed))}
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm">
                     <div className="flex items-center justify-center">
-                        {user.dataLimit ? formatGB(Number(user.dataLimit)) : <LucideInfinity className="h-4 w-4" />}
+                        {user.dataLimit ? formatBytes(Number(user.dataLimit)) : <LucideInfinity className="h-4 w-4" />}
                     </div>
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400 hidden lg:table-cell text-sm">
@@ -110,14 +110,14 @@ export default function UserTableRow({
                             <div className="flex items-center gap-1">
                                 <span className="text-gray-500 dark:text-gray-400">Data Usage:</span>
                                 <span className="font-medium text-gray-900 dark:text-white">
-                                    {formatGB(Number(user.dataUsed))}
+                                    {formatBytes(Number(user.dataUsed))}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1">
                                 <span className="text-gray-500 dark:text-gray-400">Data Limit:</span>
                                 <span className="font-medium text-gray-900 dark:text-white flex items-center gap-1">
                                     {user.dataLimit ? (
-                                        formatGB(Number(user.dataLimit))
+                                        formatBytes(Number(user.dataLimit))
                                     ) : (
                                         <LucideInfinity className="h-4 w-4" />
                                     )}

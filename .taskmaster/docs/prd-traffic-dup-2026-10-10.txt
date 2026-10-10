@@ -1,0 +1,36 @@
+# PRD: Fix traffic duplication and incorrect username mapping
+Version: 1.0 | Date: 2026-10-10 | Author: Claude
+
+## 1. Context
+Traffic accounting via maintenance-job duplicates bytes when log files rotate (inodes change) or when traffic-sync.json is rebuilt. parseTrafficLogs extracts IP instead of username for text-format logs, so processTrafficLimits looks up wrong DB rows or skips them. New users inherit previously accumulated dataUsed because traffic is aggregated globally, not per-user from log keys.
+
+## 2. Goal
+Eliminate duplicate traffic counts and ensure traffic is mapped to the correct proxy username, not IP. Each new user must start with dataUsed = 0 in DB.
+
+## 3. Non-goals
+No refactoring of maintenance scheduler interval; no change to 3proxy log format; no web-UI redesign.
+
+## 4. Functional requirements
+FR-1. traffic-parser.ts must extract username (not IP) from text-format 3proxy log lines for accurate DB lookup — Acceptance: parseTrafficLogs returns Map with username keys matching proxyUser.username.
+FR-2. maintenance-job.ts must not reset offsets on file rotation; offsets must stay correct across inode changes — Acceptance: readNewLogContent reads from stored offset and does not re-read already accounted bytes.
+FR-3. DB update in maintenance.ts must only add traffic for usernames present in trafficMap — Acceptance: new proxyUser has dataUsed = 0 after creation, and after test traffic only that user's dataUsed increases.
+
+## 5. Non-functional requirements
+NFR-1. Backward compatibility with existing traffic-sync.json format.
+NFR-2. No new external dependencies.
+
+## 6. Constraints
+Docker-compose.dev.yml uses volume 3proxy-data; must work inside container with /etc/3proxy logs.
+
+## 7. Affected modules
+- src/lib/traffic-parser.ts (line 224-233: text parsing)
+- src/lib/maintenance-job.ts (line 68: seedOffsets logic)
+- src/lib/maintenance.ts (line 63-86: DB update loop)
+
+## 8. Risks and mitigations
+Risk: fixing parser breaks existing JSON-format parsing. Mitigation: keep JSON branch untouched; only edit text fallback.
+
+## 9. Definition of done
+- format:check passes
+- test:unit passes (568/568)
+- Manual check: new user starts at 0, after proxy test increases only that user
