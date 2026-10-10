@@ -50,4 +50,5 @@ coverage
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
+3proxy-ui

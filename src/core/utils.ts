@@ -8,8 +8,8 @@ export function createPageTitle(title?: string): string {
     return `${title} - ${baseTitle}`;
 }
 
-export function formatGB(mb: number): string {
-    return `${(mb / 1024).toFixed(2)} GB`;
+export function formatGB(bytes: number): string {
+    return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
 export function formatDate(date: Date | string | null | undefined): string {

@@ -17,7 +17,7 @@ services:
       context: .
     container_name: 3proxy-ui
     ports:
-      - "3001:3000"   # Web UI
+      - "3000:3000"   # Web UI
     environment:
       - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in .env, at least 32 characters}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
@@ -41,7 +41,7 @@ services:
       - PROXY_HOST=3proxy
       - TRAFFIC_SYNC_INTERVAL=*/1 * * * *
     volumes:
-      - 3proxy-data:/app/data
+      - ./3proxy-ui:/app/data
       - ./3proxy:/etc/3proxy
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped

@@ -230,7 +230,8 @@ export function parseTrafficLogs(lines: string[]): TrafficParseResult {
             sent = parseInt(match[3], 10);
             received = parseInt(match[4], 10);
 
-            username = ipPort.includes(":") ? ipPort.split(":")[0] : ipPort;
+            const userPath = line.match(/"(?:GET|CONNECT|POST)\s+([a-zA-Z][a-zA-Z0-9.-]*)(?::\d+)?/);
+            username = userPath ? userPath[1] : ipPort.includes(":") ? ipPort.split(":")[0] : ipPort;
         }
 
         if (!username) continue;

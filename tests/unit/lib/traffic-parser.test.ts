@@ -93,9 +93,9 @@ describe("parseTrafficLogs", () => {
 
         const result = parseTrafficLogs(lines);
 
-        expect(result.trafficMap.has("192.168.1.100")).toBe(true);
-        expect(result.trafficMap.get("192.168.1.100")?.sent).toBe(1234);
-        expect(result.trafficMap.get("192.168.1.100")?.received).toBe(5678);
+        expect(result.trafficMap.has("google.com")).toBe(true);
+        expect(result.trafficMap.get("google.com")?.sent).toBe(1234);
+        expect(result.trafficMap.get("google.com")?.received).toBe(5678);
     });
 });
 

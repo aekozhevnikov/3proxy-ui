@@ -37,16 +37,7 @@ export async function update3proxyConfig(): Promise<{ success: boolean; message:
         fs.mkdirSync(path.dirname(proxyauthPath), { recursive: true });
         fs.writeFileSync(proxyauthPath, lines.join("\n") + "\n", "utf8");
 
-        console.debug(`[config] File content preview:`);
-        lines.forEach((line, i) => {
-            // Show first 5 lines, and also show deactivated users
-            if (i < 5 || !users[i].isActive) {
-                console.debug(`[config]   ${line}`);
-            }
-        });
-        if (lines.length > 5) {
-            console.debug(`[config]   ... and ${lines.length - 5} more lines`);
-        }
+        // Do NOT log file contents (contains hashed passwords); only log count
 
         // Try to restart 3proxy Docker container for immediate effect
         try {
