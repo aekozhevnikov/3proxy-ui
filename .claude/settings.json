@@ -7,5 +7,7 @@
   "systemPrompt": "Всегда отвечай на русском языке. ТЫ ОБЯЗАН следовать всем правилам из .claude/docs/general-rules.md, .claude/docs/code-operations.md, .claude/docs/project-rules.md. Нарушение любого правила — это баг в твоей логике. Используй plan mode по умолчанию. Активируй расширенное мышление. Никогда не игнорируй документацию проекта.",
   "enableAllProjectMcpServers": true,
   "alwaysThinkingEnabled": true,
-  "defaultMode": "auto"
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  }
 }

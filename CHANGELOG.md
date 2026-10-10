@@ -7,10 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.3] - 2026-10-10
+## [0.5.4] - 2026-10-10
 
 ### Fixed
-- ShareModal copy proxy data uses runtime fetchProxyConfig instead of hardcoded values; test mock updated
+- ShareModal copy proxy data uses runtime fetchProxyConfig instead of hardcoded values; test mock updated; formatting fixed
 
 ## [0.5.2] - 2026-09-27
 
@@ -330,7 +330,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - Initial version
 
-[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.3...HEAD
+[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.4...HEAD
+[0.5.4]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.0...v0.5.1

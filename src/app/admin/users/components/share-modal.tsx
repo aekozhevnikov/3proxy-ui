@@ -3,7 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { CheckIcon, ClipboardIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-import { generateHttpConfig, generateHttpsConfig, generateSocksConfig, fetchProxyConfig } from "@/src/core/proxy-config";
+import {
+    generateHttpConfig,
+    generateHttpsConfig,
+    generateSocksConfig,
+    fetchProxyConfig
+} from "@/src/core/proxy-config";
 import { showToast } from "@/src/core/toast-utils";
 
 interface ShareModalProps {
