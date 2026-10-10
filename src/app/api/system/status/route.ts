@@ -47,12 +47,12 @@ export async function GET() {
         let proxyauthModified: string | null = null;
 
         try {
-            const stat = await fs.stat(proxyauthPath);
+            const stat = await fs.stat(proxyauthPath /*turbopackIgnore: true*/);
 
             proxyauthSize = stat.size;
             proxyauthModified = stat.mtime.toISOString();
 
-            const content = await fs.readFile(proxyauthPath, "utf8");
+            const content = await fs.readFile(/*turbopackIgnore: true*/ proxyauthPath, "utf8");
 
             userCount = content.split("\n").filter((line: string) => {
                 line = line.trim();

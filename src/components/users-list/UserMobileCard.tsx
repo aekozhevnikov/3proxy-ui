@@ -3,7 +3,7 @@
 import { Infinity as LucideInfinity } from "lucide-react";
 
 import { ProxyUser } from "@/src/core/definitions";
-import { formatDate, formatGB } from "@/src/core/utils";
+import { formatDate, formatBytes } from "@/src/core/utils";
 
 interface UserMobileCardProps {
     user: ProxyUser;

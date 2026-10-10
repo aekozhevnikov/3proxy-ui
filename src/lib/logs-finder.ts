@@ -19,7 +19,7 @@ export async function findLogsDir(): Promise<string | null> {
         if (!dir) continue;
         try {
             await fs.access(dir);
-            const files = await fs.readdir(dir);
+            const files = await fs.readdir(dir /*turbopackIgnore: true*/);
             const logFiles = files.filter((file) => file.startsWith("3proxy.log") || file.endsWith(".log"));
 
             if (logFiles.length > 0) {

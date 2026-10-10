@@ -83,13 +83,15 @@ export async function getLogFiles(dateRange?: { start?: string; end?: string }):
     const files: string[] = [];
 
     try {
-        if (!fs.existsSync(LOGS_DIR)) {
+        if (!fs.existsSync(LOGS_DIR /*turbopackIgnore: true*/)) {
             console.warn("Logs directory does not exist:", LOGS_DIR);
 
             return files;
         }
 
-        const allFiles = fs.readdirSync(LOGS_DIR).filter((f: string) => f.startsWith("3proxy.log"));
+        const allFiles = fs
+            .readdirSync(LOGS_DIR /*turbopackIgnore: true*/)
+            .filter((f: string) => f.startsWith("3proxy.log"));
 
         allFiles.sort().reverse();
 
@@ -208,7 +210,7 @@ export async function getLogs(filter: LogFilter = {}): Promise<{
     let collected = 0;
 
     for (const file of files) {
-        const filePath = path.join(LOGS_DIR, file);
+        const filePath = path.join(LOGS_DIR /*turbopackIgnore: true*/, file);
         const lines = readLogFile(filePath);
 
         for (let i = lines.length - 1; i >= 0; i--) {
@@ -282,7 +284,7 @@ export async function getLogStats(): Promise<{
         const filePath = path.join(LOGS_DIR, file);
 
         try {
-            const stat = fs.statSync(filePath);
+            const stat = fs.statSync(filePath /*turbopackIgnore: true*/);
 
             totalSize += stat.size;
 

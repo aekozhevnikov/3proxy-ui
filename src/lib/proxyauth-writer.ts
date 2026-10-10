@@ -46,7 +46,7 @@ export async function updateProxyauthFile(): Promise<ProxyauthUpdateResult> {
     let previous = "";
 
     try {
-        previous = await fs.readFile(PROXYAUTH_PATH, "utf-8");
+        previous = await fs.readFile(PROXYAUTH_PATH /*turbopackIgnore: true*/, "utf-8");
     } catch {
         // No file yet, which counts as changed.
     }
