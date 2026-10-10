@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.7] - 2026-10-11
+
+### Fixed
+- `formatGB` corrected to divide by 1024³ (bytes to GB); replaced with `formatBytes` in user table components
+- `traffic-parser.ts` text-format username extraction fixed
+- `traffic-sync.json` filesystem access annotated with `turbopackIgnore`; Turbopack build warnings suppressed
+- `src/core/actions/config.ts` removed `.proxyauth` content preview from debug logs (security)
+
 ## [0.5.4] - 2026-10-10
 
 ### Fixed
@@ -330,7 +338,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - Initial version
 
-[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.4...HEAD
+[Unreleased]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.7...HEAD
+[0.5.7]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.4...v0.5.7
 [0.5.4]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/aekozhevnikov/3proxy-ui/compare/v0.5.1...v0.5.2
