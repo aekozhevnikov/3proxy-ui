@@ -434,5 +434,369 @@
         "master"
       ]
     }
+  },
+  "rewrite/go-backend": {
+    "tasks": [
+      {
+        "id": "G1",
+        "title": "Create Go module and server entry",
+        "description": "Create go.mod, main.go with HTTP router and /health endpoint. English description. Tags: go,backend.",
+        "status": "done",
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G2",
+        "title": "Port DB layer to Go",
+        "description": "Replace Prisma layer with Go SQL/ORM access, connection setup, migrations folder. Tags: go,db.",
+        "status": "done",
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G3",
+        "title": "Port proxy and core services",
+        "description": "Translate src/proxy.ts and src/core/ logic to Go packages (internal/proxy, internal/core). Tags: go,proxy.",
+        "status": "done",
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G4",
+        "title": "Add Go tests",
+        "description": "Write tests for main and proxy packages; go test ./... passes. Tags: go,test.",
+        "status": "done",
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G5",
+        "title": "Update Docker and compose for Go",
+        "description": "Update Dockerfile (Go stage) and docker-compose.yml; build passes. Tags: go,docker.",
+        "status": "done",
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G6",
+        "title": "Port auth layer (login/session/logout/jwt) to Go",
+        "description": "Translate src/app/api/auth/* and src/core/session.ts to Go (internal/auth). JWT verify, session cookie, password hash check.",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [],
+        "tags": [
+          "go",
+          "auth"
+        ],
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G7",
+        "title": "Port admin/users CRUD + share + test-proxy",
+        "description": "Translate src/app/api/admin/users/[id]/route.ts, share/route.ts, users/route.ts, test-proxy/route.ts to Go internal/users.",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "G6"
+        ],
+        "tags": [
+          "go",
+          "users"
+        ],
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G8",
+        "title": "Port config routes (generate/reload/status)",
+        "description": "Translate src/app/api/config/* to Go internal/config; proxyauth writer; 3proxy reload.",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "G6"
+        ],
+        "tags": [
+          "go",
+          "config"
+        ],
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G9",
+        "title": "Port logs + traffic + system/status",
+        "description": "Translate src/app/api/logs, users/traffic, system/status, users/maintenance to Go.",
+        "status": "done",
+        "priority": "medium",
+        "dependencies": [
+          "G6"
+        ],
+        "tags": [
+          "go",
+          "logs"
+        ],
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G10",
+        "title": "Port proxy.ts middleware to Go",
+        "description": "Replicate src/proxy.ts (JWT verify + redirect + matcher) in internal/proxy using RequireAdmin.",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "G6"
+        ],
+        "tags": [
+          "go",
+          "proxy"
+        ],
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G11",
+        "title": "Port Prisma schema + DB access",
+        "description": "Port prisma/schema.prisma models to Go + sqlc/migrations; implement DB connection from env.",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "G2"
+        ],
+        "tags": [
+          "go",
+          "db"
+        ],
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "G12",
+        "title": "Update Dockerfile + docker-compose for full Go app",
+        "description": "Replace TS Dockerfile stage with Go multi-stage build; update compose to run go-backend.",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "G11"
+        ],
+        "tags": [
+          "go",
+          "docker"
+        ],
+        "details": "Completed: full DB layer (G11), Dockerfile (G12), all API routes ported, auth working, tests pass, build OK."
+      },
+      {
+        "id": "F1",
+        "title": "Create frontend folder with React+Vite+TS+Tailwind",
+        "description": "Initialize frontend/ folder with React 18, Vite 5, TypeScript, Tailwind 3, ESLint, Prettier. Configure Vite output to ../internal/web/dist/.",
+        "status": "in_progress",
+        "priority": "high",
+        "dependencies": [],
+        "tags": [
+          "frontend",
+          "vite",
+          "react"
+        ]
+      },
+      {
+        "id": "F2",
+        "title": "Migrate Login page",
+        "description": "Migrate Next.js login page to React component with form validation, JWT handling, redirect to dashboard.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F1"
+        ],
+        "tags": [
+          "frontend",
+          "auth"
+        ]
+      },
+      {
+        "id": "F3",
+        "title": "Migrate Dashboard page",
+        "description": "Migrate dashboard with stats cards, traffic overview, user summary, system status. Use React Query for data fetching.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F1"
+        ],
+        "tags": [
+          "frontend",
+          "dashboard"
+        ]
+      },
+      {
+        "id": "F4",
+        "title": "Migrate Users management (CRUD)",
+        "description": "Migrate users list, create/edit modal, delete, share modal, test proxy. Use react-hook-form + zod validation.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F1"
+        ],
+        "tags": [
+          "frontend",
+          "users"
+        ]
+      },
+      {
+        "id": "F5",
+        "title": "Migrate Config page",
+        "description": "Migrate config generate/reload/status, proxy auth file viewer.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F1"
+        ],
+        "tags": [
+          "frontend",
+          "config"
+        ]
+      },
+      {
+        "id": "F5b",
+        "title": "Migrate Logs page",
+        "description": "Migrate logs viewer with filtering, pagination, download.",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "F1"
+        ],
+        "tags": [
+          "frontend",
+          "logs"
+        ]
+      },
+      {
+        "id": "F6",
+        "title": "Migrate Profile page",
+        "description": "Migrate profile with password change, 2FA settings.",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "F1"
+        ],
+        "tags": [
+          "frontend",
+          "profile"
+        ]
+      },
+      {
+        "id": "F7",
+        "title": "Configure Vite for go:embed output",
+        "description": "Update vite.config.ts to output to ../internal/web/dist/, configure proxy for /api to Go backend in dev.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F1"
+        ],
+        "tags": [
+          "frontend",
+          "vite"
+        ]
+      },
+      {
+        "id": "F8",
+        "title": "Add go:embed in Go for embedded dist",
+        "description": "Create internal/web/dist.go with //go:embed dist, export EmbeddedDist() fs.FS. Update main.go to serve embedded files for non-API routes.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F7"
+        ],
+        "tags": [
+          "go",
+          "embed"
+        ]
+      },
+      {
+        "id": "F9",
+        "title": "Update main.go to serve SPA",
+        "description": "Add static file handler for embedded dist, fallback to index.html for SPA routing (non-API routes). API routes take priority.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F8"
+        ],
+        "tags": [
+          "go",
+          "spa"
+        ]
+      },
+      {
+        "id": "F10",
+        "title": "Update Dockerfile for single binary build",
+        "description": "Multi-stage: frontend-builder (npm run build) -> go-builder (CGO_ENABLED=1 go build with embedded dist) -> alpine final. Remove supervisor.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F9"
+        ],
+        "tags": [
+          "docker",
+          "build"
+        ]
+      },
+      {
+        "id": "F11",
+        "title": "Update entrypoint/DockerEntrypoint for single binary",
+        "description": "Simplify entrypoint to run single binary, run migrations, seed admin, start server. Remove supervisor config.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F10"
+        ],
+        "tags": [
+          "docker",
+          "entrypoint"
+        ]
+      },
+      {
+        "id": "F12",
+        "title": "Remove Next.js files and dependencies",
+        "description": "Remove src/app/, src/components/ (Next.js), next.config.js, root package.json Next.js deps. Keep Go backend deps.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F9"
+        ],
+        "tags": [
+          "cleanup"
+        ]
+      },
+      {
+        "id": "F13",
+        "title": "Add shared UI components and hooks",
+        "description": "Create reusable components (Button, Input, Modal, Table, Card, Toast) and hooks (useAuth, useApi, useToast).",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "F1"
+        ],
+        "tags": [
+          "frontend",
+          "components"
+        ]
+      },
+      {
+        "id": "F14",
+        "title": "Add API client and React Query setup",
+        "description": "Create api/client.ts with axios/fetch wrapper, React Query provider, auth interceptors, error handling.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F1"
+        ],
+        "tags": [
+          "frontend",
+          "api"
+        ]
+      },
+      {
+        "id": "F15",
+        "title": "Run tests and verify build",
+        "description": "Run frontend tests (vitest), Go tests, Docker build, integration test. Verify single binary serves API and SPA.",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "F12"
+        ],
+        "tags": [
+          "test",
+          "build"
+        ]
+      }
+    ]
   }
 }

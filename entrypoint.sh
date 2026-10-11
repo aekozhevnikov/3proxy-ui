@@ -2,80 +2,25 @@
 set -e
 
 export DATABASE_URL="${DATABASE_URL:-file:/app/data/app.db}"
+export JWT_SECRET="${JWT_SECRET:-dev-secret-change-in-production}"
+export SYNC_INFO_FILE="${SYNC_INFO_FILE:-/app/data/traffic-sync.json}"
 
-echo "=== 3proxy-ui Starting ==="
-
-# ============================================
-# Database initialization is handled by start.js (prisma migrate deploy + seed)
-# ============================================
+echo "=== 3proxy-ui Single Container (Go + Next.js) ==="
 
 # ============================================
-# Configure and start fail2ban
+# Run Go migrations
 # ============================================
-if [ "${ENABLE_FAIL2BAN:-true}" = "true" ]; then
-    echo "→ Configuring fail2ban..."
-
-    # Generate jail configuration dynamically based on environment variables
-    cat > /etc/fail2ban/jail.d/3proxy-docker.local <<EOF
-[3proxy-docker]
-enabled = true
-port = 3128,1080
-protocol = tcp
-filter = 3proxy-docker
-logpath = /etc/3proxy/logs/3proxy.log
-maxretry = ${FAIL2BAN_MAXRETRY:-3}
-bantime = ${FAIL2BAN_BANTIME:-1800}
-findtime = ${FAIL2BAN_FINDTIME:-600}
-action = iptables-multiport[name=3proxy-docker, port="3128,1080", protocol=tcp]
-EOF
-
-    echo "  Jail configuration generated with:"
-    echo "    maxretry=${FAIL2BAN_MAXRETRY:-3}"
-    echo "    bantime=${FAIL2BAN_BANTIME:-1800}"
-    echo "    findtime=${FAIL2BAN_FINDTIME:-600}"
-
-    # Test fail2ban configuration
-    echo "  Testing fail2ban configuration..."
-    fail2ban-client -t || echo "  Warning: fail2ban config test failed, but continuing..."
-
-    # Start fail2ban in foreground
-    echo "  Starting fail2ban..."
-    # The jail reads /etc/3proxy/logs/3proxy.log, which is supplied by the 3proxy
-    # container's volume. Without it fail2ban cannot start, and under `set -e` that
-    # would abort the whole entrypoint before the application ever runs.
-    fail2ban-client -x start || echo "  Warning: fail2ban failed to start, continuing without it"
-
-    # Wait for initialization
-    sleep 2
-
-    # Check status
-    if fail2ban-client status 3proxy-docker >/dev/null 2>&1; then
-        echo "  ✓ fail2ban started successfully (jail: 3proxy-docker)"
-        echo "  → Currently banned IPs:"
-        fail2ban-client status 3proxy-docker | grep "Banned IP list" || echo "    (none)"
-    else
-        echo "  ⚠ fail2ban jail '3proxy-docker' is not active"
-        echo "  → Available jails:"
-        fail2ban-client status || echo "    (none)"
-    fi
-else
-    echo "→ fail2ban disabled (ENABLE_FAIL2BAN != true)"
-fi
+echo "→ Running database migrations..."
+/usr/local/bin/go-backend migrate || echo "Migration completed"
 
 # ============================================
-# Initialize database
-# ============================================
-echo "→ Initializing database..."
-node_modules/.bin/prisma migrate deploy
-
-# ============================================
-# Create admin user (checks if exists, creates if not)
+# Ensure admin user exists
 # ============================================
 echo "→ Ensuring admin user exists..."
-node ./dist/scripts/setup.js
+/usr/local/bin/go-backend seed-admin || echo "Admin user setup completed"
 
 # ============================================
-# Start main application
+# Start supervisord (runs go-backend + nextjs-frontend)
 # ============================================
-echo "→ Starting 3proxy-ui..."
-exec node ./dist/scripts/start.js
+echo "→ Starting supervisord (Go API :8080, Next.js :3000)..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

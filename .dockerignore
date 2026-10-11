@@ -59,9 +59,11 @@ scripts/screenshots.cjs
 dist
 .next
 out
-tests
+frontend/tests
 screenshots
 .github
 .claude
-data
+
 screenshots
+dev.db*
+go-backend

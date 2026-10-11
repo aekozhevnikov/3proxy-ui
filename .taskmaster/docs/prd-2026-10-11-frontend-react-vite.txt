@@ -1,0 +1,59 @@
+# PRD: Frontend Migration to React + Vite with go:embed
+Version: 1.0 | Date: 2026-10-11 | Author: Claude
+
+## 1. Context
+Current 3proxy-ui project uses Next.js 16 for the frontend (src/app/, src/components/) with SSR/SSG. The Go backend (rewrite/go-backend branch) is complete with all API routes ported. The goal is to replace Next.js with React + Vite SPA (like 3x-ui pattern) embedded into the Go binary via go:embed, achieving a single Go binary deployment.
+
+## 2. Goal
+A React 18 + Vite 5 SPA frontend in a separate `frontend/` folder, built into `internal/web/dist/` and embedded into the Go binary via `go:embed`, with a single Go binary producing both API (port 8080) and serving the SPA (port 3000 via Go static file server or embedded dist).
+
+## 3. Non-goals
+- Do NOT keep Next.js (src/app/, src/components/ for Next.js)
+- Do NOT keep SSR/SSG - SPA only
+- Do NOT use supervisor/Docker for frontend - single Go binary serves everything
+- Do NOT change Go backend API routes (already done)
+
+## 4. Functional requirements
+FR-1. Create `frontend/` folder with React 18 + Vite 5 + TypeScript + Tailwind - AC: `npm run build` outputs to `../internal/web/dist/`
+FR-2. Migrate all Next.js pages/components to React SPA (Admin dashboard, Users, Config, Logs, Profile) - AC: All UI features work identically
+FR-3. Configure Vite to output to `../internal/web/dist/` for go:embed - AC: Build outputs to correct path
+FR-4. Add go:embed in Go to serve embedded dist - AC: Single binary serves both API and SPA
+FR-5. Update Dockerfile to build frontend + Go in multi-stage - AC: Single Docker image produces single binary
+FR-6. Update entrypoint to run single binary - AC: Single process serves both API and SPA
+FR-7. Remove Next.js dependencies and files - AC: No Next.js in dependencies, no src/app/ Next.js routes
+
+## 5. Non-functional requirements
+NFR-1. Single binary size < 50MB (Go + embedded dist)
+NFR-2. Build time < 2 minutes (frontend + Go)
+NFR-3. Hot reload in dev mode (Vite HMR proxying to Go API)
+NFR-4. SPA routing works (Go serves index.html for non-API routes)
+
+## 6. Constraints
+- Go 1.21+, Node 20+, React 18, Vite 5, Tailwind 3
+- Must work in single Docker image (alpine final)
+- go:embed requires Go 1.16+
+- Keep existing Go backend API unchanged
+
+## 7. Affected modules
+- New: `frontend/` (React + Vite app)
+- New: `internal/web/dist.go` (go:embed)
+- Modified: `main.go` (serve static files)
+- Modified: `Dockerfile` (multi-stage build)
+- Modified: `entrypoint.sh` / `DockerEntrypoint.sh`
+- Removed: `src/app/` (Next.js), `src/components/` (Next.js), `next.config.js`, `package.json` (root Next.js)
+
+## 8. Risks and mitigations
+Risk: SPA routing conflicts with API routes -> Mitigation: Go router handles API first, falls back to SPA
+Risk: Large binary size -> Mitigation: Vite code splitting, gzip compression
+Risk: Build complexity -> Mitigation: Clear multi-stage Dockerfile like 3x-ui
+
+## 9. Definition of done
+- [ ] frontend/ folder with React+Vite+TS+Tailwind
+- [ ] All UI pages migrated (Dashboard, Users, Config, Logs, Profile, Login)
+- [ ] Vite outputs to ../internal/web/dist/
+- [ ] go:embed in internal/web/dist.go
+- [ ] main.go serves embedded dist for non-API routes
+- [ ] Dockerfile builds single binary
+- [ ] Single binary runs API + serves SPA
+- [ ] All tests pass (Go + frontend)
+- [ ] Docker builds and runs

@@ -1,0 +1,46 @@
+# PRD: Go Backend Rewrite for 3proxy-ui
+Version: 1.0 | Date: 2026-10-11 | Author: Claude
+
+## 1. Context
+Current 3proxy-ui backend is TypeScript (src/, prisma/, proxy layer) running on main branch. User wants full backend rewritten to Go in a new branch (rewrite/go-backend). Existing frontend (app/, components/) stays untouched.
+
+## 2. Goal
+A working Go backend server (go.mod, main package, DB access, auth, proxy logic) in branch rewrite/go-backend, with tests and updated Docker compose, leaving TypeScript frontend intact.
+
+## 3. Non-goals
+- Do NOT delete or modify TypeScript frontend (app/, components/, styles/)
+- Do NOT commit secrets, .env files, or credentials
+- Do NOT force-push or amend existing main commits
+- Do NOT change user-facing UI behavior
+
+## 4. Functional requirements
+FR-1. Create Go module (go.mod) and server entry (main.go) with HTTP router - AC: go build succeeds; curl /health responds.
+FR-2. Replace Prisma/DB layer with Go SQL/ORM access (connection setup, migrations folder) - AC: DB connection string from env works; schema initialized.
+FR-3. Port proxy/core service logic from src/core/ and src/proxy.ts to Go packages (proxy, core) - AC: same proxy rules applied; tests pass.
+FR-4. Add Go tests (main package and proxy package) - AC: go test ./... passes with >0 cases.
+FR-5. Update docker-compose.yml / Dockerfile for Go build - AC: docker compose build succeeds.
+
+## 5. Non-functional requirements
+NFR-1. Security: no hardcoded secrets; env-based config only.
+NFR-2. Compatibility: branch-based, no changes to main until reviewed.
+NFR-3. Build: go1.21+; standard go fmt / vet clean.
+
+## 6. Constraints
+- Branch: rewrite/go-backend (from main)
+- Language rules: English for PRD, tasks, reports, code comments; Russian for chat/user explanations.
+- Forbidden: rm/unlink, chmod/chown, git push/force-push, destructive file removal.
+- Must pass security-review before final report.
+
+## 7. Affected modules
+- New: go.mod, main.go, internal/proxy/, internal/core/, migrations/, tests/
+- Modified: docker-compose.yml, Dockerfile (Go stage)
+- Unchanged: src/app/, components/, styles/, .claude/ docs
+
+## 8. Risks and mitigations
+Risk: Full rewrite loses existing proxy logic -> mitigate: read src/proxy.ts before writing Go version.
+Risk: DB compatibility -> mitigate: keep same schema, use migrations not raw drop.
+
+## 9. Definition of done
+- Branch exists; go build + go test pass.
+- Security-agent report completed with no Critical findings (or fixed with approval).
+- Final 10-section report delivered in Russian; PRD/task files stay English.
