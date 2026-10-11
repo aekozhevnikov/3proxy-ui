@@ -1,0 +1,111 @@
+# E2E environment for 3proxy-ui.
+# Based on docker-compose.dev.yml: the same services, environment variables and
+# volumes. The only differences are test-specific: renamed containers and volumes,
+# an isolated database, and a build context relative to this file (tests/e2e -> repo root).
+#
+# The 3proxy-ui-e2e and 3proxy-ui-e2e-fail2ban services are never started at the same
+# time: both publish port 3000. Start them selectively:
+#   docker compose -f tests/e2e/docker-compose.e2e.yml up -d 3proxy-ui-e2e
+#   docker compose -f tests/e2e/docker-compose.e2e.yml up -d 3proxy-ui-e2e-fail2ban
+
+services:
+  3proxy:
+    image: 3proxy/3proxy:0.9.5
+    container_name: 3proxy-e2e-3proxy
+    restart: unless-stopped
+    ports:
+      - "3128:3128"
+      - "1080:1080"
+      - "8088:8088"  # admin web panel
+    volumes:
+      - ./test-fixtures/3proxy:/etc/3proxy
+
+  # Traffic, limits, deactivation, scheduler
+  3proxy-ui-e2e:
+    build:
+      context: ../../..
+      dockerfile: ../../../Dockerfile
+    container_name: 3proxy-ui-e2e-test
+    ports:
+      - "3000:3000"   # Web UI
+    environment:
+      - JWT_SECRET=test-secret-key-minimum-32-characters-long
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+      - PROXY_DOMAIN=test.local
+      - HTTP_PORT=3128
+      - SOCKS_PORT=1080
+      - DATABASE_URL=file:/app/data/e2e.db
+      - SYNC_INFO_FILE=/app/data/traffic-sync.json
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - ENABLE_FAIL2BAN=false
+      - LOGS_DIR=/etc/3proxy/logs
+      - PROXYAUTH_PATH=/etc/3proxy/users/.proxyauth
+      - PROXY_CONTAINER_NAME=3proxy-e2e-3proxy
+      - PROXY_HOST=3proxy-e2e-3proxy
+      - TRAFFIC_SYNC_INTERVAL=*/2 * * * *
+    volumes:
+      - e2e_data:/app/data
+      - ./test-fixtures/3proxy:/etc/3proxy
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - 3proxy
+    # On GitHub Actions (Linux) host.docker.internal does not resolve on its own,
+    # and the scheduler reaches the app's own API through it.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    init: true
+
+  # IP blocking via fail2ban: needs iptables and a separate jail volume
+  3proxy-ui-e2e-fail2ban:
+    build:
+      context: ../../..
+      dockerfile: ../../../Dockerfile
+    container_name: 3proxy-ui-e2e-fail2ban
+    ports:
+      - "3000:3000"   # Web UI
+    environment:
+      - JWT_SECRET=test-secret-key-minimum-32-characters-long
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+      - PROXY_DOMAIN=test.local
+      - HTTP_PORT=3128
+      - SOCKS_PORT=1080
+      - DATABASE_URL=file:/app/data/fail2ban.db
+      - SYNC_INFO_FILE=/app/data/traffic-sync.json
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - ENABLE_FAIL2BAN=true
+      - FAIL2BAN_MAXRETRY=2
+      - FAIL2BAN_BANTIME=30
+      - FAIL2BAN_FINDTIME=10
+      - LOGS_DIR=/etc/3proxy/logs
+      - PROXYAUTH_PATH=/etc/3proxy/users/.proxyauth
+      - PROXY_CONTAINER_NAME=3proxy-e2e-3proxy
+      - PROXY_HOST=3proxy-e2e-3proxy
+      - TRAFFIC_SYNC_INTERVAL=*/2 * * * *
+    volumes:
+      - e2e_fail2ban_data:/app/data
+      - ./test-fixtures/3proxy:/etc/3proxy
+      - e2e_fail2ban_jail:/var/lib/fail2ban
+      # docker.sock is deliberately not mounted: the tests in this suite do not
+      # create users and do not reload the 3proxy config, so the code that talks
+      # to Docker (src/core/docker.ts) is never called here. The socket would give
+      # the container full control over the Docker host, which is not needed to
+      # verify bans.
+    depends_on:
+      - 3proxy
+    # fail2ban edits iptables rules, for which NET_ADMIN is enough. Full
+    # privileged grants every capability and device access, which is not needed here.
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    # On GitHub Actions (Linux) host.docker.internal does not resolve on its own,
+    # and the scheduler reaches the app's own API through it.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    init: true
+
+volumes:
+  e2e_data:
+  e2e_fail2ban_data:
+  e2e_fail2ban_jail:
