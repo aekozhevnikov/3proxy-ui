@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { requireAdmin } from "@/src/core/auth";
-import { logger } from "@/src/core/logger";
-import { prisma } from "@/src/prisma/db";
+import { requireAdmin } from "@/core/auth";
+import { logger } from "@/core/logger";
+import { prisma } from "@/prisma/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

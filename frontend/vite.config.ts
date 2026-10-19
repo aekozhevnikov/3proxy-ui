@@ -16,10 +16,19 @@ export default defineConfig({
     base: './',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['@heroui/react', '@heroui/theme'],
-          query: ['@tanstack/react-query'],
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor';
+            }
+            if (id.includes('@heroui')) {
+              return 'ui';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'query';
+            }
+            return 'vendor';
+          }
         },
       },
     },

@@ -1,5 +1,3 @@
-import { randomInt } from "crypto";
-
 import { crypt } from "nano-md5";
 
 // 3proxy's CR type accepts MD5-crypt ($1$) and BLAKE2b-crypt ($3$). It also
@@ -12,10 +10,12 @@ const SALT_ALPHABET = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrs
 const SALT_LENGTH = 8;
 
 function randomSalt(): string {
-    let salt = "";
+    const values = new Uint8Array(SALT_LENGTH);
+    crypto.getRandomValues(values);
 
+    let salt = "";
     for (let i = 0; i < SALT_LENGTH; i++) {
-        salt += SALT_ALPHABET[randomInt(SALT_ALPHABET.length)];
+        salt += SALT_ALPHABET[values[i] % SALT_ALPHABET.length];
     }
 
     return salt;

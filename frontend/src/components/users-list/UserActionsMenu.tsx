@@ -2,7 +2,7 @@
 
 import { PencilIcon, PlayIcon, ShareIcon, TrashIcon } from "@heroicons/react/24/outline";
 
-import { ProxyUser } from "@/src/core/definitions";
+import { ProxyUser } from "@/core/definitions";
 
 interface UserActionsMenuProps {
     user: ProxyUser;

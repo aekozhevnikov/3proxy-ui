@@ -1,12 +1,12 @@
 "use client";
 
 import { Accordion, AccordionItem, Button, Modal } from "@heroui/react";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { usePress } from "@react-aria/interactions";
 
-import { donationAddresses } from "@/src/core/donation";
-import useQrCode from "@/src/hooks/use-qr-code";
+import { donationAddresses } from "@/core/donation";
+import useQrCode from "@/hooks/use-qr-code";
 
 interface Props {
     disclosure: {
@@ -63,7 +63,7 @@ export default function DonationModal({ disclosure }: Props) {
                                                 </Accordion.Heading>
                                                 <Accordion.Panel>
                                                     <Accordion.Body>
-                                                        <CryptoItem _name={name} address={address!} />
+                                                        <CryptoItem address={address!} />
                                                     </Accordion.Body>
                                                 </Accordion.Panel>
                                             </AccordionItem>
@@ -92,7 +92,7 @@ export default function DonationModal({ disclosure }: Props) {
     );
 }
 
-function CryptoItem({ _name, address }: { _name: string; address: string }) {
+function CryptoItem({ address }: { address: string }) {
     const qrCodeContainerRef = useRef<HTMLDivElement>(null);
     const [copied, setCopied] = useState(false);
 

@@ -4,16 +4,16 @@ import { useMemo } from "react";
 
 import ShareModal from "./share-modal.tsx";
 
-import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/src/core/definitions";
-import { useUsers } from "@/src/hooks/useUsers";
-import { useUserModals } from "@/src/hooks/useUserModals";
-import { useUsersActions } from "@/src/hooks/useUsersActions";
-import UserHeader from "@/src/components/users-list/UserHeader";
-import UserDesktopTable from "@/src/components/users-list/UserDesktopTable";
-import UserMobileCard from "@/src/components/users-list/UserMobileCard";
-import UserEmptyState from "@/src/components/users-list/UserEmptyState";
-import DeleteConfirmModal from "@/src/components/users-list/DeleteConfirmModal";
-import UserModal from "@/src/components/users-list/UserModal";
+import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/core/definitions";
+import { useUsers } from "@/hooks/useUsers";
+import { useUserModals } from "@/hooks/useUserModals";
+import { useUsersActions } from "@/hooks/useUsersActions";
+import UserHeader from "@/components/users-list/UserHeader";
+import UserDesktopTable from "@/components/users-list/UserDesktopTable";
+import UserMobileCard from "@/components/users-list/UserMobileCard";
+import UserEmptyState from "@/components/users-list/UserEmptyState";
+import DeleteConfirmModal from "@/components/users-list/DeleteConfirmModal";
+import UserModal from "@/components/users-list/UserModal";
 
 interface UsersListProps {
     users?: ProxyUser[];

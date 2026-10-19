@@ -1,14 +1,27 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 import ProfileForm from "./components/profile-form.tsx";
 
-import { resolveAdmin } from "@/src/core/auth";
+export default function ProfilePage() {
+    const { isAuthenticated, isLoading, username } = useAuth();
+    const navigate = useNavigate();
 
-export default async function ProfilePage() {
-    const admin = await resolveAdmin();
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            navigate("/login", { replace: true });
+        }
+    }, [isAuthenticated, isLoading, navigate]);
 
-    if (!admin) {
-        redirect("/login");
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+            </div>
+        );
     }
 
     return (
@@ -19,7 +32,7 @@ export default async function ProfilePage() {
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6">
-                <ProfileForm currentUsername={admin.username} />
+                <ProfileForm currentUsername={username || ""} />
             </div>
         </div>
     );

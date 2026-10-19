@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 
-import { prisma } from "@/src/prisma/db";
+import { prisma } from "@/prisma/db";
 import { generatePassword } from "@src/core/password-hash";
 
 interface AdminUser {

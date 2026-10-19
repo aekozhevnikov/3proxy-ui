@@ -1,9 +1,9 @@
-import type { LogType } from "@/src/core/definitions";
+import type { LogType } from "@/core/definitions";
 
 import { NextRequest, NextResponse } from "next/server";
 
-import { getLogs, getAvailableLogDates, getLogStats } from "@/src/core/log-parser";
-import { requireAdmin } from "@/src/core/auth";
+import { getLogs, getAvailableLogDates, getLogStats } from "@/core/log-parser";
+import { requireAdmin } from "@/core/auth";
 
 const VALID_LOG_TYPES: ReadonlySet<string> = new Set(["all", "PROXY", "SOCKS", "ADMIN"]);
 

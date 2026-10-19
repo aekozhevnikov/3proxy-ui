@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
-import { app } from "@/src/core/config";
-import { prisma } from "@/src/prisma/db";
-import { SessionPayload } from "@/src/core/definitions";
+import { app } from "@/core/config";
+import { prisma } from "@/prisma/db";
+import { SessionPayload } from "@/core/definitions";
 
 function isSessionPayload(payload: unknown): payload is SessionPayload {
     if (typeof payload !== "object" || payload === null) return false;

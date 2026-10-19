@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 export default function HomePage() {
-    const router = useRouter();
+    const navigate = useNavigate();
 
     useEffect(() => {
         // Simple client-side redirect
-        router.replace("/login");
-    }, [router]);
+        navigate("/login", { replace: true });
+    }, [navigate]);
 
     return (
         <div className="min-h-screen flex items-center justify-center">

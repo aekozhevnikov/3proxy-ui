@@ -3,12 +3,10 @@
 import fs from "fs";
 import path from "path";
 
-import { revalidatePath } from "next/cache";
-
-import { prisma } from "@/src/prisma/db";
-import { assertAdmin } from "@/src/core/auth";
-import { proxyauthEntry } from "@/src/core/password-hash";
-import { find3proxyContainer, restart3proxyContainer } from "@/src/core/docker";
+import { prisma } from "@/prisma/db";
+import { assertAdmin } from "@/core/auth";
+import { proxyauthEntry } from "@/core/password-hash";
+import { find3proxyContainer, restart3proxyContainer } from "@/core/docker";
 
 export async function update3proxyConfig(): Promise<{ success: boolean; message: string; userCount: number }> {
     await assertAdmin();

@@ -1,19 +1,43 @@
-import { Metadata } from "next";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import UserForm from "@/app/admin/users/components/user-form";
+import { NewProxyUserRequest, ProxyUser } from "@/core/definitions";
+import { showToast } from "@/core/toast-utils";
 
-import { redirect } from "next/navigation";
+async function handleCreateUser(data: NewProxyUserRequest): Promise<ProxyUser | void> {
+    const response = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
 
-import UserForm from "@/src/app/admin/users/components/user-form";
-import { resolveAdmin } from "@/src/core/auth";
-import { createProxyUser } from "@/src/core/actions/proxy-user";
-import { createPageTitle } from "@/src/core/utils";
+    const responseData = await response.json().catch(() => ({}));
 
-export const metadata: Metadata = {
-    title: createPageTitle("Create Proxy User")
-};
+    if (!response.ok) {
+        throw new Error(responseData.message || "Failed to create user");
+    }
 
-export default async function CreateProxyUserPage() {
-    if (!(await resolveAdmin())) {
-        redirect("/login");
+    showToast(`User "${data.username}" created successfully`, "success");
+    return responseData.user;
+}
+
+function CreateProxyUserPageContent() {
+    const { isAuthenticated, isLoading } = useAuth();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            navigate("/login", { replace: true });
+        }
+    }, [isAuthenticated, isLoading, navigate]);
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+            </div>
+        );
     }
 
     return (
@@ -21,9 +45,13 @@ export default async function CreateProxyUserPage() {
             <div className="max-w-2xl mx-auto">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">Create Proxy User</h1>
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:p-6">
-                    <UserForm onCreate={createProxyUser} />
+                    <UserForm onCreate={handleCreateUser} />
                 </div>
             </div>
         </div>
     );
+}
+
+export default function CreateProxyUserPage() {
+    return <CreateProxyUserPageContent />;
 }

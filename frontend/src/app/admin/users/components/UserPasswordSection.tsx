@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import PasswordInput from "@/src/components/password-input";
+import PasswordInput from "@/components/password-input";
 
 interface UserPasswordSectionProps {
     password: string;

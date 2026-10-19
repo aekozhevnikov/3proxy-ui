@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { SESSION_COOKIE, sessionCookieOptions } from "@/src/core/session-cookie";
+import { SESSION_COOKIE, sessionCookieOptions } from "@/core/session-cookie";
 
 export async function POST() {
     const response = NextResponse.json({ success: true });

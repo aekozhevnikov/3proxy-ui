@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { requireAdmin } from "@/src/core/auth";
-import { prisma } from "@/src/prisma/db";
+import { requireAdmin } from "@/core/auth";
+import { prisma } from "@/prisma/db";
 
 export async function GET() {
     try {

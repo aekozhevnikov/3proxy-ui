@@ -1,13 +1,12 @@
-import { HerouiProvider } from '@heroui/react';
-import { ThemeProvider } from 'next-themes';
-import { ReactNode } from 'react';
+"use client";
+
+import { ThemeProvider } from "@/core/theme/ThemeContext";
+import { ReactNode } from "react";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <HerouiProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        {children}
-      </ThemeProvider>
-    </HerouiProvider>
+    <ThemeProvider defaultTheme="dark">
+      {children}
+    </ThemeProvider>
   );
 }

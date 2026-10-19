@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { currentSession } from "@/src/core/session";
-import { prisma } from "@/src/prisma/db";
+import { currentSession } from "@/core/session";
+import { prisma } from "@/prisma/db";
 
 export interface AdminSession {
     id: number;

@@ -1,11 +1,11 @@
 "use client";
 
-import DashboardHeader from "@/src/app/admin/dashboard/DashboardHeader";
-import SystemStatusCard from "@/src/app/admin/dashboard/SystemStatusCard";
-import UserSummaryCard from "@/src/app/admin/dashboard/UserSummaryCard";
-import TrafficOverviewCard from "@/src/app/admin/dashboard/TrafficOverviewCard";
-import SystemInfoCard from "@/src/app/admin/dashboard/SystemInfoCard";
-import useDashboardData from "@/src/app/admin/dashboard/useDashboardData";
+import DashboardHeader from "./DashboardHeader";
+import SystemStatusCard from "./SystemStatusCard";
+import UserSummaryCard from "./UserSummaryCard";
+import TrafficOverviewCard from "./TrafficOverviewCard";
+import SystemInfoCard from "./SystemInfoCard";
+import useDashboardData from "./useDashboardData";
 
 export default function DashboardPage() {
     const { data, loading, refreshing, error, refresh } = useDashboardData();

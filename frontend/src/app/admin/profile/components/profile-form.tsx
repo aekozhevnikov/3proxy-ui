@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 import PasswordChangeSection from "./PasswordChangeSection.tsx";
 
@@ -10,7 +10,7 @@ interface ProfileFormProps {
 }
 
 export default function ProfileForm({ currentUsername }: ProfileFormProps) {
-    const router = useRouter();
+    const navigate = useNavigate();
     const [username, setUsername] = useState(currentUsername);
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -61,7 +61,7 @@ export default function ProfileForm({ currentUsername }: ProfileFormProps) {
             setConfirmPassword("");
 
             if (username !== currentUsername) {
-                setTimeout(() => router.refresh(), 1500);
+                setTimeout(() => navigate(-1), 1500);
             }
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : "An error occurred";
@@ -120,7 +120,7 @@ export default function ProfileForm({ currentUsername }: ProfileFormProps) {
                 <button
                     className="w-full sm:w-auto px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium rounded-full transition-colors"
                     type="button"
-                    onClick={() => router.back()}
+                    onClick={() => navigate(-1)}
                 >
                     Cancel
                 </button>

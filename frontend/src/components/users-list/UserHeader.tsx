@@ -3,7 +3,7 @@
 import { ArrowPathIcon, ChevronDownIcon, FunnelIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { Button, ButtonGroup, Dropdown, Label } from "@heroui/react";
 
-import { ProxyUser } from "@/src/core/definitions";
+import { ProxyUser } from "@/core/definitions";
 
 type StatusFilter = "all" | "active" | "deactivated";
 

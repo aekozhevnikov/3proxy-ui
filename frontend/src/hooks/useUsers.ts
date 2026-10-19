@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/src/core/definitions";
-import { createProxyUser as createProxyUserAction } from "@/src/core/actions/proxy-user";
-import { showToast } from "@/src/core/toast-utils";
+import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/core/definitions";
+import { showToast } from "@/core/toast-utils";
 
 interface UseUsersOptions {
     fetchEnabled?: boolean;
@@ -62,7 +61,18 @@ export function useUsers(options?: UseUsersOptions): UseUsersResult {
             try {
                 setError(null);
 
-                await createProxyUserAction(data);
+                const response = await fetch("/api/admin/users", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                const responseData = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(responseData.message || "Failed to create user");
+                }
+
                 await fetchUsers();
                 showToast(`User "${data.username}" created successfully`, "success");
             } catch (err) {

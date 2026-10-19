@@ -2,8 +2,8 @@
 
 import { SignalIcon } from "@heroicons/react/24/outline";
 
-import { formatBytes } from "@/src/core/utils";
-import { SystemStatus } from "@/src/app/admin/dashboard/useDashboardData";
+import { formatBytes } from "@/core/utils";
+import { SystemStatus } from "./useDashboardData";
 
 interface SystemStatusCardProps {
     systemStatus: SystemStatus | null;

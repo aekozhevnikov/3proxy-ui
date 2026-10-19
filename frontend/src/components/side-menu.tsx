@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowRightStartOnRectangleIcon, HomeIcon, UserGroupIcon, UserIcon } from "@heroicons/react/24/outline";
-import { useTheme } from "next-themes";
-import Image from "next/image";
+import { useTheme } from "@/core/theme/ThemeContext";
 
 import { HeartFilledIcon, MoonFilledIcon, SunFilledIcon } from "./icons.tsx";
 
-import DonationModal from "@/src/components/modals/donation-modal";
+import DonationModal from "@/components/modals/donation-modal";
 
 const navigation = [
     { name: "Dashboard", href: "/admin/dashboard", icon: HomeIcon },
@@ -19,7 +17,7 @@ const navigation = [
 
 export default function SideMenu() {
     const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
-    const pathname = usePathname();
+    const location = useLocation();
     const { theme, setTheme } = useTheme();
 
     const toggleTheme = () => {
@@ -41,12 +39,11 @@ export default function SideMenu() {
 
             <div className="sticky top-0 z-40 h-screen w-[316px] border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col">
                 <div className="flex h-16 items-center justify-between border-b border-gray-200 dark:border-gray-800 px-6">
-                    <Link className="flex items-center gap-4" href="/admin/dashboard">
-                        <Image
+                    <Link className="flex items-center gap-4" to="/admin/dashboard">
+                        <img
                             alt="3proxy"
                             className="h-10 w-10"
                             height={40}
-                            loading="eager"
                             src="/favicon.svg"
                             width={40}
                         />
@@ -77,18 +74,14 @@ export default function SideMenu() {
 
                 <nav className="mt-6 px-4 flex-1 space-y-2">
                     {navigation.map((item) => {
-                        const isActive = pathname.startsWith(item.href);
+                        const isActive = location.pathname.startsWith(item.href);
                         const Icon = item.icon;
 
                         return (
                             <Link
                                 key={item.name}
-                                className={`flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium transition ${
-                                    isActive
-                                        ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                                        : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-                                }`}
-                                href={item.href}
+                                className={`flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium transition ${isActive ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"}`}
+                                to={item.href}
                             >
                                 <Icon className="h-5 w-5 shrink-0" />
                                 <span className="truncate">{item.name}</span>

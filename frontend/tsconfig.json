@@ -21,5 +21,10 @@
     }
   },
   "include": ["src"],
+  "exclude": [
+    "src/app/api",
+    "src/core",
+    "src/prisma"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

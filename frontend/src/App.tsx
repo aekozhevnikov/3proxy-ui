@@ -1,13 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Layout } from './components/layout/Layout';
-import { LoginPage } from './pages/login/LoginPage';
-import { DashboardPage } from './pages/admin/DashboardPage';
-import { UsersPage } from './pages/users/UsersPage';
-import { ConfigPage } from './pages/admin/ConfigPage';
-import { LogsPage } from './pages/admin/LogsPage';
-import { ProfilePage } from './pages/profile/ProfilePage';
+import Layout from './app/layout.tsx';
+import LoginPage from './app/login/page.tsx';
+import DashboardPage from './app/admin/dashboard/page.tsx';
+import UsersPage from './app/admin/users/page.tsx';
+import ProfilePage from './app/admin/profile/page.tsx';
 import { NotFound } from './NotFound';
 import { useAuth } from './hooks/useAuth';
+import { Providers } from './app/providers';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -29,23 +28,23 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        element={
-          <PrivateRoute>
-            <Layout />
-          </PrivateRoute>
-        }
-      >
-        <Route path="/admin/dashboard" element={<DashboardPage />} />
-        <Route path="/admin/users" element={<UsersPage />} />
-        <Route path="/admin/config" element={<ConfigPage />} />
-        <Route path="/admin/logs" element={<LogsPage />} />
-        <Route path="/admin/profile" element={<ProfilePage />} />
-        <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="*" element={<NotFound />} />
-      </Route>
-    </Routes>
+    <Providers>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }
+        >
+          <Route path="/admin/dashboard" element={<DashboardPage />} />
+          <Route path="/admin/users" element={<UsersPage />} />
+          <Route path="/admin/profile" element={<ProfilePage />} />
+          <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </Providers>
   );
 }

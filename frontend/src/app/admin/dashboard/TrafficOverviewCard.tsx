@@ -2,8 +2,8 @@
 
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
-import { formatBytes } from "@/src/core/utils";
-import { TrafficStats } from "@/src/app/admin/dashboard/useDashboardData";
+import { formatBytes } from "@/core/utils";
+import { TrafficStats } from "./useDashboardData";
 
 interface TrafficOverviewCardProps {
     trafficStats: TrafficStats | null;

@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-import { prisma } from "@/src/prisma/db";
-import { app } from "@/src/core/config";
-import { logger } from "@/src/core/logger";
-import { SESSION_COOKIE, SESSION_MAX_AGE, sessionCookieOptions } from "@/src/core/session-cookie";
+import { prisma } from "@/prisma/db";
+import { app } from "@/core/config";
+import { logger } from "@/core/logger";
+import { SESSION_COOKIE, SESSION_MAX_AGE, sessionCookieOptions } from "@/core/session-cookie";
 
 /**
  * Failed attempts are counted per username and source address with an

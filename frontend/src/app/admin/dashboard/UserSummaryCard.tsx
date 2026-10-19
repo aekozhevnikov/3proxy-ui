@@ -2,7 +2,7 @@
 
 import { CircleStackIcon } from "@heroicons/react/24/outline";
 
-import { UserSummary } from "@/src/app/admin/dashboard/useDashboardData";
+import { UserSummary } from "./useDashboardData";
 
 interface UserSummaryCardProps {
     userSummary: UserSummary | null;

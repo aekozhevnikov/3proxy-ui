@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireAdmin } from "@/src/core/auth";
-import { createProxyUser } from "@/src/core/actions/proxy-user";
-import { prisma } from "@/src/prisma/db";
-import { logger } from "@/src/core/logger";
-import { isValidationError } from "@/src/core/errors";
+import { requireAdmin } from "@/core/auth";
+import { createProxyUser } from "@/core/actions/proxy-user";
+import { prisma } from "@/prisma/db";
+import { logger } from "@/core/logger";
+import { isValidationError } from "@/core/errors";
 
 // Disable caching for all responses in this route
 export const dynamic = "force-dynamic";

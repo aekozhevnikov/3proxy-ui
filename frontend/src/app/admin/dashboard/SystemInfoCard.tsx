@@ -1,7 +1,7 @@
 "use client";
 
-import { formatBytes, formatRelativeTime } from "@/src/core/utils";
-import { SystemStatus } from "@/src/app/admin/dashboard/useDashboardData";
+import { formatBytes, formatRelativeTime } from "@/core/utils";
+import { SystemStatus } from "./useDashboardData";
 
 interface SystemInfoCardProps {
     systemStatus: SystemStatus | null;

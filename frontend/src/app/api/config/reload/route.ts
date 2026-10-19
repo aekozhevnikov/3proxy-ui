@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { find3proxyContainer, restart3proxyContainer } from "@/src/core/docker";
-import { requireAdmin } from "@/src/core/auth";
+import { find3proxyContainer, restart3proxyContainer } from "@/core/docker";
+import { requireAdmin } from "@/core/auth";
 
 export async function POST(): Promise<Response> {
     try {

@@ -10,9 +10,9 @@ import {
     get3proxyMemoryUsage,
     get3proxyPid,
     get3proxyVersion
-} from "@/src/core/system-info";
-import { findLogsDir } from "@/src/lib/logs-finder";
-import { requireAdmin } from "@/src/core/auth";
+} from "@/core/system-info";
+import { findLogsDir } from "@/lib/logs-finder";
+import { requireAdmin } from "@/core/auth";
 
 export async function GET() {
     try {

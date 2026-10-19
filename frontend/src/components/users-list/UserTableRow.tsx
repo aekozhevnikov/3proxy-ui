@@ -3,8 +3,8 @@
 import UserActionsMenu from "./UserActionsMenu.tsx";
 
 import { Infinity as LucideInfinity } from "lucide-react";
-import { ProxyUser } from "@/src/core/definitions";
-import { formatDate, formatBytes } from "@/src/core/utils";
+import { ProxyUser } from "@/core/definitions";
+import { formatDate, formatBytes } from "@/core/utils";
 
 interface UserTableRowProps {
     user: ProxyUser;

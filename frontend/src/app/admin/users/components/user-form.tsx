@@ -1,14 +1,14 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
-import { EditProxyUserRequest, NewProxyUserRequest, ProxyUser } from "@/src/core/definitions";
-import { showToast } from "@/src/core/toast-utils";
-import UserBasicFields from "@/src/app/admin/users/components/UserBasicFields";
-import UserPasswordSection from "@/src/app/admin/users/components/UserPasswordSection";
-import UserLimitsSection from "@/src/app/admin/users/components/UserLimitsSection";
-import UserExpirationSection from "@/src/app/admin/users/components/UserExpirationSection";
+import { EditProxyUserRequest, NewProxyUserRequest, ProxyUser } from "@/core/definitions";
+import { showToast } from "@/core/toast-utils";
+import UserBasicFields from "@/app/admin/users/components/UserBasicFields";
+import UserPasswordSection from "@/app/admin/users/components/UserPasswordSection";
+import UserLimitsSection from "@/app/admin/users/components/UserLimitsSection";
+import UserExpirationSection from "@/app/admin/users/components/UserExpirationSection";
 
 interface UserFormProps {
     user?: ProxyUser;
@@ -18,7 +18,7 @@ interface UserFormProps {
 }
 
 export default function UserForm({ user, onCreate, onUpdate, onCancel = () => {} }: UserFormProps) {
-    const router = useRouter();
+    const navigate = useNavigate();
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -174,7 +174,7 @@ export default function UserForm({ user, onCreate, onUpdate, onCancel = () => {}
             }
 
             // Navigate back to users list
-            router.push("/admin/users");
+            navigate("/admin/users");
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : "An error occurred";
             setError(errorMessage);

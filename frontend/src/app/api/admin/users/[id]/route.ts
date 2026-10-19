@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireAdmin } from "@/src/core/auth";
-import { getProxyUserById, deleteProxyUser, updateProxyUser } from "@/src/core/actions/proxy-user";
-import { logger } from "@/src/core/logger";
-import { isValidationError } from "@/src/core/errors";
+import { requireAdmin } from "@/core/auth";
+import { getProxyUserById, deleteProxyUser, updateProxyUser } from "@/core/actions/proxy-user";
+import { logger } from "@/core/logger";
+import { isValidationError } from "@/core/errors";
 
 // Disable caching for GET requests
 export const dynamic = "force-dynamic";

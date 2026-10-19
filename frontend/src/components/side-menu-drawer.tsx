@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "react-router-dom";
 import {
     ArrowRightStartOnRectangleIcon,
     Bars3Icon,
@@ -11,12 +10,11 @@ import {
     UserIcon,
     XMarkIcon
 } from "@heroicons/react/24/outline";
-import { useTheme } from "next-themes";
-import Image from "next/image";
+import { useTheme } from "@/core/theme/ThemeContext";
 
 import { HeartFilledIcon, MoonFilledIcon, SunFilledIcon } from "./icons.tsx";
 
-import DonationModal from "@/src/components/modals/donation-modal";
+import DonationModal from "@/components/modals/donation-modal";
 
 const navigation = [
     { name: "Dashboard", href: "/admin/dashboard", icon: HomeIcon },
@@ -27,7 +25,7 @@ const navigation = [
 export default function SideMenuDrawer() {
     const [isOpen, setIsOpen] = useState(false);
     const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
-    const pathname = usePathname();
+    const location = useLocation();
     const { theme, setTheme } = useTheme();
 
     const toggleTheme = () => {
@@ -70,14 +68,14 @@ export default function SideMenuDrawer() {
                         <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
                             <Link
                                 className="flex items-center gap-3 flex-1"
-                                href="/admin/dashboard"
+                                to="/admin/dashboard"
                                 onClick={() => setIsOpen(false)}
                             >
-                                <Image
+                                <img
                                     alt="3proxy"
                                     className="h-8 w-8 shrink-0"
                                     height={32}
-                                    loading="eager"
+                                    
                                     src="/favicon.svg"
                                     width={32}
                                 />
@@ -108,7 +106,7 @@ export default function SideMenuDrawer() {
 
                         <nav className="mt-6 px-4 flex-1 space-y-2">
                             {navigation.map((item) => {
-                                const isActive = pathname.startsWith(item.href);
+                                const isActive = location.pathname.startsWith(item.href);
                                 const Icon = item.icon;
 
                                 return (
@@ -119,7 +117,7 @@ export default function SideMenuDrawer() {
                                                 ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
                                                 : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
                                         }`}
-                                        href={item.href}
+                                        to={item.href}
                                         onClick={() => setIsOpen(false)}
                                     >
                                         <Icon className="h-5 w-5 shrink-0" />

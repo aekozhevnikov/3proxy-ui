@@ -3,10 +3,10 @@ import { promisify } from "util";
 
 import { NextRequest, NextResponse } from "next/server";
 
-import { prisma } from "@/src/prisma/db";
-import { find3proxyContainer } from "@/src/core/docker";
-import { logger } from "@/src/core/logger";
-import { requireAdmin } from "@/src/core/auth";
+import { prisma } from "@/prisma/db";
+import { find3proxyContainer } from "@/core/docker";
+import { logger } from "@/core/logger";
+import { requireAdmin } from "@/core/auth";
 
 const execAsync = promisify(exec);
 

@@ -1,7 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 
-import { dockerExec, find3proxyContainer, get3proxyContainerPid } from "@/src/core/docker";
+import { dockerExec, find3proxyContainer, get3proxyContainerPid } from "@/core/docker";
 
 export { find3proxyContainer, get3proxyContainerPid };
 

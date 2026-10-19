@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { readTrafficLogs, UserTrafficStats } from "@/src/lib/traffic-parser";
-import { requireAdmin } from "@/src/core/auth";
+import { readTrafficLogs, UserTrafficStats } from "@/lib/traffic-parser";
+import { requireAdmin } from "@/core/auth";
 
 /**
  * GET /api/users/traffic

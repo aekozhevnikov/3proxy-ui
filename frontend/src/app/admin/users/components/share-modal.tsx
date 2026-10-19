@@ -8,8 +8,8 @@ import {
     generateHttpsConfig,
     generateSocksConfig,
     fetchProxyConfig
-} from "@/src/core/proxy-config";
-import { showToast } from "@/src/core/toast-utils";
+} from "@/core/proxy-config";
+import { showToast } from "@/core/toast-utils";
 
 interface ShareModalProps {
     username: string;

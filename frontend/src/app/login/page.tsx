@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useTheme } from "next-themes";
-import Image from "next/image";
+import { useTheme } from "@/core/theme/ThemeContext";
 
-import { MoonFilledIcon, SunFilledIcon } from "@/src/components/icons";
+import { MoonFilledIcon, SunFilledIcon } from "@/components/icons";
 
 export default function LoginPage() {
     const { theme, setTheme } = useTheme();
@@ -49,11 +48,10 @@ export default function LoginPage() {
             <div className="max-w-md w-full space-y-8">
                 <div className="text-center">
                     <div className="flex justify-center mb-6">
-                        <Image
+                        <img
                             alt="3proxy"
                             className="h-32 w-32"
                             height={128}
-                            loading="eager"
                             src="/favicon.svg"
                             width={128}
                         />

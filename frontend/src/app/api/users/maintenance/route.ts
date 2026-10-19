@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { requireAdmin } from "@/src/core/auth";
-import { logger } from "@/src/core/logger";
-import { runMaintenanceJob } from "@/src/lib/maintenance-job";
+import { requireAdmin } from "@/core/auth";
+import { logger } from "@/core/logger";
+import { runMaintenanceJob } from "@/lib/maintenance-job";
 
 export async function POST(): Promise<Response> {
     try {

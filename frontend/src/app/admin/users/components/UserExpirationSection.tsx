@@ -1,6 +1,6 @@
 "use client";
 
-import CustomDatePicker from "@/src/components/custom-date-picker";
+import CustomDatePicker from "@/components/custom-date-picker";
 
 interface UserExpirationSectionProps {
     dataLimit: string;

@@ -1,7 +1,7 @@
 "use client";
 
-import UserForm from "@/src/app/admin/users/components/user-form";
-import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/src/core/definitions";
+import UserForm from "@/app/admin/users/components/user-form";
+import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/core/definitions";
 
 interface UserModalProps {
     user?: ProxyUser;

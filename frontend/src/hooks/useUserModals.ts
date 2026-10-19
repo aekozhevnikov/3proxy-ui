@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { ProxyUser } from "@/src/core/definitions";
-import { showToast } from "@/src/core/toast-utils";
+import { ProxyUser } from "@/core/definitions";
+import { showToast } from "@/core/toast-utils";
 
 interface UseUserModalsResult {
     isCreateModalOpen: boolean;

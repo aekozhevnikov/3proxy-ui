@@ -1,4 +1,4 @@
-export type { LogEntry, LogFilter } from "@/src/lib/log-parser";
+export type { LogEntry, LogFilter } from "@/lib/log-parser";
 
 export {
     parseLogLine,
@@ -8,6 +8,6 @@ export {
     getLogs,
     getAvailableLogDates,
     getLogStats
-} from "@/src/lib/log-parser";
+} from "@/lib/log-parser";
 
-export { formatBytes, formatLogDate } from "@/src/core/utils";
+export { formatBytes, formatLogDate } from "@/core/utils";

@@ -3,9 +3,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
-import { prisma } from "@/src/prisma/db";
-import { app } from "@/src/core/config";
-import { SESSION_COOKIE, SESSION_MAX_AGE, sessionCookieOptions } from "@/src/core/session-cookie";
+import { prisma } from "@/prisma/db";
+import { app } from "@/core/config";
+import { SESSION_COOKIE, SESSION_MAX_AGE, sessionCookieOptions } from "@/core/session-cookie";
 
 export async function POST(request: NextRequest) {
     try {

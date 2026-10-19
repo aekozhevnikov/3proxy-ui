@@ -1,19 +1,24 @@
-import { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import UsersList from "./components/users-list";
 
-import { resolveAdmin } from "@/src/core/auth";
-import { createPageTitle } from "@/src/core/utils";
-import UsersList from "@/src/app/admin/users/components/users-list";
+function UsersPageContent() {
+    const { isAuthenticated, isLoading } = useAuth();
+    const navigate = useNavigate();
 
-export const metadata: Metadata = {
-    title: createPageTitle("Users")
-};
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            navigate("/login", { replace: true });
+        }
+    }, [isAuthenticated, isLoading, navigate]);
 
-export const dynamic = "force-dynamic";
-
-export default async function UsersPage() {
-    if (!(await resolveAdmin())) {
-        redirect("/login");
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+            </div>
+        );
     }
 
     return (
@@ -21,4 +26,8 @@ export default async function UsersPage() {
             <UsersList />
         </div>
     );
+}
+
+export default function UsersPage() {
+    return <UsersPageContent />;
 }

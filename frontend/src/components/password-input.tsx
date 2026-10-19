@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
-import { generatePassword } from "@/src/core/password-hash";
+import { generatePassword } from "@/core/password-hash";
 
 interface PasswordInputProps {
     id: string;

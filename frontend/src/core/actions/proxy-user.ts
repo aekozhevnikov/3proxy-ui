@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
-import { assertAdmin } from "@/src/core/auth";
-import { ValidationError } from "@/src/core/errors";
+import { assertAdmin } from "@/core/auth";
+import { ValidationError } from "@/core/errors";
 
 import { update3proxyConfig } from "./config.ts";
 
 import prisma from "@/prisma/db";
-import { NewProxyUserRequest, EditProxyUserRequest, ProxyUser } from "@/src/core/definitions";
+import { NewProxyUserRequest, EditProxyUserRequest, ProxyUser } from "@/core/definitions";
 
 // A username ends up as a token in the file 3proxy parses, where whitespace
 // and a colon are argument separators. An unvalidated value can therefore add

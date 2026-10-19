@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/src/core/definitions";
-import { showToast } from "@/src/core/toast-utils";
+import { ProxyUser, NewProxyUserRequest, EditProxyUserRequest } from "@/core/definitions";
+import { showToast } from "@/core/toast-utils";
 
 type StatusFilter = "all" | "active" | "deactivated";
 

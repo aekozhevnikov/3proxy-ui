@@ -1,17 +1,15 @@
 "use client";
 
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { ThemeProvider } from "@/core/theme/ThemeContext";
 import { ReactNode, useEffect, useState } from "react";
 import { Slide, ToastContainer } from "react-toastify";
 
-import { SessionProvider } from "@/src/components/session-provider";
+import { SessionProvider } from "@/components/session-provider";
 
 interface Props {
     children: ReactNode;
     themeProps?: {
-        attribute?: "class" | "data";
-        defaultTheme?: string;
-        disableTransitionOnChange?: boolean;
+        defaultTheme?: 'light' | 'dark';
     };
 }
 
@@ -24,7 +22,7 @@ export function Providers({ children, themeProps }: Props) {
 
     return (
         <SessionProvider>
-            <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
+            <ThemeProvider {...themeProps}>{children}</ThemeProvider>
             {mounted && (
                 <ToastContainer
                     closeOnClick

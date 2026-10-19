@@ -2,7 +2,7 @@
 
 import UserTableRow from "./UserTableRow.tsx";
 
-import { ProxyUser } from "@/src/core/definitions";
+import { ProxyUser } from "@/core/definitions";
 
 interface UserDesktopTableProps {
     users: ProxyUser[];

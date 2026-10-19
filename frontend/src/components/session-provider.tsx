@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-import { UserSession } from "@/src/core/definitions";
+import { UserSession } from "@/core/definitions";
 
 const SessionContext = createContext<{
     session: UserSession;
