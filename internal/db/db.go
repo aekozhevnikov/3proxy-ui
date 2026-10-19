@@ -2,7 +2,9 @@ package db
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"gorm.io/driver/sqlite"
@@ -15,7 +17,9 @@ var ErrNotFound = errors.New("record not found")
 func Init() error {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		dsn = "file:dev.db?mode=rwc&_cache=shared&_journal_mode=WAL"
+		// Use absolute path for database
+		dbPath := filepath.Join(getDataDir(), "3proxy.db")
+		dsn = fmt.Sprintf("file:%s?mode=rwc&_cache=shared&_journal_mode=WAL", dbPath)
 	}
 	var err error
 	DB, err = gorm.Open(sqlite.Open(dsn), &gorm.Config{})
@@ -25,8 +29,21 @@ func Init() error {
 	return DB.AutoMigrate(&User{}, &Server{}, &ProxyUser{}, &ConfigVersion{})
 }
 
+func getDataDir() string {
+	// Check for DATA_DIR env var first
+	if dir := os.Getenv("DATA_DIR"); dir != "" {
+		return dir
+	}
+	// Default to ./data in current working directory
+	dir := "data"
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "."
+	}
+	return dir
+}
+
 type User struct {
-	ID             int    `gorm:"primaryKey"`
+	ID             int    `gorm:"primaryKey;table:User"`
 	Username       string `gorm:"uniqueIndex;not null"`
 	Password       string `gorm:"not null"`
 	Name           *string
@@ -34,6 +51,10 @@ type User struct {
 	SessionVersion int
 	CreatedAt      time.Time
 	UpdatedAt      *time.Time
+}
+
+func (User) TableName() string {
+	return "User"
 }
 
 type Server struct {
@@ -62,7 +83,7 @@ type ProxyUser struct {
 	DeactivatedAt  *time.Time
 	ExpiresAt      *time.Time
 	CreatedAt      time.Time
-	UpdatedAt      *time.Time
+	UpdatedAt      time.Time
 }
 
 type ConfigVersion struct {

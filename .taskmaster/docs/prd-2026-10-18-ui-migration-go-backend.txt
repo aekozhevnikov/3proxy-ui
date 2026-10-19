@@ -1,0 +1,81 @@
+# PRD: UI Migration from Next.js to React+Vite and Go Backend Completion
+Version: 1.0 | Date: 2026-10-18 | Author: Claude
+
+## 1. Context
+The 3proxy-ui project has a working Go backend in branch `rewrite/go-backend` with partial API routes ported from the TypeScript/Next.js frontend in `main` branch. The frontend is still Next.js 16 (src/app/, src/components/). The goal is to:
+- Move all UI code from `main` branch into `frontend/` folder in `rewrite/go-backend`
+- Replace Next.js with React 18 + Vite 5 + TypeScript + Tailwind + React Router
+- Embed the built frontend into Go binary via go:embed
+- Complete the Go backend by adding all missing API routes from the original Next.js API layer
+
+## 2. Goal
+A single Go binary that serves both the REST API (port 8080) and the React SPA (embedded via go:embed, served for non-API routes), with all UI features working identically to the Next.js version.
+
+## 3. Non-goals
+- Do NOT keep Next.js (src/app/, src/components/ for Next.js)
+- Do NOT keep SSR/SSG — SPA only with client-side routing
+- Do NOT use supervisor/Docker for frontend — single Go binary serves everything
+- Do NOT change Go backend API routes that already work (auth, config, users list/create)
+- Do NOT modify database schema — keep existing GORM models
+
+## 4. Functional Requirements
+FR-1. Copy all UI source from main branch to frontend/ — AC: frontend/src/ contains all pages, components, hooks, core logic from main
+FR-2. Create React+Vite+TypeScript+Tailwind project in frontend/ — AC: `npm run build` succeeds, outputs to `../internal/web/dist/`
+FR-3. Migrate all pages to React Router SPA — AC: Dashboard, Users CRUD, Config, Logs, Profile, Login all accessible and functional
+FR-4. Configure Vite output to `../internal/web/dist/` — AC: Build artifacts land in correct path for go:embed
+FR-5. Add go:embed in Go (internal/web/dist.go) — AC: `go build` includes embedded dist, single binary serves SPA
+FR-6. Update main.go to serve embedded static files with SPA fallback — AC: Non-API routes return index.html, API routes work
+FR-7. Complete missing Go API routes:
+    - FR-7a: GET/PUT/DELETE /api/admin/users/[id] — AC: User detail, update, delete work
+    - FR-7b: POST /api/admin/users/[id]/share — AC: Share modal works
+    - FR-7c: POST /api/auth/change-credentials — AC: Password change works
+    - FR-7d: GET /api/logs — AC: Logs page loads data
+    - FR-7e: GET /api/proxy-config — AC: Config page shows proxy config
+    - FR-7f: GET /api/users/traffic — AC: Traffic data in dashboard/users
+    - FR-7g: POST /api/users/maintenance — AC: Maintenance actions work
+FR-8. Update Dockerfile for multi-stage build (frontend → Go → alpine) — AC: `docker build` produces single binary < 50MB
+FR-9. Update entrypoint.sh for single binary — AC: Container starts single process, runs migrations, seeds admin
+FR-10. Remove all Next.js files and dependencies — AC: No next.config.js, no Next.js deps in package.json, no src/app/ (Next.js)
+
+## 5. Non-functional Requirements
+NFR-1. Single binary size < 50MB (Go + embedded dist)
+NFR-2. Build time < 3 minutes (frontend + Go)
+NFR-3. Hot reload in dev mode (Vite HMR proxying to Go API on :8080)
+NFR-4. SPA routing works (Go serves index.html for non-API routes)
+NFR-5. All existing Go tests pass (`go test ./...`)
+NFR-6. Frontend unit tests pass (`npm run test:unit`)
+
+## 6. Constraints
+- Go 1.21+, Node 20+, React 18, Vite 5, Tailwind 4, React Router 7
+- Must work in single Docker image (alpine final)
+- go:embed requires Go 1.16+
+- Keep existing Go backend API unchanged where already implemented
+- Language: English for PRD, tasks, code comments; Russian for chat
+
+## 7. Affected Modules
+- **New:** `frontend/` (React+Vite app), `internal/web/dist.go` (go:embed)
+- **Modified:** `main.go` (static file serving), `Dockerfile` (multi-stage), `entrypoint.sh`, `go.mod` (if new deps)
+- **Modified:** `frontend/package.json`, `frontend/vite.config.ts`, `frontend/tsconfig.json`, `frontend/tailwind.config.js`
+- **Removed:** Root `package.json` (Next.js), `next.config.js`, `src/app/` (Next.js), `src/components/` (Next.js)
+
+## 8. Risks and Mitigations
+| Risk | Mitigation |
+|------|------------|
+| SPA routing conflicts with API routes | Go router handles /api/* first, falls back to SPA for /* |
+| Large binary size | Vite code splitting, gzip compression, tree shaking |
+| Build complexity | Clear multi-stage Dockerfile following 3x-ui pattern |
+| Missing API parity | Systematic mapping of every Next.js API route to Go handler |
+| Auth/session differences | Port session cookie logic exactly from Next.js (JWT + bcrypt) |
+
+## 9. Definition of Done
+- [ ] frontend/ folder with React+Vite+TS+Tailwind+React Router
+- [ ] All UI pages migrated and functional (Dashboard, Users, Config, Logs, Profile, Login)
+- [ ] Vite outputs to `../internal/web/dist/`
+- [ ] go:embed in `internal/web/dist.go`
+- [ ] main.go serves embedded dist for non-API routes
+- [ ] All missing Go API routes implemented and tested
+- [ ] Dockerfile builds single binary
+- [ ] Single binary runs API + serves SPA
+- [ ] All Go tests pass (`go test ./...`)
+- [ ] Frontend tests pass (`npm run test:unit`)
+- [ ] Docker builds and runs successfully

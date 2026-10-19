@@ -54,3 +54,4 @@ coverage
 3proxy-ui
 dev.db*
 go-backend
+settings.local.json

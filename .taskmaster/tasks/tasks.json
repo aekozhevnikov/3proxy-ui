@@ -423,13 +423,264 @@
         "priority": "high",
         "subtasks": [],
         "updatedAt": "2026-09-27T00:14:45.364Z"
+      },
+      {
+        "id": "20",
+        "title": "Create frontend/ folder with React+Vite+TypeScript+Tailwind",
+        "description": "Initialize a new React 18 + Vite 5 + TypeScript + Tailwind 4 project in frontend/ folder. Configure Vite to output to ../internal/web/dist/ for go:embed. Set up ESLint, Prettier, Jest/Vitest.",
+        "details": "Create frontend/ with package.json, vite.config.ts, tsconfig.json, tailwind.config.js, postcss.config.js, index.html. Configure Vite build.outDir = '../internal/web/dist'. Set up React Router 7 for SPA routing. Add @heroui/react, react-hook-form, zod, axios, react-query, lucide-react, react-toastify dependencies. Configure path aliases (@/ for src/).",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:16:22.985Z"
+      },
+      {
+        "id": "21",
+        "title": "Copy UI source from main branch to frontend/src",
+        "description": "Copy all UI source code from main branch (src/app/, src/components/, src/core/, src/hooks/, src/lib/, src/styles/, src/types/, providers.tsx, layout.tsx, not-found.tsx, page.tsx) to frontend/src/, adapting Next.js App Router to React Router SPA structure.",
+        "details": "Copy from main branch:\n- src/app/admin/** → frontend/src/pages/admin/** (convert page.tsx to route components)\n- src/app/login/page.tsx → frontend/src/pages/LoginPage.tsx\n- src/app/profile/** → frontend/src/pages/profile/**\n- src/components/** → frontend/src/components/\n- src/core/** → frontend/src/core/\n- src/hooks/** → frontend/src/hooks/\n- src/lib/** → frontend/src/lib/\n- src/styles/** → frontend/src/styles/\n- src/types/** → frontend/src/types/\n- providers.tsx → frontend/src/providers.tsx\n- layout.tsx → frontend/src/Layout.tsx (wrap with BrowserRouter)\n- not-found.tsx → frontend/src/NotFound.tsx\n- page.tsx → frontend/src/pages/DashboardPage.tsx (redirect to /admin/dashboard)\nRemove Next.js specific: 'use client' directives (not needed in Vite), next/navigation imports, next/headers, server components pattern.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:19:09.804Z"
+      },
+      {
+        "id": "22",
+        "title": "Migrate Dashboard page with stats cards",
+        "description": "Migrate dashboard with stats cards, traffic overview, user summary, system status. Use React Query for data fetching.",
+        "details": "Migrate src/app/admin/dashboard/page.tsx to frontend/src/pages/admin/DashboardPage.tsx. Use React Query for data fetching from /api/system/status, /api/users/traffic, /api/admin/users. Components: SystemInfoCard, SystemStatusCard, TrafficOverviewCard, UserSummaryCard. Add useDashboardData hook.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:19:09.818Z"
+      },
+      {
+        "id": "23",
+        "title": "Migrate Users management (CRUD, share, test proxy)",
+        "description": "Migrate users list, create/edit modal, delete, share modal, test proxy. Use react-hook-form + zod validation.",
+        "details": "Migrate src/app/admin/users/page.tsx → UsersPage.tsx, create/page.tsx → CreateUserModal, [id]/edit/page.tsx → EditUserModal. Components: UserForm, UserList, UserTableRow, UserMobileCard, ShareModal, DeleteConfirmModal. API calls to /api/admin/users (GET, POST), /api/admin/users/[id] (GET, PUT, DELETE), /api/admin/users/[id]/share (POST), /api/admin/users/test-proxy (POST).",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:23:01.079Z"
+      },
+      {
+        "id": "24",
+        "title": "Migrate Config page (generate, reload, status, proxy auth viewer)",
+        "description": "Migrate config generate/reload/status, proxy auth file viewer.",
+        "details": "Migrate src/app/admin/config/page.tsx → ConfigPage.tsx. Components: ConfigGenerate, ConfigReload, ConfigStatus, ProxyAuthViewer. API calls to /api/config/generate (POST), /api/config/reload (POST), /api/config/status (GET).",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:27:58.479Z"
+      },
+      {
+        "id": "25",
+        "title": "Migrate Logs page with filtering and pagination",
+        "description": "Migrate logs viewer with filtering, pagination, download.",
+        "details": "Migrate src/app/admin/logs/page.tsx → LogsPage.tsx. Components: LogsTable, LogFilters, LogPagination. API call to /api/logs (GET with query params: limit, offset, level, search).",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:28:34.652Z"
+      },
+      {
+        "id": "26",
+        "title": "Migrate Profile page with password change",
+        "description": "Migrate profile with password change, 2FA settings.",
+        "details": "Migrate src/app/admin/profile/page.tsx → ProfilePage.tsx. Components: ProfileForm, PasswordChangeSection. API calls to /api/auth/session (GET), /api/auth/change-credentials (POST).",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:29:05.465Z"
+      },
+      {
+        "id": "27",
+        "title": "Configure Vite for go:embed output to ../internal/web/dist/",
+        "description": "Update vite.config.ts: set build.outDir = '../internal/web/dist', base = './', add @vitejs/plugin-react. Configure server.proxy for /api to http://localhost:8080 for dev HMR. Add resolve.alias for @/ → ./src/. Ensure build.emptyOutDir = true.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:17.076Z"
+      },
+      {
+        "id": "28",
+        "title": "Add go:embed in Go for embedded dist",
+        "description": "Create internal/web/dist.go with //go:embed dist, export EmbeddedDist() fs.FS. Update main.go to serve embedded files for non-API routes.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:17.446Z"
+      },
+      {
+        "id": "29",
+        "title": "Update main.go to serve SPA with embedded dist",
+        "description": "Add static file handler for embedded dist, fallback to index.html for SPA routing (non-API routes). API routes take priority. Use http.FS from embedded dist.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:17.823Z"
+      },
+      {
+        "id": "30",
+        "title": "Update Dockerfile for single binary build with embedded frontend",
+        "description": "Multi-stage: frontend-builder (Node 20, npm run build) -> go-builder (CGO_ENABLED=1 go build with embedded dist, Go 1.21) -> alpine final (copy binary, 3proxy config, entrypoint). Remove supervisor. Target binary size < 50MB.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:18.133Z"
+      },
+      {
+        "id": "31",
+        "title": "Update entrypoint for single binary",
+        "description": "Simplify entrypoint to run single binary, run migrations, seed admin, start server. Remove supervisor config.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:18.210Z"
+      },
+      {
+        "id": "32",
+        "title": "Remove Next.js files and dependencies",
+        "description": "Remove root package.json (Next.js), next.config.js, src/app/ (Next.js), src/components/ (Next.js). Keep Go backend deps only.",
+        "details": "",
+        "testStrategy": "",
+        "status": "in-progress",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:25.364Z"
+      },
+      {
+        "id": "33",
+        "title": "Implement GET/PUT/DELETE /api/admin/users/[id] in Go",
+        "description": "Add GetHandler, UpdateHandler, DeleteHandler in internal/users/users.go. Route in main.go: /api/admin/users/[id] with ID parsing. Return ProxyUser struct without password. Validate username. Test with curl.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:31:09.728Z"
+      },
+      {
+        "id": "34",
+        "title": "Implement POST /api/admin/users/[id]/share in Go",
+        "description": "Add ShareHandler in internal/users/users.go. Generate shareable link with user credentials. Return share URL. Route in main.go: /api/admin/users/[id]/share (POST).",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:10.428Z"
+      },
+      {
+        "id": "35",
+        "title": "Implement POST /api/auth/change-credentials in Go",
+        "description": "Add ChangeCredentialsHandler in internal/auth/auth.go. Verify current password, hash new password with bcrypt, update session version, return new JWT. Route in main.go: /api/auth/change-credentials (POST). Mirrors Next.js logic.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:10.676Z"
+      },
+      {
+        "id": "36",
+        "title": "Implement GET /api/logs in Go",
+        "description": "Add LogsHandler in internal/logs/logs.go. Read log files with pagination (limit, offset), filtering by level and search. Return JSON with logs array and total. Route in main.go: /api/logs (GET). Apply BoundedLimit from logs package.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:11.199Z"
+      },
+      {
+        "id": "37",
+        "title": "Implement GET /api/proxy-config in Go",
+        "description": "Add ProxyConfigHandler in internal/proxy/proxy.go or internal/config/config.go. Read 3proxy.cfg, parse and return structured config. Route in main.go: /api/proxy-config (GET).",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:12.444Z"
+      },
+      {
+        "id": "38",
+        "title": "Implement GET /api/users/traffic in Go",
+        "description": "Add TrafficHandler in internal/logs/logs.go or internal/users/users.go. Aggregate traffic data by user from 3proxy logs. Return JSON with user traffic stats. Route in main.go: /api/users/traffic (GET).",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:12.749Z"
+      },
+      {
+        "id": "39",
+        "title": "Implement POST /api/users/maintenance in Go",
+        "description": "Add MaintenanceHandler in internal/logs/logs.go or internal/users/users.go. Run traffic sync, deactivate expired users, enforce data limits, update proxyauth file. Route in main.go: /api/users/maintenance (POST). Ignore logsDir from body, use server-side path.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-10-18T18:32:12.845Z"
+      },
+      {
+        "id": "40",
+        "title": "Run tests and verify build",
+        "description": "Run go test ./... in project root. Run npm run test:unit in frontend/. Run go build. Run npm run build in frontend/. Run docker build. Test single binary serves API and SPA. Verify all UI pages load and API calls work.",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-27T01:16:40.211Z",
-      "taskCount": 19,
-      "completedCount": 19,
+      "lastModified": "2026-10-18T18:32:25.364Z",
+      "taskCount": 40,
+      "completedCount": 38,
       "tags": [
         "master"
       ]
@@ -797,6 +1048,11 @@
           "build"
         ]
       }
-    ]
+    ],
+    "metadata": {
+      "created": "2026-10-18T18:02:38.781Z",
+      "updated": "2026-10-18T18:02:38.781Z",
+      "description": "Tasks for rewrite/go-backend context"
+    }
   }
 }

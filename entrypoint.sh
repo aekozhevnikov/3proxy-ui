@@ -1,26 +1,32 @@
 #!/bin/sh
 set -e
 
-export DATABASE_URL="${DATABASE_URL:-file:/app/data/app.db}"
-export JWT_SECRET="${JWT_SECRET:-dev-secret-change-in-production}"
-export SYNC_INFO_FILE="${SYNC_INFO_FILE:-/app/data/traffic-sync.json}"
+echo "Starting 3proxy-ui..."
 
-echo "=== 3proxy-ui Single Container (Go + Next.js) ==="
+# Run migrations
+echo "Running database migrations..."
+/app/3proxy-ui migrate
 
-# ============================================
-# Run Go migrations
-# ============================================
-echo "→ Running database migrations..."
-/usr/local/bin/go-backend migrate || echo "Migration completed"
+# Seed admin user
+echo "Seeding admin user..."
+/app/3proxy-ui seed-admin
 
-# ============================================
-# Ensure admin user exists
-# ============================================
-echo "→ Ensuring admin user exists..."
-/usr/local/bin/go-backend seed-admin || echo "Admin user setup completed"
+# Create proxyauth file if it doesn't exist
+if [ ! -f /etc/3proxy/users/.proxyauth ]; then
+    echo "Creating empty proxyauth file..."
+    touch /etc/3proxy/users/.proxyauth
+fi
 
-# ============================================
-# Start supervisord (runs go-backend + nextjs-frontend)
-# ============================================
-echo "→ Starting supervisord (Go API :8080, Next.js :3000)..."
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+# Start 3proxy in background
+echo "Starting 3proxy..."
+3proxy /etc/3proxy/3proxy.cfg &
+
+# Start fail2ban if configured
+if [ -f /etc/fail2ban/jail.local ]; then
+    echo "Starting fail2ban..."
+    fail2ban-server -f &
+fi
+
+# Start the Go application
+echo "Starting 3proxy-ui server on port 8080..."
+exec /app/3proxy-ui

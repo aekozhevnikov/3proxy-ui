@@ -1,22 +1,23 @@
-import axios from 'axios'
+import axios from 'axios';
 
-const api = axios.create({
-  baseURL: '/api',
-  withCredentials: true,
+export const api = axios.create({
+  baseURL: '',
   headers: {
     'Content-Type': 'application/json',
   },
-})
+  withCredentials: true,
+});
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Redirect to login
-      window.location.href = '/login'
+      // Clear auth state and redirect to login
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth-storage');
+        window.location.href = '/login';
+      }
     }
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
-)
-
-export default api
+);

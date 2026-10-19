@@ -1,7 +1,9 @@
 package proxy
 
 import (
+	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/antonkozevnikov/3proxy-ui/go-backend/internal/auth"
 )
@@ -28,4 +30,28 @@ func ProxyMiddleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// ProxyConfigHandler — GET /api/proxy-config
+func ProxyConfigHandler(w http.ResponseWriter, r *http.Request) {
+	if !auth.IsAuthorized(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	config := map[string]string{
+		"domain":   getEnv("PROXY_DOMAIN", "localhost"),
+		"httpPort": getEnv("HTTP_PORT", "3128"),
+		"socksPort": getEnv("SOCKS_PORT", "1080"),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(config)
+}
+
+func getEnv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
 }
