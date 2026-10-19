@@ -28,7 +28,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 export function App() {
   return (
-    <Providers>
+    <Providers themeProps={{ defaultTheme: "dark" }}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route

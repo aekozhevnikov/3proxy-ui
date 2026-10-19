@@ -63,7 +63,7 @@ export default function DonationModal({ disclosure }: Props) {
                                                 </Accordion.Heading>
                                                 <Accordion.Panel>
                                                     <Accordion.Body>
-                                                        <CryptoItem address={address!} />
+                                                        <CryptoItem _name={name} address={address!} />
                                                     </Accordion.Body>
                                                 </Accordion.Panel>
                                             </AccordionItem>
@@ -92,7 +92,7 @@ export default function DonationModal({ disclosure }: Props) {
     );
 }
 
-function CryptoItem({ address }: { address: string }) {
+function CryptoItem({ address }: { _name: string; address: string }) {
     const qrCodeContainerRef = useRef<HTMLDivElement>(null);
     const [copied, setCopied] = useState(false);
 

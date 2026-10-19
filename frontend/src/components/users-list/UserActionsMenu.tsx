@@ -56,8 +56,12 @@ export default function UserActionsMenu({
                 )}
             </button>
             <button
-                className="p-2 sm:p-3 flex items-center justify-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-full transition-colors"
-                title="Edit"
+                className={`p-2 sm:p-3 flex items-center justify-center rounded-full transition-colors $
+                    user.isActive
+                        ? "text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30"
+                        : "text-blue-400 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 opacity-70"
+                }`}
+                title={user.isActive ? "Edit" : "Edit (deactivated user)"}
                 onClick={() => onEdit(user)}
             >
                 <PencilIcon className="h-4 w-4" data-testid="pencil-icon" />
