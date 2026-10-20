@@ -1,0 +1,91 @@
+# PRD: Go Backend for 3proxy UI
+Version: 1.0 | Date: 2026-10-20 | Author: Claude
+
+## 1. Context
+The current 3proxy UI backend is implemented as Next.js API routes (TypeScript) running in a Node.js container. The frontend is a React/Next.js application. The backend handles authentication, proxy user management, 3proxy configuration generation, log parsing, traffic accounting, maintenance scheduling, and system monitoring. The goal is to rewrite the entire backend in Go as a standalone service, keeping the existing frontend but communicating via REST API. The Go backend will run as a separate container/service, replacing the Next.js API routes.
+
+## 2. Goal
+Build a complete Go backend service that implements all current backend functionality with identical API contracts, so the existing frontend can switch to it without changes. The service must run independently, manage its own database (SQLite via GORM), handle 3proxy config file generation, parse 3proxy logs for traffic accounting, enforce data limits and expirations, and provide all REST endpoints currently served by Next.js API routes.
+
+## 3. Non-goals
+- Rewrite the frontend (React/Next.js stays as-is)
+- Change the database schema (reuse Prisma models via GORM)
+- Change the 3proxy configuration format or config file locations
+- Implement new features beyond parity with current backend
+- Replace the Docker/container orchestration (entrypoint.sh stays)
+- Modify fail2ban integration
+
+## 4. Functional requirements
+FR-1. Authentication API - Acceptance criteria: POST /api/auth/login returns JWT cookie, validates credentials against bcrypt hashes in User table, implements rate limiting per username with exponential backoff, returns 401 for invalid credentials without user enumeration.
+FR-2. Session validation - Acceptance criteria: GET /api/auth/session returns current session info (isAuthorized, userId, username) by validating JWT signature, audience, issuer, and sessionVersion against database.
+FR-3. Logout - Acceptance criteria: POST /api/auth/logout clears session cookie and returns success.
+FR-4. Change credentials - Acceptance criteria: POST /api/auth/change-credentials updates username and/or password, verifies current password, bumps sessionVersion to invalidate old tokens, issues new JWT cookie.
+FR-5. Admin authorization - Acceptance criteria: All admin endpoints verify caller is authenticated admin via JWT + database isAdmin check; returns 401/403 appropriately.
+FR-6. Proxy user CRUD - Acceptance criteria: GET/POST/PUT/DELETE /api/admin/users with pagination, filtering; validates username pattern (alphanumeric + ._-); password stored as plaintext for 3proxy CRYPT-MD5 hashing; on create/update/delete, regenerates .proxyauth and reloads 3proxy.
+FR-7. Proxy config generation - Acceptance criteria: GET /api/config/generate returns active users with limits; POST /api/config/reload regenerates .proxyauth from DB and restarts 3proxy Docker container (or logs warning if not found).
+FR-8. Runtime proxy config - Acceptance criteria: GET /api/proxy-config returns domain, httpPort, socksPort from environment variables.
+FR-9. Health check - Acceptance criteria: GET /api/health returns {status: "ok", timestamp, uptime}.
+FR-10. System status - Acceptance criteria: GET /api/system/status returns 3proxy running state, version, memory, PID, config file info, user count, proxyauth file stats, disk usage for logs, traffic sync info.
+FR-11. Logs API - Acceptance criteria: GET /api/logs with filters (startDate, endDate, username, logType, limit, offset) returns parsed JSON log entries, total count, files scanned, available dates, stats.
+FR-12. Traffic API - Acceptance criteria: GET /api/users/traffic returns aggregated traffic (requests, sent, received) per username/IP from 3proxy logs (both JSON and text formats), with 30-second cache.
+FR-13. Maintenance job - Acceptance criteria: POST /api/users/maintenance (and scheduled runner) reads new log bytes since last run (by inode+offset), aggregates traffic, updates ProxyUser.dataUsed, deactivates users exceeding dataLimit or past expiresAt, sends Telegram notifications, regenerates .proxyauth, reloads 3proxy. Runs every minute via scheduler.
+FR-14. Telegram notifications - Acceptance criteria: On user deactivation (limit/expiry), sends formatted Markdown message to telegramUserId via bot token from env.
+FR-15. Database migrations - Acceptance criteria: Auto-migrate schema on startup matching Prisma models (User, Server, ProxyUser, ConfigVersion).
+FR-16. Configuration via environment - Acceptance criteria: All settings via env vars (DATABASE_URL, JWT_SECRET, PROXY_DOMAIN, HTTP_PORT, SOCKS_PORT, PROXYAUTH_PATH, LOGS_DIR, SYNC_INFO_FILE, TELEGRAM_BOT_TOKEN, PROXY_CONTAINER_NAME, SESSION_COOKIE_SECURE).
+
+## 5. Non-functional requirements
+NFR-1. Performance: API responses < 200ms p95 for simple endpoints; log parsing scales to 100MB+ logs via streaming.
+NFR-2. Security: JWT HS256 with 32+ char secret; bcrypt cost 10; Secure/HttpOnly/SameSite=Lax cookies; rate limiting on login; no secrets in logs; password never returned in list endpoints.
+NFR-3. Compatibility: Exact same JSON request/response shapes as current Next.js API routes; frontend requires zero changes.
+NFR-4. Observability: Structured JSON logging (level, timestamp, message, fields); debug/info/warn/error levels.
+NFR-5. Concurrency: Handle 100+ concurrent requests; maintenance job runs atomically (mutex).
+NFR-6. Backward compatibility: Existing SQLite database file works without migration; .proxyauth format unchanged.
+
+## 6. Constraints
+- Go 1.22+ (standard library + minimal deps: gin/gorilla/mux, gorm, golang-jwt, bcrypt, go-ini for config)
+- Must compile to single static binary for Alpine Linux (scratch/alpine base)
+- No CGO dependencies (pure Go SQLite driver: modernc.org/sqlite)
+- Database: SQLite (file-based, same as current)
+- Container: Runs in same Docker network as 3proxy, shares volumes for /etc/3proxy, /var/log/3proxy, /app/data
+
+## 7. Affected modules
+- New: backend/ (entire Go service)
+- New: backend/cmd/server/main.go (entry point)
+- New: backend/internal/api/ (handlers for each endpoint group)
+- New: backend/internal/service/ (business logic: auth, users, config, logs, traffic, maintenance, system, notifications)
+- New: backend/internal/repository/ (GORM models + DB access)
+- New: backend/internal/scheduler/ (cron-like maintenance runner)
+- New: backend/internal/docker/ (3proxy container management)
+- New: backend/internal/parser/ (log parsing, traffic aggregation)
+- Existing: prisma/schema.prisma (reference for GORM models)
+- Existing: 3proxy/3proxy.cfg (config format reference)
+- Existing: entrypoint.sh (may need to start Go backend)
+
+## 8. Risks and mitigations
+Risk: Log parsing differences between Node and Go cause traffic accounting drift.
+Mitigation: Port parsing logic line-by-line; add integration test comparing outputs on sample logs.
+
+Risk: JWT token format incompatibility breaks existing sessions.
+Mitigation: Use same algorithm (HS256), claims (aud, iss, sessionVersion), cookie name (session), and secret from env.
+
+Risk: .proxyauth regeneration race condition with 3proxy.
+Mitigation: Same atomic write + signature comparison + conditional reload pattern as current code.
+
+Risk: Docker container detection fails in new environment.
+Mitigation: Reuse PROXY_CONTAINER_NAME env var and same lookup order (env, "3proxy", "vpn-3proxy").
+
+Risk: Database locking with concurrent maintenance + API.
+Mitigation: GORM with WAL mode; short transactions; retry on busy.
+
+## 9. Definition of done
+- [ ] Go backend compiles and runs on Alpine
+- [ ] All 16 FR endpoints return identical JSON to current API (verified by diff)
+- [ ] Existing SQLite database opens and works (auto-migrate)
+- [ ] Maintenance job runs every minute, processes logs correctly
+- [ ] .proxyauth file generated matches current format exactly
+- [ ] 3proxy container reload works via Docker API
+- [ ] Telegram notifications send on deactivation
+- [ ] Frontend works against Go backend without changes (manual smoke test)
+- [ ] Unit tests for parsers, auth, traffic aggregation
+- [ ] Integration test: full login → create user → traffic → maintenance cycle
+- [ ] Dockerfile builds Go binary + copies to runtime image

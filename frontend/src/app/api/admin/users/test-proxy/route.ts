@@ -1,0 +1,207 @@
+import { exec } from "child_process";
+import { promisify } from "util";
+
+import { NextRequest, NextResponse } from "next/server";
+
+import { prisma } from "@/src/prisma/db";
+import { find3proxyContainer } from "@/src/core/docker";
+import { logger } from "@/src/core/logger";
+import { requireAdmin } from "@/src/core/auth";
+
+const execAsync = promisify(exec);
+
+/**
+ * POST /api/admin/users/test-proxy
+ * Tests proxy availability for a specific user via SOCKS5 and HTTP
+ * Body: { username: string }
+ */
+export async function POST(request: NextRequest) {
+    try {
+        const auth = await requireAdmin();
+
+        if (auth.denial) {
+            return auth.denial;
+        }
+
+        const body = await request.json();
+        const { username } = body;
+
+        if (!username) {
+            return NextResponse.json({ success: false, error: "Username is required" }, { status: 400 });
+        }
+
+        // Get user from database (include password and isActive)
+        const user = await prisma.proxyUser.findFirst({
+            where: { username },
+            select: { username: true, password: true, isActive: true, deactivatedAt: true }
+        });
+
+        if (!user || !user.password) {
+            return NextResponse.json(
+                { success: false, error: `User '${username}' not found or has no password set` },
+                { status: 404 }
+            );
+        }
+
+        // Check if user is active
+        if (!user.isActive) {
+            const reason = user.deactivatedAt
+                ? `User was deactivated on ${new Date(user.deactivatedAt).toLocaleString()}`
+                : "User is deactivated";
+
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: `Cannot test deactivated user. ${reason}`,
+                    deactivated: true,
+                    deactivatedAt: user.deactivatedAt
+                },
+                { status: 403 }
+            );
+        }
+
+        // Check if 3proxy is running (via Docker or directly)
+        let isRunning = false;
+
+        try {
+            // First check Docker container (if used)
+            const containerInfo = await find3proxyContainer();
+
+            if (containerInfo) {
+                isRunning = true;
+            } else {
+                // Otherwise check local process
+                await execAsync("pgrep -x 3proxy", { timeout: 5000 });
+                isRunning = true;
+            }
+        } catch {
+            return NextResponse.json({ success: false, error: "3proxy service is not running" }, { status: 503 });
+        }
+
+        if (!isRunning) {
+            return NextResponse.json({ success: false, error: "3proxy service is not running" }, { status: 503 });
+        }
+
+        // Get proxy ports. In Docker container 3proxy typically uses one port
+        // Try to get info from system status or use defaults
+        let socks5Port: number | null = null;
+        let httpPort: number | null = null;
+        let proxyHost = process.env.PROXY_HOST || "127.0.0.1";
+
+        try {
+            // Try to get system status via local API
+            const { stdout: statusJson } = await execAsync(
+                "curl -s --connect-timeout 2 --max-time 5 http://localhost:3000/api/system/status 2>/dev/null || echo '{}'",
+                { timeout: 6000 }
+            );
+            const statusData = JSON.parse(statusJson);
+
+            if (statusData?.proxy?.socks5Port) {
+                socks5Port = statusData.proxy.socks5Port;
+                proxyHost = statusData.proxy.host || proxyHost;
+            }
+            if (statusData?.proxy?.httpPort) {
+                httpPort = statusData.proxy.httpPort;
+                proxyHost = statusData.proxy.host || proxyHost;
+            }
+        } catch (error) {
+            console.error(error);
+        }
+
+        // If couldn't get from API, try default ports
+        if (!socks5Port) {
+            socks5Port = 1080;
+        }
+        if (!httpPort) {
+            httpPort = 3128; // May match socks5 if single port
+        }
+
+        // Store protocol information
+        const protocols: Array<{ protocol: string; port: number }> = [];
+
+        if (socks5Port) protocols.push({ protocol: "socks5", port: socks5Port });
+        if (httpPort && httpPort !== socks5Port) protocols.push({ protocol: "http", port: httpPort });
+
+        // 3proxy hashes the incoming password itself and compares it against the
+        // entry in .proxyauth, so the request has to carry the plain password.
+        const authString = `${encodeURIComponent(user.username)}:${encodeURIComponent(user.password)}`;
+
+        logger.info(`[proxy-test] Testing proxy for user "${username}" at ${proxyHost}:${socks5Port}/${httpPort}`);
+
+        // Test connection via curl (with authentication)
+        const testPromises = protocols.map((p) =>
+            execAsync(
+                `curl --connect-timeout 3 --max-time 5 ${p.protocol === "socks5" ? `--socks5 ${authString}@${proxyHost}:${p.port}` : `-x http://${authString}@${proxyHost}:${p.port}`} http://example.com`,
+                { timeout: 6000 }
+            )
+                .then(({ stdout }) => {
+                    const output = stdout ? stdout.trim() : "";
+
+                    return { protocol: p.protocol, success: true, response: output.substring(0, 200) };
+                })
+                .catch((err: Error & { stderr?: string }) => ({
+                    protocol: p.protocol,
+                    success: false,
+                    error: err.message,
+                    stderr: err.stderr
+                }))
+        );
+
+        const results = await Promise.allSettled(testPromises);
+        const tests: Array<{ protocol: string; success: boolean; error?: string; stderr?: string; response?: string }> =
+            [];
+
+        for (let i = 0; i < results.length; i++) {
+            const result = results[i];
+
+            if (result.status === "fulfilled") {
+                tests.push(result.value);
+            } else {
+                tests.push({ protocol: protocols[i].protocol, success: false, error: "Test failed" });
+            }
+        }
+
+        const allSuccess = tests.every((t) => t.success);
+        const anySuccess = tests.some((t) => t.success);
+
+        if (allSuccess) {
+            logger.info(`[proxy-test] Proxy test successful for user "${username}"`);
+        } else if (anySuccess) {
+            logger.warn(`[proxy-test] Proxy test partially successful for user "${username}"`, tests);
+        } else {
+            logger.error(`[proxy-test] Proxy test failed for user "${username}"`, tests);
+        }
+
+        return NextResponse.json({
+            success: anySuccess,
+            message: allSuccess
+                ? `Proxy test successful for user ${username} (SOCKS5 & HTTP)`
+                : anySuccess
+                  ? `Proxy test partially successful for user ${username} (some protocols failed)`
+                  : `Proxy test failed for user ${username}`,
+            data: {
+                username,
+                tests: tests.reduce<
+                    Record<
+                        string,
+                        { protocol: string; success: boolean; error?: string; stderr?: string; response?: string }
+                    >
+                >((acc, test) => {
+                    acc[test.protocol] = test;
+
+                    return acc;
+                }, {}),
+                proxyConfig: {
+                    host: proxyHost,
+                    socks5Port,
+                    httpPort
+                },
+                timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        logger.error("[proxy-test] Error testing proxy:", error);
+
+        return NextResponse.json({ success: false, error: "Failed to test proxy" }, { status: 500 });
+    }
+}

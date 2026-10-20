@@ -1,0 +1,29 @@
+import type { Metadata } from "next";
+
+import { redirect } from "next/navigation";
+
+import UserForm from "@/app/admin/users/components/user-form";
+import { resolveAdmin } from "@/core/auth";
+import { createProxyUser } from "@/core/actions/proxy-user";
+import { createPageTitle } from "@/core/utils";
+
+export const metadata: Metadata = {
+    title: createPageTitle("Create Proxy User")
+};
+
+export default async function CreateProxyUserPage() {
+    if (!(await resolveAdmin())) {
+        redirect("/login");
+    }
+
+    return (
+        <div className="container mx-auto px-4 py-6 sm:py-8">
+            <div className="max-w-2xl mx-auto">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">Create Proxy User</h1>
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:p-6">
+                    <UserForm onCreate={createProxyUser} />
+                </div>
+            </div>
+        </div>
+    );
+}

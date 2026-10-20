@@ -3,436 +3,500 @@
     "tasks": [
       {
         "id": "1",
-        "title": "Analyze Docker image size breakdown",
-        "description": "Run docker history or dive to identify largest layers in the 3proxy-ui Docker image. Document which packages and files contribute most to the 1.3GB size.",
-        "status": "done",
+        "title": "Project scaffolding, Go module, dependencies, and Dockerfile",
+        "description": "Initialize Go module, add required dependencies, create directory structure, and setup multi-stage Dockerfile for Alpine.",
+        "details": "Initialize Go module github.com/example/3proxy-backend with Go 1.22. Add dependencies: github.com/gin-gonic/gin, gorm.io/gorm, modernc.org/sqlite, github.com/golang-jwt/jwt/v5, golang.org/x/crypto/bcrypt, github.com/go-ini/ini. Create directory structure: cmd/server/main.go, internal/api/, internal/service/, internal/repository/, internal/scheduler/, internal/docker/, internal/parser/, internal/config/, internal/logger/. Create multi-stage Dockerfile: build stage golang:1.22-alpine running go build -o server, runtime stage alpine:latest copying binary and ca-certificates. Implement main.go skeleton with flag parsing and server setup.",
+        "testStrategy": "Run go build ./... and go vet ./... to verify compilation. Build Docker image and verify binary runs on Alpine. Confirm directory structure matches PRD section 7.",
         "priority": "high",
         "dependencies": [],
-        "details": "Use docker history or dive tool to analyze layer sizes. Identify the largest contributors to image size including node_modules, system packages, and build artifacts. Document findings for targeted optimization.",
-        "testStrategy": "Document the largest layers and their sizes. Identify specific packages or files that can be removed.",
+        "status": "in-progress",
         "subtasks": [],
-        "updatedAt": "2026-09-24T02:12:25.885Z"
+        "updatedAt": "2026-10-20T12:55:14.125Z"
       },
       {
         "id": "2",
-        "title": "Remove devDependencies from runtime stage",
-        "description": "Modify Dockerfile to install only production dependencies in the runtime stage. Use npm ci --omit=dev to avoid installing devDependencies.",
-        "status": "done",
+        "title": "Environment configuration loader and structured logging",
+        "description": "Load all settings from environment variables and implement structured JSON logger.",
+        "details": "Create internal/config/config.go with Config struct containing all env vars from FR-16: DATABASE_URL, JWT_SECRET, PROXY_DOMAIN, HTTP_PORT, SOCKS_PORT, PROXYAUTH_PATH, LOGS_DIR, SYNC_INFO_FILE, TELEGRAM_BOT_TOKEN, PROXY_CONTAINER_NAME, SESSION_COOKIE_SECURE. Load from environment with defaults using os.Getenv. Validate required fields on startup. Create internal/logger/logger.go with structured JSON logger outputting level, timestamp, message, and fields at debug/info/warn/error levels.",
+        "testStrategy": "Unit test config loading with missing required env vars returns error. Verify defaults applied for optional fields. Capture logger output and verify JSON contains level, timestamp, message, fields keys.",
         "priority": "high",
         "dependencies": [
           "1"
         ],
-        "details": "Update the runtime stage of the Dockerfile to perform a clean production-only npm install. This ensures no devDependencies like @types, eslint, jest, puppeteer, typescript, etc. are included in the final image.",
-        "testStrategy": "Build the Docker image and verify node_modules size is reduced. Check that no dev packages exist in runtime stage.",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-09-24T02:34:57.659Z"
+        "updatedAt": "2026-10-20T12:16:23.911Z"
       },
       {
         "id": "3",
-        "title": "Remove unnecessary runtime packages",
-        "description": "Evaluate docker-cli and other runtime packages. Remove docker-cli if not needed at runtime, keeping only essential packages for fail2ban and basic operation.",
-        "status": "done",
+        "title": "SQLite database connection, GORM setup, and auto-migration",
+        "description": "Connect to SQLite via GORM using pure Go driver, enable WAL mode, and auto-migrate schema on startup.",
+        "details": "Initialize GORM database connection using modernc.org/sqlite pure Go driver (no CGO). Open DATABASE_URL with query parameters _journal_mode=WAL, _busy_timeout=5000, _foreign_keys=1. Configure connection pool (MaxOpenConns, MaxIdleConns). Implement AutoMigrate on startup for GORM models matching Prisma schema: User, Server, ProxyUser, ConfigVersion. Create DB singleton accessible via repository layer.",
+        "testStrategy": "Integration test using temporary SQLite file. Verify AutoMigrate creates all expected tables. Verify PRAGMA journal_mode returns WAL. Verify concurrent writes do not cause permanent database locked errors.",
         "priority": "high",
         "dependencies": [
-          "1"
+          "1",
+          "2"
         ],
-        "details": "Review the runtime apk add packages (curl, docker-cli, fail2ban, iptables, python3, sqlite-libs). Determine which are truly needed. docker-cli is large and may not be needed if docker socket is mounted. Remove unnecessary packages to reduce image size.",
-        "testStrategy": "Build image and verify all features still work (dashboard, user management, proxy testing, fail2ban).",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-09-24T02:35:04.942Z"
+        "updatedAt": "2026-10-20T12:16:44.820Z"
       },
       {
         "id": "4",
-        "title": "Optimize node_modules in build stage",
-        "description": "Ensure aggressive pruning of node_modules before copying to runtime. Remove all documentation, tests, types, and unnecessary files from packages.",
-        "status": "done",
+        "title": "GORM models and repository layer",
+        "description": "Define GORM models matching Prisma schema and implement repository interfaces for CRUD operations.",
+        "details": "Define GORM models matching Prisma schema: User (ID, Username, Password, IsAdmin, SessionVersion, CreatedAt, UpdatedAt), ProxyUser (ID, Username, Password, DataUsed, DataLimit, ExpiresAt, IsActive, CreatedAt, UpdatedAt), Server, ConfigVersion. Implement repository interfaces and GORM implementations: UserRepository (GetByUsername, Create, Update, BumpSessionVersion), ProxyUserRepository (List with pagination/filtering, Create, Update, Delete, GetByID), ConfigRepository. Add bcrypt utilities: HashPassword (cost 10), CheckPasswordHash.",
+        "testStrategy": "Unit test repository CRUD against test SQLite database. Verify bcrypt hash cost is 10. Verify CheckPasswordHash returns true for correct password, false for incorrect. Verify username uniqueness constraints.",
         "priority": "high",
         "dependencies": [
-          "2"
+          "3"
         ],
-        "details": "Add comprehensive cleanup of node_modules in the build stage: remove @types packages, test files, documentation, examples directories. Use npm prune --production and additional rm commands to strip unnecessary files.",
-        "testStrategy": "Run tsc --noEmit to verify no type errors. Build Docker image and measure node_modules size.",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-09-24T02:35:04.968Z"
+        "updatedAt": "2026-10-20T12:16:51.713Z"
       },
       {
         "id": "5",
-        "title": "Build and verify optimized image size",
-        "description": "Build the optimized Docker image and verify the size is at most 900MB. Test that the application starts and all core features work.",
-        "status": "done",
+        "title": "Authentication core service: JWT, bcrypt, rate limiting",
+        "description": "Implement JWT HS256 token service, bcrypt password verification, and per-username rate limiting with exponential backoff.",
+        "details": "Implement AuthService: Login(username, password) validates credentials via UserRepository, returns JWT token and user. GenerateToken(user) creates HS256 JWT with claims: sub=userID, aud, iss, sessionVersion from DB, exp. ValidateToken(token) verifies signature, audience, issuer, and sessionVersion against database. Implement rate limiter per username with exponential backoff (1s, 2s, 4s, 8s...) using sync.Map and mutex. Return generic 401 for invalid credentials without user enumeration.",
+        "testStrategy": "Unit test JWT generation and validation with tampered signature, wrong audience, wrong issuer, stale sessionVersion. Test rate limiter blocks after N failed attempts with exponential backoff timing. Test Login returns identical 401 for existing and non-existing users.",
         "priority": "high",
         "dependencies": [
+          "3",
           "4"
         ],
-        "details": "Run docker build with the optimized Dockerfile. Check image size with docker images. Start the container and verify: dashboard loads, user management works, proxy testing functions, 3proxy integration works.",
-        "testStrategy": "Image size <= 900MB. Application starts without errors. All features verified.",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-09-24T03:41:52.286Z"
+        "updatedAt": "2026-10-20T12:16:56.865Z"
       },
       {
         "id": "6",
-        "title": "Run tests and validate no regressions",
-        "description": "Run the full test suite to ensure Docker optimization did not introduce any regressions.",
-        "status": "done",
+        "title": "Authentication API handlers",
+        "description": "Implement login, session, logout, and change-credentials endpoints with cookie handling.",
+        "details": "Implement Gin handlers: POST /api/auth/login accepts JSON {username, password}, sets session cookie (Secure, HttpOnly, SameSite=Lax) with JWT, returns user info. GET /api/auth/session returns {isAuthorized, userId, username}. POST /api/auth/logout clears cookie and returns success. POST /api/auth/change-credentials verifies current password, updates username/password, bumps sessionVersion via repository, issues new JWT cookie. Match exact JSON response shapes from existing Next.js API routes.",
+        "testStrategy": "Unit test handlers with mock AuthService. Verify cookie attributes (Secure, HttpOnly, SameSite=Lax). Verify session endpoint returns correct shape. Verify change-credentials bumps sessionVersion and old token fails validation. Verify JSON response keys match frontend expectations.",
         "priority": "high",
         "dependencies": [
           "5"
         ],
-        "details": "Run npx tsc --noEmit for type checking and npx jest for unit tests. Verify all tests pass without new failures.",
-        "testStrategy": "All existing tests pass. No new test failures introduced.",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-09-25T08:13:46.883Z"
+        "updatedAt": "2026-10-20T12:17:01.934Z"
       },
       {
         "id": "7",
-        "title": "Update E2E tests with docker-compose.dev.yml base and create test logs",
-        "description": "Update E2E test infrastructure to use docker-compose.dev.yml as base, create realistic 3proxy test logs for validation, and ensure traffic data is correctly recorded in DB with proper BigInt handling. Add unit/integration tests for traffic parsing with test logs.",
-        "details": "",
-        "testStrategy": "",
+        "title": "Authentication and authorization middleware",
+        "description": "Implement JWT validation middleware and admin authorization middleware.",
+        "details": "Create Gin middleware: AuthMiddleware extracts JWT from session cookie, validates via AuthService, stores user claims in context, returns 401 on missing/invalid token. AdminMiddleware checks user.IsAdmin from database, returns 403 if not admin. Apply middleware to protected route groups.",
+        "testStrategy": "Unit test middleware with valid, expired, and missing tokens. Verify 401 for unauthenticated requests. Verify 403 for non-admin users on admin endpoints. Verify user claims available in context for downstream handlers.",
+        "priority": "high",
+        "dependencies": [
+          "5",
+          "6"
+        ],
         "status": "done",
-        "dependencies": [],
-        "priority": "medium",
         "subtasks": [],
-        "updatedAt": "2026-09-25T23:26:59.094Z"
+        "updatedAt": "2026-10-20T12:17:09.167Z"
       },
       {
         "id": "8",
-        "title": "Restore limit enforcement in proxyauth file generation",
-        "description": "Ensure that the live user file (/etc/3proxy/users/.proxyauth) carries the d<bytes>, e<timestamp>, and i<count> flags alongside the CR hash. Decide the source of truth for each flag (dataLimit in MB -> bytes, expiresAt -> unix seconds, ipLimit) and emit them in proxyauthEntry(). Remove the dead write to /etc/3proxy-users.cfg and verify against the deployed 3proxy build whether shaper and ipcount support are present.",
-        "status": "done",
-        "dependencies": [
-          "14"
-        ],
+        "title": "Proxy user service and .proxyauth management",
+        "description": "Implement proxy user CRUD business logic, username validation, plaintext password storage, and atomic .proxyauth generation.",
+        "details": "Implement ProxyUserService with CRUD operations. Validate username pattern: ^[a-zA-Z0-9._-]+$. Store password as plaintext for 3proxy CRYPT-MD5 (no bcrypt hashing for proxy users). Implement GenerateProxyAuth() that reads all active ProxyUsers, writes .proxyauth atomically (write to temp file, os.Rename), compares file signature/hash to avoid unnecessary reloads. On Create/Update/Delete, regenerate .proxyauth and trigger 3proxy reload via DockerService.",
+        "testStrategy": "Unit test username validation regex accepts alphanumeric+._- and rejects special characters. Verify .proxyauth file format matches expected 3proxy format. Verify atomic write leaves no temp files on failure. Verify service calls reload after user mutations.",
         "priority": "high",
-        "details": "Modify proxyauthEntry() in the config generation logic to include limit flags. Map dataLimit (MB) to bytes for d<bytes>, expiresAt (ISO) to unix seconds for e<timestamp>, and ipLimit to i<count>. Remove the write to /etc/3proxy-users.cfg in api/config/generate POST. Verify 3proxy build flags (--enable-ipcount, shaper support) and document silently non-functional flags. Confirm 3proxy 0.9.5 accepts quoted user:CR:\"$1$...\" values inside a $ included users file.",
-        "testStrategy": "Run a container and verify .proxyauth contains the flags. Restart 3proxy and confirm a user over their data limit is cut off. Confirm a deactivated user is rejected. Verify 3proxy accepts quoted CR hashes in included files.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Map ProxyUser fields to 3proxy flag syntax",
-            "description": "Decide the exact flag values written for each user: dataLimit is stored in MB and 3proxy's d flag takes bytes, expiresAt is a Date and e takes a unix timestamp, ipLimit is already a count. Handle the null cases: an absent dataLimit means unlimited, so no d flag, and the same for expiry. Confirm whether an already-expired user should get e in the past (3proxy refuses them immediately) or be omitted entirely.</description>\n<parameter name=\"details\">Read src/lib/proxyauth-writer.ts and src/core/actions/config.ts side by side; both build the same line and must agree. The conversion helpers for MB to bytes and Date to unix seconds already exist in src/app/api/config/generate/route.ts and can be moved rather than rewritten. Careful: dataUsed and dataLimit are BigInt in Prisma, so the conversion goes through Number() first.",
-            "details": "<info added on 2026-09-26T18:30:33.332Z>\nBLOCKING QUESTION ANSWERED by task 14: 3proxy 0.9.5 DOES accept a quoted CR hash inside a users file pulled in by the $ directive. Verified end to end on the real stack, not on a synthetic file. The panel wrote `admin:CR:\"$1$...\"` through its own updateProxyauthFile, 3proxy was restarted to re-read the file, and then the correct plaintext returned HTTP 200 through the proxy while a wrong password returned 407. So the quoting in proxyauthEntry is correct and the $1$ prefix is understood. Task 8 can proceed on that assumption. Two things still to establish while implementing the flags: whether 3proxy enforces the e expiry flag and the d byte limit in this build, since both can require compile-time support that silently does nothing when absent. Repeat-method note: the sandbox blocks reading or hand-writing the users file, and 3proxy 0.9.5 takes no CLI flags, so the only viable route is to let the application generate the file, restart the 3proxy container, and probe with curl.\n</info added on 2026-09-26T18:30:33.332Z>\n<info added on 2026-09-26T19:18:02.751Z>\nPREMISE INVALIDATED: The d/e/i per-user flags do not exist in 3proxy's user list. Per howtoe.html, USERDESC is exactly three parts (login, password type, password) with only CL, CR, and NT as valid types; access limits are enforced via ACLs, not inline flags. src/conf.c h_users() confirms this mechanically: on a CR entry it takes everything after \"CR:\" as the password and never parses a fourth field. Measured on the real stack: appending :d1048576 causes 3proxy to treat it as part of the password, resulting in 407 for every user. The repo's code comment claiming \"users username:CL:password[:flags]\" was incorrect. Limit enforcement must instead come from 3proxy ACL traffic counters (a larger 3proxy.cfg change) or from the panel side, where the fix is that a deactivated user must leave the file entirely, which is now done and verified. This subtask is therefore obsolete and should not be implemented as written.\n</info added on 2026-09-26T19:18:02.751Z>",
-            "status": "cancelled",
-            "dependencies": [],
-            "parentTaskId": 8,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:19.738Z"
-          },
-          {
-            "id": 2,
-            "title": "Emit the flags from proxyauthEntry in both writers",
-            "description": "Extend proxyauthEntry() in src/core/password-hash.ts to take the flag string and append it, so both src/lib/proxyauth-writer.ts and src/core/actions/config.ts pick it up without each building the line themselves. Keep the quoting of the CR hash exactly as it is now; only add the flag suffix after the closing quote.</description>\n<parameter name=\"details\">3proxy's entry syntax is user:TYPE:password[:flags], so the flags go after the quoted hash, not inside it. Both writers currently call proxyauthEntry(username, password) and are the only two callers, so changing the signature is contained. Verify the emitted line shape against a real 3proxy, not against the doc example alone. Update tests/unit/core/password-hash.test.ts and tests/unit/core/actions/config.test.ts, which assert on the entry format, and tests/unit/core/actions/config.test.ts currently asserts toContain(\"activeuser:CR:\") which must keep passing.",
-            "details": "",
-            "status": "cancelled",
-            "dependencies": [],
-            "parentTaskId": 8,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:19.753Z"
-          },
-          {
-            "id": 3,
-            "title": "Remove the dead /etc/3proxy-users.cfg write path",
-            "description": "Remove the dead write to /etc/3proxy-users.cfg. The POST handler in src/app/api/config/generate writes the generated config to that path; no 3proxy config includes it, confirmed by grep across 3proxy.cfg, the compose files, entrypoint.sh and the Dockerfile. Either delete the write or make the endpoint feed the file 3proxy actually reads.</description>\n",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 8,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.844Z"
-          }
+        "dependencies": [
+          "4"
         ],
-        "updatedAt": "2026-09-27T00:00:43.848Z"
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-10-20T12:17:15.073Z"
       },
       {
         "id": "9",
-        "title": "Stop emitting deactivated users in proxyauth file",
-        "description": "Deactivated users are currently written as comment lines in the proxyauth file, which 3proxy still parses and registers. Stop emitting them in the proxyauth file entirely. Keep deactivation history in a log file or the database instead.",
-        "status": "done",
+        "title": "Proxy user API handlers",
+        "description": "Implement GET/POST/PUT/DELETE /api/admin/users with pagination and filtering.",
+        "details": "Implement Gin handlers: GET /api/admin/users with pagination (page, pageSize) and filtering (username, isActive), returns users without password field. POST /api/admin/users creates user, validates input, returns created user. PUT /api/admin/users/:id updates fields. DELETE /api/admin/users/:id removes user. All return appropriate 400/404/500 statuses.",
+        "testStrategy": "Unit test handlers with mock ProxyUserService. Verify password excluded from list response. Verify pagination parameters applied. Verify 400 on invalid username pattern. Verify 404 on non-existent user ID.",
+        "priority": "high",
         "dependencies": [
           "8"
         ],
-        "priority": "high",
-        "details": "Modify the deactivation logic to no longer write `# DEACTIVATED <iso>: user:CR:\"hash\"` lines into /etc/3proxy/users/.proxyauth. Instead, record deactivation events in the database or a dedicated log file. Ensure the proxyauth file only contains active users with their limit flags.",
-        "testStrategy": "Deactivate a user and confirm the proxyauth file no longer contains their entry. Confirm 3proxy rejects authentication for the deactivated user. Verify deactivation history is recorded in the database or log.",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-09-26T19:18:07.688Z"
+        "updatedAt": "2026-10-20T12:17:27.212Z"
       },
       {
         "id": "10",
-        "title": "Add authentication and authorization to all unauthenticated API routes",
-        "description": "Add session check plus admin check to GET /api/config/status, GET and POST /api/config/generate, POST /api/config/reload, POST /api/users/maintenance, and POST /api/admin/users/test-proxy. Remove plaintext password from /api/config/status response. Stop accepting logsDir from the request body in /api/users/maintenance.",
-        "status": "done",
-        "dependencies": [],
-        "priority": "high",
-        "details": "Implement a shared guard function (currentSession + isAdmin) and apply it to all listed routes. Remove `password: true` from the /api/config/status response. In /api/users/maintenance, ignore logsDir from the body and use a server-side configured path. Ensure all routes fail closed when no valid admin session is present.",
-        "testStrategy": "Send unauthenticated requests to each route and confirm 401/403. Send authenticated non-admin requests and confirm 403. Confirm /api/config/status no longer returns the password column. Confirm /api/users/maintenance ignores body logsDir.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add a single shared requireAdmin guard",
-            "description": "Add one shared guard combining currentSession() with an isAdmin check, and call it as the first statement of every route and action that changes state or returns data. It must fail closed: no valid session, or a session without isAdmin, returns 401 or 403.</description>\n<parameter name=\"details\">src/core/session.ts exposes currentSession() returning { isAuthorized, userId, username } but carries no role, so the guard needs a way to know the role. Either widen currentSession to return isAdmin from a database read, which also closes the separate finding that currentSession never re-checks the database, or add a separate helper. Decide once here rather than re-deriving the check in eight routes. Place it next to session.ts. This guard is the fix for the class of bug, not just the eight instances: a route added later should get the check by default.",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 10,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.946Z"
-          },
-          {
-            "id": 2,
-            "title": "Close the two config routes and strip passwords from their output",
-            "description": "CRITICAL. Close GET /api/config/status and both handlers of /api/config/generate. status/route.ts:12 selects password:true and returns it at :46 with no session check, so one unauthenticated GET dumps every proxy credential. generate/route.ts interpolates the plaintext into the emitted config at :45 and :93. Apply the shared guard, and drop the password column from the status response entirely rather than merely hiding it behind auth, since the share modal already has a dedicated endpoint for the one case that legitimately needs a plaintext. Note for the enforcement work: the MB-to-bytes and Date-to-unix conversion helpers currently live in generate and should move to a shared place. Test: unauthenticated GET returns 401, non-admin returns 403, admin gets a response with no password field. Grep the body for a seeded test plaintext to prove the column is gone, not just hidden.</description>\n<parameter name=\"file\">.taskmaster/tasks/tasks.json",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 10,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.947Z"
-          },
-          {
-            "id": 3,
-            "title": "Guard remaining routes",
-            "description": "Apply the shared guard to config/reload, users/maintenance, logs, system/status and admin/users/test-proxy. maintenance must also stop taking logsDir from the request body at route.ts:28.",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 10,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.952Z"
-          }
+        "title": "3proxy Docker container integration service",
+        "description": "Implement Docker API client for detecting and restarting/reloading the 3proxy container.",
+        "details": "Implement DockerService using Docker API (github.com/docker/docker/client or direct HTTP). Methods: ContainerExists(name), RestartContainer(name), ReloadContainer(name). Container name resolution order: PROXY_CONTAINER_NAME env var, '3proxy', 'vpn-3proxy'. If container not found, log warning and return gracefully without error.",
+        "testStrategy": "Unit test with mock Docker client. Verify name resolution order. Verify warning logged when container missing. Verify restart/reload API calls made with correct container name.",
+        "priority": "medium",
+        "dependencies": [
+          "2"
         ],
-        "updatedAt": "2026-09-27T00:00:13.952Z"
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-10-20T12:17:32.633Z"
       },
       {
         "id": "11",
-        "title": "Harden session and authentication mechanisms",
-        "description": "Add rate limiting and logging to POST /api/auth/login. Fix the session cookie secure flag to use a single shared constant. Invalidate old JWTs on password change. Re-read the user from the database in currentSession to reflect deletions and role changes.",
-        "status": "done",
-        "dependencies": [],
+        "title": "Configuration API handlers",
+        "description": "Implement config generate, reload, and runtime proxy-config endpoints.",
+        "details": "Implement handlers: GET /api/config/generate queries active ProxyUsers with limits, returns JSON array. POST /api/config/reload calls ProxyUserService.GenerateProxyAuth() then DockerService.ReloadContainer(). GET /api/proxy-config returns {domain, httpPort, socksPort} from config environment variables.",
+        "testStrategy": "Unit test handlers. Verify config generate returns only active users with limit fields. Verify reload triggers service and docker methods. Verify proxy-config returns env values exactly.",
         "priority": "high",
-        "details": "Implement a failed-attempt counter per username and IP with exponential backoff in /api/auth/login. Log every login attempt and outcome. Create a shared constant for the cookie secure flag and use it in login, logout, and change-credentials. Add a session version or passwordChangedAt field to User and check it in currentSession. Modify currentSession to re-read the user after JWT verification.",
-        "testStrategy": "Attempt repeated failed logins and confirm lockout/backoff. Confirm cookie secure flag is consistent across all auth endpoints. Change a password and confirm old JWTs are rejected. Delete or de-admin a user and confirm their token is immediately invalid.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Rate limit and log the login endpoint",
-            "description": "POST /api/auth/login is 58 lines with no counter, no backoff and no logger import, while change-credentials does log. Add a failed-attempt counter keyed by username and IP with exponential backoff, and log every attempt and outcome. Default credentials admin/admin are documented in DOCKER.md, so this is the brute-force path.",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 11,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.953Z"
-          },
-          {
-            "id": 2,
-            "title": "Share one cookie-secure constant across all three auth routes",
-            "description": "login/route.ts:49 hardcodes secure:false while logout and change-credentials use NODE_ENV === production, so the flag depends on which endpoint ran last. The compose stack publishes 3000 without TLS. Extract one shared constant and use it in all three.",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 11,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.954Z"
-          },
-          {
-            "id": 3,
-            "title": "Invalidate old sessions and re-check the database in currentSession",
-            "description": "Changing the password mints a new JWT but old ones live out their hour. currentSession verifies the token and returns without touching the database, so a deleted or de-admined account keeps full access. Add a session version or passwordChangedAt to User, check it in currentSession, and re-read the user after verify.",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 11,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.955Z"
-          }
+        "dependencies": [
+          "8",
+          "10"
         ],
-        "updatedAt": "2026-09-27T00:00:13.955Z"
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-10-20T12:17:39.108Z"
       },
       {
         "id": "12",
-        "title": "Add authorization guards to Server Actions and admin pages",
-        "description": "Add currentSession plus admin check to Server Actions in src/core/actions/proxy-user.ts and config.ts. Add the same guard to /admin/users/[id]/edit/page.tsx and /admin/dashboard/page.tsx. Fix getProxyUserById to use an explicit select without the password field. Validate usernames on create and update.",
-        "status": "done",
-        "dependencies": [
-          "10"
-        ],
+        "title": "3proxy log parser service",
+        "description": "Implement streaming parsers for 3proxy logs (JSON and text formats) and traffic aggregation.",
+        "details": "Implement LogParserService with streaming parsers for 3proxy log formats (JSON lines and text format). Parse fields: timestamp, username, IP, bytesSent, bytesReceived, requestType. Implement AggregateTraffic(entries) returning per-username/IP totals (requests, sent, received). Implement ReadNewBytes(filePath, lastInode, lastOffset) using os.Stat and file seeking for incremental reads. Use bufio.Reader for streaming to handle 100MB+ logs without loading into memory.",
+        "testStrategy": "Unit test parser with sample 3proxy log lines in both JSON and text formats. Verify field extraction accuracy. Verify aggregation sums correctly. Test streaming with 100MB+ file verifies constant memory usage.",
         "priority": "high",
-        "details": "Add currentSession + isAdmin checks at the top of createProxyUser and updateProxyUser actions. Apply the same guard to the edit and dashboard pages. Modify getProxyUserById to use Prisma select excluding the password column. Add username validation rejecting whitespace, colons, control characters, and enforcing a sane length.",
-        "testStrategy": "Call Server Actions without a session and confirm rejection. Access admin pages without auth and confirm redirect. Open the edit modal and confirm no plaintext password in RSC payload. Attempt to create/update a user with an invalid username and confirm rejection.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Guard the server actions and the two unprotected admin pages",
-            "description": "Server Actions in core/actions/proxy-user.ts and config.ts run no session check; createProxyUser is the live create path via useUsers.ts:65. Separately, /admin/users/[id]/edit/page.tsx and /admin/dashboard/page.tsx call no currentSession, unlike users/page.tsx and profile/page.tsx which redirect. Add the guard to all four.",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 12,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.956Z"
-          },
-          {
-            "id": 2,
-            "title": "Strip the password from getProxyUserById and validate usernames",
-            "description": "getProxyUserById does findUnique with no select and spreads the row, so the password is returned by GET /api/admin/users/[id] and serialised into the RSC payload of the edit page, landing in browser state each time the edit modal opens. Use an explicit select. Separately, username is validated nowhere, and whitespace plus a colon produces extra h_users tokens, creating proxy accounts the panel cannot list or revoke. Reject whitespace, colon and control characters on create and update.",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 12,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.957Z"
-          }
+        "dependencies": [
+          "2"
         ],
-        "updatedAt": "2026-09-27T00:00:13.957Z"
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-10-20T12:17:53.246Z"
       },
       {
         "id": "13",
-        "title": "Apply security headers, fix Docker context leaks, and clean up config traps",
-        "description": "Add security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS) in next.config.js. Fix .dockerignore to exclude prisma/**/*.db. Move HOSTNAME=0.0.0.0 from image ENV to scripts/start.ts. Return neutral error messages to clients. Require ADMIN_PASSWORD in compose. Remove NODE_TLS_REJECT_UNAUTHORIZED=0 from .env.example. Upgrade next to a patched release.",
-        "status": "done",
-        "dependencies": [],
+        "title": "Logs API handler",
+        "description": "Implement GET /api/logs with filtering, pagination, and statistics.",
+        "details": "Implement GET /api/logs handler accepting query params: startDate, endDate, username, logType, limit, offset. Scan log files in LOGS_DIR, parse entries via LogParserService, apply filters, paginate results. Return {entries, totalCount, filesScanned, availableDates, stats} matching existing API response shape.",
+        "testStrategy": "Unit test handler with mock parser. Verify date range filtering. Verify username filtering. Verify pagination limit/offset. Verify response includes totalCount and filesScanned.",
         "priority": "medium",
-        "details": "Configure next.config.js with appropriate security headers. Update .dockerignore to `prisma/**/*.db`. Move HOSTNAME handling to scripts/start.ts and remove the image ENV. Wrap route error handlers to log full errors server-side and return neutral messages. Update compose to require ADMIN_PASSWORD. Remove the insecure TLS env var from .env.example. Upgrade next to a version patched against the four advisories.",
-        "testStrategy": "Inspect response headers for all security headers. Build the Docker image and confirm no .db files are in the build context. Confirm HOSTNAME is set correctly in scripts/start.ts. Trigger an error and confirm a neutral message is returned. Confirm ADMIN_PASSWORD is required. Confirm next is upgraded and no advisories remain.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add security headers to next.config.js",
-            "description": "next.config.js has no headers section at all: no CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy or HSTS. The panel displays proxy passwords, so frame-ancestors matters for clickjacking on the copy button. Add CSP with frame-ancestors none, X-Frame-Options DENY, nosniff, and Referrer-Policy no-referrer.",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 13,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.959Z"
-          },
-          {
-            "id": 2,
-            "title": "Close the dockerignore leak and relocate the HOSTNAME fix",
-            "description": "Two infrastructure fixes. First, .dockerignore:34 is prisma/*.db, which does not match prisma/sqlite/app.db, so a local database holding plaintext proxy passwords and the admin bcrypt hash enters the build context and the build-stage layers. Use prisma/**/*.db. Second, move HOSTNAME=0.0.0.0 out of the image ENV added in b25982d and into scripts/start.ts:11, where the existing but dead fallback process.env.HOSTNAME || 0.0.0.0 already lives, because a platform like ECS can re-inject the container id over the image value.",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 13,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.960Z"
-          },
-          {
-            "id": 3,
-            "title": "Neutral error messages, require ADMIN_PASSWORD, drop the TLS trap",
-            "description": "Three smaller items. Neutral errors: users/route.ts:34,99, admin/users/[id]/route.ts:60, share/route.ts:49 and core/actions/config.ts:85 return raw error.message, so Prisma text reaches the browser. Log server-side, return neutral. Default credentials: scripts/setup.ts:7-8 hardcodes admin/admin and runs from entrypoint.sh on every boot; require ADMIN_PASSWORD in compose and log the generated proxy password once at first creation. Remove NODE_TLS_REJECT_UNAUTHORIZED=0 from .env.example, currently inert because compose passes an explicit environment list with no env_file, but a trap for anyone who wires one up.",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 13,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:00:13.961Z"
-          }
+        "dependencies": [
+          "12"
         ],
-        "updatedAt": "2026-09-27T00:00:13.961Z"
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-10-20T12:17:58.343Z"
       },
       {
         "id": "14",
-        "title": "Spike: verify 3proxy accepts quoted CR hashes in a $ included users file",
-        "description": "BLOCKING SPIKE. Determine whether 3proxy 0.9.5 accepts a quoted value `user:CR:\"$1$salt$hash\"` in a users file pulled in by the `users $file` directive, or whether the quotes become part of the stored hash and break every password. Run a real 3proxy container, write such a file, restart, and attempt authentication with the plaintext.</description>\n<parameter name=\"details\">The 3proxy documentation requires quotes around CR values because a leading $ is a file-inclusion macro, but the documented example is an inline `users` command inside 3proxy.cfg, not an entry inside a separate file pulled in by `$`. src/conf.c strips quote characters in parsestr() before the token reaches h_users(), so the hypothesis is that quotes are handled identically in both cases, but this has never been tested. Everything in the enforcement task depends on the answer: if quotes break the hash, the fix is a different mechanism entirely. Method: start 3proxy with a users file containing a quoted $1$ MD5-crypt hash, authenticate over HTTP and SOCKS with the plaintext, and confirm 200 rather than 407. Compare against an unquoted entry. Record the exact file content that works.",
-        "details": "",
-        "testStrategy": "Container run: a quoted $1$ entry authenticates with the plaintext, an unquoted $1$ entry does not, and a wrong plaintext is rejected in both cases. Write down the working file format verbatim so the writer task can copy it.",
+        "title": "Traffic API handler with caching",
+        "description": "Implement GET /api/users/traffic returning aggregated traffic with 30-second cache.",
+        "details": "Implement GET /api/users/traffic handler. Call LogParserService to aggregate traffic from logs. Implement in-memory cache with 30-second TTL using sync.RWMutex and expiration map. Return aggregated traffic per username/IP: {username, ip, requests, sent, received}.",
+        "testStrategy": "Unit test cache expiration: verify data refreshed after 30 seconds. Verify aggregation matches parser output. Test concurrent cache reads/writes safety with race detector.",
+        "priority": "medium",
+        "dependencies": [
+          "12"
+        ],
         "status": "done",
-        "dependencies": [],
-        "priority": "high",
         "subtasks": [],
-        "updatedAt": "2026-09-26T18:30:21.599Z"
+        "updatedAt": "2026-10-20T12:18:03.657Z"
       },
       {
         "id": "15",
-        "title": "Remove wildcard CORS headers and bound the log endpoint limit",
-        "description": "Remove Access-Control-Allow-Origin: * from /api/logs (line 54), /api/system/status (line 141) and /api/users/traffic (line 27), and bound the `limit` query parameter on /api/logs. The limit is read as a bare parseInt with no clamp and used as a ceiling while getLogs slurps whole files via readLogFile before slicing, so ?limit=999999999 is a memory and response size DoS.</description>\n<parameter name=\"details\">The wildcard CORS header made the log endpoint readable from any website the operator visited, before authentication was added. It is unnecessary even for a same-origin panel and only widens exposure. Bound the limit with a clamp such as Math.min(Math.max(limit ?? 1000, 1), 5000) and reject a non-numeric value instead of letting parseInt produce NaN. Also check readLogFile: it reads the entire file into memory before slicing, so a large log file costs memory regardless of the limit; consider reading only the tail that the limit needs.",
-        "details": "",
-        "testStrategy": "Response headers carry no Access-Control-Allow-Origin. A request with limit=999999999 returns at most the cap. A request with limit=abc does not produce NaN behaviour. Confirm the response size stays bounded for a large log file.",
-        "status": "done",
-        "dependencies": [],
+        "title": "Maintenance job service",
+        "description": "Implement atomic maintenance job: log processing, traffic updates, user deactivation, Telegram notifications, .proxyauth regeneration, and 3proxy reload.",
+        "details": "Implement MaintenanceService with sync.Mutex for atomic execution. RunMaintenance(): read SYNC_INFO_FILE for last inode+offset per log file, read new bytes via LogParserService, aggregate traffic, update ProxyUser.dataUsed in database via short transactions, deactivate users where dataUsed >= dataLimit or ExpiresAt < now, send Telegram notification (Markdown) to TELEGRAM_BOT_TOKEN/telegramUserId for each deactivated user, regenerate .proxyauth, reload 3proxy. Update SYNC_INFO_FILE with new inode+offset. Retry on database busy errors.",
+        "testStrategy": "Unit test maintenance logic with mock dependencies. Verify mutex prevents concurrent execution. Verify deactivation logic for data limit and expiry. Verify Telegram message format is Markdown. Verify .proxyauth regeneration and reload called after maintenance.",
         "priority": "high",
+        "dependencies": [
+          "4",
+          "12",
+          "14"
+        ],
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-09-27T00:04:03.040Z"
+        "updatedAt": "2026-10-20T12:18:05.721Z"
       },
       {
         "id": "16",
-        "title": "Upgrade Next.js to a release patched against the four middleware-bypass advisories",
-        "description": "Upgrade next from the installed 16.2.3 to a release that closes four open High middleware/proxy-bypass advisories: GHSA-6gpp-xcg3-4w24 (&lt;16.2.11, CVSS 8.3), GHSA-492v-c6pp-mqqv (&lt;16.2.5, dynamic route parameter injection), GHSA-267c-6grr-h53f (&lt;16.2.5, segment prefetch) and GHSA-26hh-7cqf-hhc6 (&lt;16.2.6, incomplete fix). This is a High on its own and is not cosmetic like the headers work it was bundled with in task 13.</description>\n<parameter name=\"details\">GHSA-6gpp applies to this project: its condition is Turbopack plus a single locale, Turbopack became the default bundler for next build in 16.0.0, scripts/build.ts runs a bare next build, and there is no i18n config so the single-locale condition holds trivially. Run this as its own change with its own verification, not bundled with config edits, because a Next major or minor bump can move behaviour the build depends on. Check the upgrade guide for the middleware to proxy rename, verify next.config.js still applies, and confirm the Docker build stage still produces a working standalone bundle. Note that the two CRITICAL advisories against next (GHSA-p293-qw3h-jr36 Windows path traversal, GHSA-2xp9-vwfh-vxw4 AVIF RCE) do not apply to a Linux Alpine build, but check that the upgrade does not introduce a new i18n or image-optimizer path that would make the AVIF one reachable.",
-        "details": "",
-        "testStrategy": "npm audit --omit=dev reports no open High or Critical advisory against next. tsc, unit, integration and fail2ban suites pass. The Docker image builds and the standalone bundle serves /api/health. Proxy behaviour (src/proxy.ts) still guards /admin paths.",
+        "title": "Maintenance scheduler",
+        "description": "Implement cron-like runner that triggers maintenance every minute.",
+        "details": "Implement Scheduler with time.Ticker firing every minute. On each tick, attempt MaintenanceService.RunMaintenance() if mutex is available (non-blocking lock). Handle graceful shutdown via context. Log scheduler start/stop and maintenance run results.",
+        "testStrategy": "Unit test scheduler interval using fake clock or short interval. Verify maintenance called approximately every minute. Verify shutdown stops ticker and completes running maintenance.",
+        "priority": "medium",
+        "dependencies": [
+          "15"
+        ],
         "status": "done",
-        "dependencies": [],
-        "priority": "high",
         "subtasks": [],
-        "updatedAt": "2026-09-27T00:05:30.903Z"
+        "updatedAt": "2026-10-20T12:18:08.609Z"
       },
       {
         "id": "17",
-        "title": "Verify the fix set end to end and ship a release",
-        "description": "End-to-end verification of the whole fix set, then ship it. Covers: a new E2E test proving a deactivated user is rejected by 3proxy and a user over their data limit is cut off; a container run proving the scheduler reaches its endpoint and .proxyauth carries the flags; an independent security pass re-checking the Critical and High findings are closed and introducing nothing new; and a release. v0.5.1 is already published, so this needs 0.5.2 or later plus a release tag.</description>\n<parameter name=\"details\">The enforcement fix is the one that needs proving rather than asserting, because a wrong flag value miscounts a paying customer's traffic. Bring up the real two-container stack, create a user with a small data limit, drive traffic through 3proxy until the limit is exceeded, restart 3proxy and confirm the user is refused. Then deactivate a user outright and confirm authentication fails after a restart. Only after both pass, run the independent security pass. This is also the point to settle whether docker-compose.yml stays gitignored now that it no longer contains a hardcoded secret, which is a decision the owner should make explicitly rather than by omission.",
-        "details": "",
-        "testStrategy": "Two new E2E assertions: a deactivated user receives an auth failure from 3proxy, and a user past their data limit is cut off. Container run shows .proxyauth with flags and the scheduler succeeding. Independent audit reports no open Critical or High. Release tag published and the multi-arch image carries both platforms.",
-        "status": "done",
+        "title": "System status and health check handlers",
+        "description": "Implement GET /api/health and GET /api/system/status endpoints.",
+        "details": "Implement handlers: GET /api/health returns {status: 'ok', timestamp, uptime} with server start time. GET /api/system/status returns composite status: 3proxy running state/version/memory/PID via DockerService, config file info, user count from DB, proxyauth file stats (size, mod time), disk usage for LOGS_DIR, traffic sync info from SYNC_INFO_FILE.",
+        "testStrategy": "Unit test handlers. Verify health returns status ok and uptime > 0. Verify system status aggregates data from Docker, DB, and file system. Verify graceful handling when 3proxy container unavailable.",
+        "priority": "medium",
         "dependencies": [
-          "8",
-          "9",
-          "10",
-          "12",
-          "13",
-          "15",
-          "16"
+          "3",
+          "4",
+          "10"
         ],
-        "priority": "high",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-09-27T01:16:40.211Z"
+        "updatedAt": "2026-10-20T12:18:14.808Z"
       },
       {
         "id": "18",
-        "title": "Decide whether to pursue native 3proxy traffic limiting via ACL counters",
-        "description": "OPTIONAL / DECISION REQUIRED. Native per-user traffic limiting is now the only remaining enforcement gap, and it is not reachable from the users file. 3proxy defines a user entry as exactly login:type:password with CL, CR and NT as the only types, and directs limits to ACLs; its auth.c enforces limits from conf.trafcounter, which is populated from 3proxy.cfg rather than from the users list. Work out what that requires in this deployment and decide whether it is worth doing, because panel-side enforcement now actually works: a user who exceeds their quota is set inactive and leaves the file, so 3proxy refuses them on the next reload.</description>\n<parameter name=\"details\">Tradeoff to weigh. Panel-side enforcement depends on the panel being up and on a maintenance run happening, so a user can overshoot by whatever they transfer between runs, and enforcement stops entirely if the panel is down. Native enforcement would cut off inside 3proxy and keep working when the panel is not, but it means generating and managing per-user ACL rules in 3proxy.cfg, which the panel does not currently write at all, and it may need compile-time support in the 3proxy build that silently does nothing when absent. First step is to establish whether the shipped 3proxy/3proxy:0.9.5 image supports per-user traffic counters at all, and what the config syntax is; the howtoe ACL section covers allow, deny and flush but the counter directive was not located in the documentation read so far. Not blocking: the deactivated-user fix in task 9 removed the silent failure, so limits are enforced as of that commit, just not natively.",
-        "details": "",
-        "testStrategy": "Spike: determine the counter directive and whether the shipped build honours it, by configuring a limit for one user in 3proxy.cfg and pushing traffic past it. If the build lacks support, record that and close the task as not applicable.",
-        "status": "done",
-        "dependencies": [],
-        "priority": "medium",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Record the decision and why the users-file route is closed",
-            "description": "Not pursued. The users-file route is closed, not merely unexplored: 3proxy defines a user entry as exactly login:type:password with CL, CR and NT as the only types, and h_users in src/conf.c takes everything after CR: as the password without parsing a fourth field. Appending d/e/i was implemented, measured to break authentication for every user with a 407, and reverted. The remaining route is ACL traffic counters in 3proxy.cfg, whose directive syntax was not established and which the panel does not write today. It is also worth less than it was, because panel-side enforcement now works: a user over quota is set inactive and leaves the user file, so 3proxy refuses them. The cost of the panel-side model is that a user can overshoot between maintenance runs and enforcement stops if the panel is down, which is a real limitation but not a broken promise.</description>\n<parameter name=\"id\">18",
-            "details": "",
-            "status": "done",
-            "dependencies": [],
-            "parentTaskId": 18,
-            "parentId": "undefined",
-            "updatedAt": "2026-09-27T00:14:45.354Z"
-          }
-        ],
-        "updatedAt": "2026-09-27T00:14:45.354Z"
-      },
-      {
-        "id": "19",
-        "title": "Keep the traffic sync offsets on the data volume, not in the image layer",
-        "description": "SYNC_INFO_FILE defaults to path.join(process.cwd(), \"data\", \"traffic-sync.json\"), and in the container cwd is /app/.next/standalone, so the per-inode log offsets land at /app/.next/standalone/data/traffic-sync.json, inside the image layer rather than on the /app/data volume. The file is lost whenever the container is recreated from the image, the offsets reset to zero, and every logged byte is accounted again. Point SYNC_INFO_FILE at /app/data in the compose stacks, or derive it from the database location so it follows the volume automatically. Found while verifying the maintenance scheduler: the job reported success and regenerated the user file, but no traffic-sync.json existed under /app/data. The impact is double counting rather than an outage, which for a metered service means billing twice for the same traffic. The integration test sets SYNC_INFO_FILE explicitly, which is why the suite never caught it. The same class of problem applies to any other default path that resolves against cwd rather than the volume.</description>\n<parameter name=\"file\">.taskmaster/tasks/tasks.json",
-        "details": "",
-        "testStrategy": "Container run: after a maintenance pass the offsets file exists under /app/data, and after recreating the container a second pass reports zero newly accounted bytes instead of re-reading the whole log.",
-        "status": "done",
-        "dependencies": [],
+        "title": "Main entry point, router setup, and server wiring",
+        "description": "Wire all services, middleware, and routes into the Gin HTTP server with graceful shutdown.",
+        "details": "Create cmd/server/main.go entry point: load config, initialize logger, connect to database with auto-migration, initialize repositories and services, setup Gin router with middleware (structured logger, CORS, recovery, auth middleware), register route groups (auth, admin, config, logs, traffic, system), start HTTP server on configured port with graceful shutdown (Shutdown with timeout on SIGINT/SIGTERM), start maintenance scheduler in goroutine.",
+        "testStrategy": "Integration test: start server on test port, perform full cycle login → create user → generate traffic → maintenance → verify endpoints. Send SIGTERM and verify graceful shutdown completes within timeout. Verify all routes registered and respond.",
         "priority": "high",
+        "dependencies": [
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17"
+        ],
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2026-09-27T00:14:45.364Z"
+        "updatedAt": "2026-10-20T12:18:20.282Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-27T01:16:40.211Z",
-      "taskCount": 19,
-      "completedCount": 19,
+      "lastModified": "2026-10-20T12:55:14.129Z",
+      "taskCount": 18,
+      "completedCount": 17,
       "tags": [
         "master"
       ]
+    }
+  },
+  "frontend": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Initialize Vite + React 19 + TypeScript + Tailwind + HeroUI project",
+        "description": "Create the frontend/ directory and set up a Vite-based React 19 application with TypeScript, Tailwind CSS, and HeroUI.",
+        "details": "Run `npm create vite@latest frontend -- --template react-ts`. Install Tailwind CSS v4, HeroUI, React Router DOM, axios, react-toastify. Configure `vite.config.ts` with server port 3000, build output directory `dist`, and plugins for Tailwind and HeroUI. Add `tsconfig.json` with strict settings and include paths for `@/` alias.",
+        "testStrategy": "Execute `npm run dev` and verify the dev server starts on http://localhost:3000. Run `npm run build` and confirm the `dist/` directory is generated.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Copy UI components, hooks, and core utilities",
+        "description": "Migrate all existing UI components, custom hooks, and core definition/utility files from the Next.js app to the new React app, removing Next.js-specific imports.",
+        "details": "Copy `src/components/*` → `frontend/src/components/`, `src/hooks/*` → `frontend/src/hooks/`, `src/core/definitions.ts` → `frontend/src/types/`, `src/core/utils.ts` → `frontend/src/utils/`, `src/core/toast-utils.ts` → `frontend/src/utils/toast-utils.ts`. Replace imports of `next/navigation`, `next/image`, `next-themes` with React equivalents (e.g., `useNavigate` from react-router-dom, standard `<img>`, custom theme hook). Convert any server components to client components by adding `'use client'` directive.",
+        "testStrategy": "Run ESLint with a rule banning `next/` imports and ensure no violations. Render each component on a test page to confirm no runtime errors.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Create API client layer",
+        "description": "Implement a centralized API client using axios to communicate with the Go backend.",
+        "details": "Create `frontend/src/api/client.ts`. Configure axios instance with `baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080'` and `withCredentials: true`. Add request interceptor for auth token if needed, and response interceptor for error handling (e.g., 401 → redirect to login). Export typed functions for each API endpoint.",
+        "testStrategy": "Use MSW or mock server to intercept requests, verify base URL and credentials are sent. Write unit tests for each endpoint function.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Set up React Router routes and convert pages",
+        "description": "Create router configuration mapping URLs to migrated page components, replicating the Next.js App Router structure.",
+        "details": "Create `frontend/src/routes.tsx` using `createBrowserRouter`. Define routes for `/`, `/admin/dashboard`, `/admin/users`, `/admin/users/create`, `/admin/users/:id/edit`, `/admin/profile`. Copy each page from `src/app/` into `frontend/src/pages/`, converting server-component logic (e.g., `fetch` on server) to `useEffect`/`useQuery` hooks. Wrap the router in `ThemeProvider` and `ToastProvider`.",
+        "testStrategy": "Start dev server, navigate to each route in a browser, and verify correct page renders without 404. Use React Router's `useLocation` to assert path changes.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement authentication flow",
+        "description": "Add login, session validation, logout, and change-credentials functionality using the Go backend endpoints.",
+        "details": "Create `frontend/src/auth/AuthProvider.tsx` context that fetches `GET /api/auth/session` on mount. Implement login page calling `POST /api/auth/login`, logout via `POST /api/auth/logout`, and change-credentials via `PUT /api/auth/change-credentials`. Protect routes by redirecting to `/login` when session is invalid.",
+        "testStrategy": "Perform end-to-end test: start dev server, log in with valid credentials, verify session persists on page reload, log out, ensure redirect to login. Test invalid credentials show error toast.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement admin user management",
+        "description": "Create hooks and UI for listing, creating, editing, deleting users and sharing passwords.",
+        "details": "Develop `frontend/src/hooks/useUsers.ts` with functions for `GET /api/admin/users`, `POST /api/admin/users`, `PUT /api/admin/users/:id`, `DELETE /api/admin/users/:id`, `GET /api/admin/users/:id/share`. Connect to admin pages, implement pagination, filtering, and toast notifications on success/error.",
+        "testStrategy": "Run integration tests against a running Go backend: create a user, verify list includes it, edit user, delete user, check share password endpoint returns password.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement config management",
+        "description": "Add pages for generating, reloading config and fetching proxy config.",
+        "details": "Create `frontend/src/hooks/useConfig.ts` with `GET /api/config/generate`, `POST /api/config/reload`, `GET /api/proxy-config`. Bind to UI components, show loading states and toasts.",
+        "testStrategy": "Call generate endpoint, verify response; trigger reload, confirm success toast; fetch proxy config, display data.",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement logs viewer",
+        "description": "Build logs page with filters, pagination, and infinite scroll.",
+        "details": "Create `frontend/src/hooks/useLogs.ts` to fetch `GET /api/logs` with query params for date, username, type. Implement infinite scroll using IntersectionObserver. Display available dates and stats from endpoint.",
+        "testStrategy": "Load logs page, apply filters, verify data updates; scroll to bottom to trigger more fetches.",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Implement traffic monitoring page",
+        "description": "Show aggregated traffic data per user with auto-refresh.",
+        "details": "Create `frontend/src/hooks/useTraffic.ts` calling `GET /api/users/traffic`. Use `setInterval` to refresh every 30 seconds. Cache results in memory. Display data in charts/tables.",
+        "testStrategy": "Navigate to traffic page, verify data loads, wait 30s, confirm data updates.",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Implement system status page",
+        "description": "Display proxy status, version, memory, config, users count, proxyauth info, logs disk usage.",
+        "details": "Create `frontend/src/hooks/useSystemStatus.ts` for `GET /api/system/status` and `GET /api/health`. Populate UI components with returned data.",
+        "testStrategy": "Load status page, verify all fields are populated correctly.",
+        "priority": "medium",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Implement manual maintenance trigger",
+        "description": "Add button in admin panel to trigger maintenance via `POST /api/users/maintenance`.",
+        "details": "Create `frontend/src/hooks/useMaintenance.ts` with function to call endpoint. Show success/error toast.",
+        "testStrategy": "Click trigger button, verify toast appears and backend executes maintenance.",
+        "priority": "low",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Implement theme switching and toast notifications",
+        "description": "Replace next-themes with localStorage-based theme toggle and integrate react-toastify.",
+        "details": "Create `frontend/src/theme/ThemeContext.tsx` that toggles `dark` class on `<html>` and persists to localStorage. Add `ToastContainer` from react-toastify in root component. Update components to use theme context.",
+        "testStrategy": "Toggle theme, verify class changes and persists after reload; trigger a toast, verify display.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Set up environment configuration",
+        "description": "Create `.env.example` and ensure build-time env injection works.",
+        "details": "Add `frontend/.env.example` with `VITE_API_URL=http://localhost:8080`. Configure Vite to expose env variables via `import.meta.env`. Update API client to use `import.meta.env.VITE_API_URL`.",
+        "testStrategy": "Copy `.env.example` to `.env`, modify value, run build, verify compiled code uses correct URL.",
+        "priority": "low",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Add Docker support",
+        "description": "Create Dockerfile and docker-compose.yml for frontend.",
+        "details": "Write multi-stage Dockerfile: build stage uses node:20 to run `npm run build`, then copy `dist/` to nginx:alpine. Configure nginx to serve SPA and proxy `/api/*` to Go backend. Add `docker-compose.yml` with services for frontend and backend.",
+        "testStrategy": "Run `docker compose up --build`, verify frontend loads in browser and API calls proxy to backend.",
+        "priority": "low",
+        "dependencies": [
+          1,
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Perform integration and smoke testing",
+        "description": "Execute end-to-end smoke test covering core user flows.",
+        "details": "Start dev server, log in, create a user, verify user appears in list, check config generation, logs, traffic, system status, and maintenance trigger. Ensure theme toggle and toasts work.",
+        "testStrategy": "Manual test script or automated Cypress script; record results.",
+        "priority": "high",
+        "dependencies": [
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          14
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2026-10-20T12:54:57.186Z",
+      "updated": "2026-10-20T12:54:57.186Z",
+      "description": "Tasks for frontend context"
     }
   }
 }

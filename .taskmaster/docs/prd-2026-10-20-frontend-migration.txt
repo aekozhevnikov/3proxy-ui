@@ -1,0 +1,113 @@
+# PRD: Frontend Migration to Standalone React App
+Version: 1.0 | Date: 2026-10-20 | Author: Claude
+
+## 1. Context
+The current 3proxy UI frontend is a Next.js 16 app (App Router) with React 19, using server components, server actions, and API routes. The backend has been rewritten in Go as a standalone service running on port 8080. The frontend needs to be extracted into a separate `frontend/` folder as a standalone React application (Vite + React 19), with all API calls updated to point to the Go backend at `http://localhost:8080` (or configurable via env). The Next.js-specific features (server components, server actions, API routes, Image optimization, next-themes) must be replaced with client-side equivalents.
+
+## 2. Goal
+Create a standalone React 19 + Vite + TypeScript application in `frontend/` that is a functional copy of the current UI, communicating exclusively with the Go backend via REST API, with zero Next.js dependencies.
+
+## 3. Non-goals
+- Rewrite UI components from scratch (copy existing components as-is)
+- Change UI/UX design or component structure
+- Add new features beyond parity
+- Modify the Go backend
+- Implement SSR/SSG (pure SPA is acceptable)
+- Migrate to a different UI library (keep HeroUI, Tailwind, etc.)
+
+## 4. Functional requirements
+FR-1. Project scaffolding - Acceptance criteria: `frontend/` directory exists with Vite + React 19 + TypeScript + Tailwind + HeroUI configured; `npm run dev` starts dev server on port 3000; `npm run build` produces production build in `dist/`.
+
+FR-2. Copy all UI components - Acceptance criteria: All components from `src/components/`, `src/hooks/`, `src/core/definitions.ts`, `src/core/toast-utils.ts`, `src/core/utils.ts` copied to `frontend/src/` with identical behavior; no Next.js imports remain.
+
+FR-3. Copy all pages as React routes - Acceptance criteria: Pages from `src/app/` converted to React Router routes: `/` (login), `/admin/dashboard`, `/admin/users`, `/admin/users/create`, `/admin/users/:id/edit`, `/admin/profile`; all page components copied with server-component logic moved to client-side useEffect/hooks.
+
+FR-4. API client layer - Acceptance criteria: New `frontend/src/api/client.ts` with axios/fetch wrapper; base URL from `import.meta.env.VITE_API_URL` (default `http://localhost:8080`); all API calls from hooks updated to use this client; request/response types match Go backend exactly.
+
+FR-5. Authentication flow - Acceptance criteria: Login page calls `POST /api/auth/login` on Go backend; session cookie handled by browser; `GET /api/auth/session` validates session on mount; logout clears cookie via `POST /api/auth/logout`; change-credentials works; protected routes redirect to login if unauthorized.
+
+FR-6. Admin user management - Acceptance criteria: Users list with pagination/filtering works via `GET /api/admin/users`; create user via `POST /api/admin/users`; edit via `PUT /api/admin/users/:id`; delete via `DELETE /api/admin/users/:id`; share modal fetches password via `GET /api/admin/users/:id/share`; all toasts/notifications work.
+
+FR-7. Config management - Acceptance criteria: Config generate via `GET /api/config/generate`; reload via `POST /api/config/reload`; proxy config via `GET /api/proxy-config`; all work with Go backend.
+
+FR-8. Logs viewer - Acceptance criteria: Logs page with filters (date, username, type), pagination, infinite scroll works via `GET /api/logs`; available dates and stats displayed.
+
+FR-9. Traffic monitoring - Acceptance criteria: Traffic page shows aggregated data per user via `GET /api/users/traffic` with 30s cache; auto-refresh works.
+
+FR-10. System status - Acceptance criteria: System status page shows 3proxy status, version, memory, config, users count, proxyauth info, logs disk usage via `GET /api/system/status`; health check via `GET /api/health`.
+
+FR-11. Maintenance trigger - Acceptance criteria: Manual maintenance trigger via `POST /api/users/maintenance` works from admin panel; shows result toast.
+
+FR-12. Theme and toast - Acceptance criteria: Theme switching (light/dark) works via localStorage + CSS class on `<html>` (no next-themes); toast notifications via react-toastify work identically.
+
+FR-13. Environment configuration - Acceptance criteria: `.env.example` with `VITE_API_URL=http://localhost:8080`; build-time env injection works.
+
+FR-14. Docker support - Acceptance criteria: `frontend/Dockerfile` builds static assets with nginx; `docker-compose.yml` integration for local dev; nginx proxies `/api/*` to Go backend in production.
+
+## 5. Non-functional requirements
+NFR-1. Performance: Initial load < 2s on 3G; bundle size < 500KB gzipped (code-split by route).
+NFR-2. Compatibility: Works in Chrome, Firefox, Safari, Edge (last 2 versions).
+NFR-3. Type safety: Strict TypeScript; no `any` in new code; all API types shared with Go backend via generated types or manual sync.
+NFR-4. Backward compatibility: API contracts identical to Next.js backend; Go backend requires zero changes.
+NFR-5. No Next.js dependencies: Zero `next/`, `next-auth`, `next-themes`, server actions in final build.
+
+## 6. Constraints
+- React 19, Vite 5+, TypeScript 5.6+, Tailwind 4+, HeroUI 3+
+- Node 20+ for build
+- Go backend runs on port 8080 (configurable)
+- CORS configured on Go backend for frontend origin
+- Cookie-based auth (HttpOnly, Secure, SameSite=Lax) — frontend must send credentials
+
+## 7. Affected modules
+- New: `frontend/` (entire React app)
+- New: `frontend/src/api/client.ts` (API client)
+- New: `frontend/src/routes.tsx` (React Router routes)
+- New: `frontend/src/main.tsx` (entry point)
+- New: `frontend/vite.config.ts`, `frontend/tsconfig.json`, `frontend/tailwind.config.js`
+- Copied: `src/components/*` → `frontend/src/components/`
+- Copied: `src/hooks/*` → `frontend/src/hooks/`
+- Copied: `src/core/definitions.ts` → `frontend/src/types/`
+- Copied: `src/core/utils.ts` → `frontend/src/utils/`
+- Copied: `src/core/toast-utils.ts` → `frontend/src/utils/`
+- Copied: `src/app/*` pages → `frontend/src/pages/`
+- Removed: All `src/app/api/*` (backend routes)
+- Removed: All `src/lib/*` (backend libs)
+- Removed: All `src/core/*` except definitions, utils, toast-utils
+
+## 8. Risks and mitigations
+Risk: API response shape differences between Next.js and Go backend.
+Mitigation: Verify each endpoint response matches exactly; write integration tests against running Go backend.
+
+Risk: Cookie-based auth fails due to CORS/credentials.
+Mitigation: Configure Go backend CORS with `Access-Control-Allow-Credentials: true` and `Access-Control-Allow-Origin: http://localhost:3000`; frontend uses `credentials: 'include'`.
+
+Risk: Next.js Image component not available.
+Mitigation: Replace with standard `<img>` or use a lightweight alternative.
+
+Risk: Theme persistence differs from next-themes.
+Mitigation: Implement simple localStorage + class-based theme switching.
+
+Risk: Server actions (createProxyUserAction) not available.
+Mitigation: Convert to direct API calls in hooks (already done in useUsers for update/delete).
+
+Risk: Build fails due to missing polyfills or Node built-ins.
+Mitigation: Vite config with `define` for process.env, polyfill buffer if needed.
+
+## 9. Definition of done
+- [ ] `frontend/` directory created with Vite + React + TS + Tailwind + HeroUI
+- [ ] All components, hooks, types, utils copied and working
+- [ ] All pages converted to React Router routes
+- [ ] API client implemented with correct base URL
+- [ ] All API calls updated to use Go backend endpoints
+- [ ] Login/logout/session/change-credentials flow works end-to-end
+- [ ] Admin user CRUD works end-to-end
+- [ ] Config generate/reload works
+- [ ] Logs viewer works with filters/pagination
+- [ ] Traffic page works with auto-refresh
+- [ ] System status page works
+- [ ] Theme switching works (localStorage)
+- [ ] Toast notifications work
+- [ ] `npm run dev` starts on port 3000
+- [ ] `npm run build` succeeds, produces `dist/`
+- [ ] Dockerfile builds, nginx serves SPA + proxies `/api/*` to backend
+- [ ] Manual smoke test: login → create user → verify in Go backend DB

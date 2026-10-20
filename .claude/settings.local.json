@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__pdf-mcp__*",
+      "mcp__mcp-safari__*",
+      "mcp__avito-scraper__*",
+      "mcp__notion__*",
+      "Bash(chmod *)",
+      "Bash(mkdir *)",
+      "Bash(grep *)",
+      "Bash(ls *)",
+      "Bash(ls*)",
+      "Bash(pnpm:*)",
+      "Bash(npm:*)",
+      "Bash(git:*)",
+      "Bash(bd:*)",
+      "WebSearch",
+      "mcp__codebase-memory-mcp__*",
+      "mcp__github__*",
+      "mcp__context7__*",
+      "mcp__filesystem__*",
+      "mcp__taskmaster-ai__*",
+      "mcp__tavily__*",
+      "mcp__sequential-thinking__*"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Read(**/credentials*)",
+      "Bash(rm -rf:*)",
+      "Bash(rm -r:*)"
+    ],
+    "defaultMode": "bypassPermissions"
+  }
+}

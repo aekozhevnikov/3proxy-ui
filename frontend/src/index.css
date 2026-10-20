@@ -1,0 +1,108 @@
+@import "tailwindcss";
+@import "@heroui/react";
+
+@theme inline {
+  --color-primary: var(--heroui-primary);
+  --color-secondary: var(--heroui-secondary);
+  --color-background: var(--heroui-background);
+  --color-foreground: var(--heroui-foreground);
+  --color-muted: var(--heroui-muted);
+  --color-muted-foreground: var(--heroui-muted-foreground);
+  --color-border: var(--heroui-border);
+  --color-ring: var(--heroui-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* HeroUI customizations */
+:root {
+  --heroui-primary: #3b82f6;
+  --heroui-primary-foreground: #ffffff;
+  --heroui-secondary: #64748b;
+  --heroui-secondary-foreground: #ffffff;
+  --heroui-background: #ffffff;
+  --heroui-foreground: #0f172a;
+  --heroui-muted: #f1f5f9;
+  --heroui-muted-foreground: #64748b;
+  --heroui-border: #e2e8f0;
+  --heroui-ring: #3b82f6;
+}
+
+.dark {
+  --heroui-primary: #60a5fa;
+  --heroui-primary-foreground: #0f172a;
+  --heroui-secondary: #94a3b8;
+  --heroui-secondary-foreground: #0f172a;
+  --heroui-background: #0f172a;
+  --heroui-foreground: #f8fafc;
+  --heroui-muted: #1e293b;
+  --heroui-muted-foreground: #94a3b8;
+  --heroui-border: #334155;
+  --heroui-ring: #60a5fa;
+}
+
+/* Toast customizations */
+.Toastify__toast-container {
+  z-index: 9999;
+}
+
+.Toastify__toast {
+  border-radius: 9999px !important;
+  padding: 12px 20px !important;
+  font-size: 14px !important;
+}
+
+.Toastify__toast--success {
+  background: #22c55e !important;
+}
+
+.Toastify__toast--error {
+  background: #ef4444 !important;
+}
+
+.Toastify__toast--info {
+  background: #3b82f6 !important;
+}
+
+.Toastify__toast--warning {
+  background: #f59e0b !important;
+}
+
+/* Custom scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--heroui-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--heroui-muted-foreground);
+}
